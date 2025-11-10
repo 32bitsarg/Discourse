@@ -152,11 +152,9 @@ Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más información.
 
 ## 👤 Autor
 
-**Tu Nombre**
+**32bitsarg**
 
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-- Email: tu-email@ejemplo.com
-
+- GitHub: [@32bitsarg](https://github.com/32bitsarg)
 ---
 
 <div align="center">
