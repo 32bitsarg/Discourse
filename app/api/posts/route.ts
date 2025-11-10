@@ -1,0 +1,235 @@
+import { NextRequest, NextResponse } from 'next/server'
+import pool from '@/lib/db'
+import { getCache, setCache } from '@/lib/redis'
+import { getCurrentUser } from '@/lib/auth'
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const filter = searchParams.get('filter') || 'all'
+    const subforumId = searchParams.get('subforum_id')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const offset = (page - 1) * limit
+
+    // Obtener usuario actual (si está logueado)
+    const currentUser = await getCurrentUser()
+    const userId = currentUser?.id
+
+    // NOTA: No usamos cache para posts porque contienen imágenes base64 grandes
+    // Cachear posts completos consumiría demasiado espacio en Redis
+    // En su lugar, optimizamos las consultas a la BD con índices
+
+    // Obtener IDs de comunidades del usuario (si está logueado) - con cache
+    let userSubforumIds: number[] = []
+    if (userId) {
+      const userMembershipsCacheKey = `user:${userId}:subforum_ids`
+      const cachedMemberships = await getCache<number[]>(userMembershipsCacheKey)
+      
+      if (cachedMemberships) {
+        userSubforumIds = cachedMemberships
+      } else {
+        const [userMemberships] = await pool.execute(
+          'SELECT subforum_id FROM subforum_members WHERE user_id = ? AND status = ?',
+          [userId, 'approved']
+        ) as any[]
+        userSubforumIds = userMemberships.map((m: any) => m.subforum_id)
+        // Cache por 10 minutos (se guarda en Upstash porque TTL > 2min)
+        await setCache(userMembershipsCacheKey, userSubforumIds, 600)
+      }
+    }
+
+    let query = `
+      SELECT 
+        p.id,
+        p.title,
+        p.content,
+        p.upvotes,
+        p.downvotes,
+        p.comment_count,
+        p.is_hot,
+        p.is_pinned,
+        p.created_at,
+        s.id as subforum_id,
+        s.name as subforum_name,
+        s.slug as subforum_slug,
+        s.is_public,
+        u.username as author_username,
+        u.id as author_id
+      FROM posts p
+      LEFT JOIN subforums s ON p.subforum_id = s.id
+      LEFT JOIN users u ON p.author_id = u.id
+      WHERE 1=1
+    `
+
+    const params: any[] = []
+
+    if (subforumId) {
+      query += ' AND p.subforum_id = ?'
+      params.push(subforumId)
+    } else {
+      // Si no es una comunidad específica, filtrar comunidades privadas
+      // Mostrar solo comunidades públicas O comunidades del usuario
+      if (userId && userSubforumIds.length > 0) {
+        const placeholders = userSubforumIds.map(() => '?').join(',')
+        query += ` AND (s.is_public = TRUE OR s.id IN (${placeholders}))`
+        params.push(...userSubforumIds)
+      } else {
+        // Si no está logueado, solo mostrar públicas
+        query += ' AND s.is_public = TRUE'
+      }
+    }
+
+    // Aplicar filtros y ordenamiento
+    if (filter === 'hot') {
+      query += ' AND p.is_hot = TRUE'
+      query += ' ORDER BY p.created_at DESC'
+    } else if (filter === 'new') {
+      query += ' ORDER BY p.created_at DESC'
+    } else if (filter === 'top') {
+      query += ' ORDER BY (p.upvotes - p.downvotes) DESC'
+        } else {
+          // 'all' - mostrar todos ordenados por fecha
+          query += ' ORDER BY p.created_at DESC'
+        }
+
+        query += ` LIMIT ? OFFSET ?`
+        params.push(limit, offset)
+
+    const [posts] = await pool.execute(query, params) as any[]
+
+    // Obtener el número real de comentarios para cada post (para asegurar sincronización)
+    const postIds = posts.map((p: any) => p.id)
+    let realCommentCounts: Record<number, number> = {}
+    
+    if (postIds.length > 0) {
+      const placeholders = postIds.map(() => '?').join(',')
+      const [commentCounts] = await pool.execute(
+        `SELECT post_id, COUNT(*) as count FROM comments WHERE post_id IN (${placeholders}) GROUP BY post_id`,
+        postIds
+      ) as any[]
+      
+      commentCounts.forEach((cc: any) => {
+        realCommentCounts[cc.post_id] = cc.count
+      })
+    }
+
+        // Formatear fechas y sincronizar comment_count
+        const formattedPosts = posts.map((post: any) => {
+          const realCount = realCommentCounts[post.id] ?? 0
+          // Si el comment_count en la BD no coincide con el real, usar el real
+          const commentCount = realCount !== post.comment_count ? realCount : post.comment_count
+          
+          // Verificar si el usuario es miembro de esta comunidad
+          const isMember = userId && userSubforumIds.includes(post.subforum_id)
+          
+          return {
+            id: post.id,
+            title: post.title,
+            content: post.content, // Contenido completo con imágenes
+            upvotes: post.upvotes,
+            downvotes: post.downvotes,
+            comment_count: commentCount,
+            is_hot: post.is_hot,
+            is_pinned: post.is_pinned,
+            created_at: post.created_at,
+            subforum_id: post.subforum_id,
+            subforum_name: post.subforum_name,
+            subforum_slug: post.subforum_slug,
+            is_public: post.is_public,
+            author_username: post.author_username,
+            author_id: post.author_id,
+            timeAgo: getTimeAgo(post.created_at),
+            isNew: isNewPost(post.created_at),
+            isFromMemberCommunity: isMember || false,
+          }
+        })
+
+    // Ordenar: primero posts de comunidades del usuario, luego el resto
+    if (userId && userSubforumIds.length > 0) {
+      formattedPosts.sort((a: any, b: any) => {
+        if (a.isFromMemberCommunity && !b.isFromMemberCommunity) return -1
+        if (!a.isFromMemberCommunity && b.isFromMemberCommunity) return 1
+        return 0
+      })
+    }
+
+        // Obtener el total de posts para saber si hay más páginas
+        let totalCount = 0
+        let countQuery = `
+          SELECT COUNT(*) as total
+          FROM posts p
+          LEFT JOIN subforums s ON p.subforum_id = s.id
+          WHERE 1=1
+        `
+        const countParams: any[] = []
+        
+        if (subforumId) {
+          countQuery += ' AND p.subforum_id = ?'
+          countParams.push(subforumId)
+        } else {
+          if (userId && userSubforumIds.length > 0) {
+            const placeholders = userSubforumIds.map(() => '?').join(',')
+            countQuery += ` AND (s.is_public = TRUE OR s.id IN (${placeholders}))`
+            countParams.push(...userSubforumIds)
+          } else {
+            countQuery += ' AND s.is_public = TRUE'
+          }
+        }
+        
+        if (filter === 'hot') {
+          countQuery += ' AND p.is_hot = TRUE'
+        }
+        
+        const [countResult] = await pool.execute(countQuery, countParams) as any[]
+        totalCount = countResult[0]?.total || 0
+        
+        const hasMore = (offset + limit) < totalCount
+
+        const result = { 
+          posts: formattedPosts || [], // Respuesta completa con imágenes
+          pagination: {
+            page,
+            limit,
+            total: totalCount,
+            hasMore,
+            totalPages: Math.ceil(totalCount / limit)
+          }
+        }
+
+        // No guardamos posts en cache porque contienen imágenes base64 grandes
+        // Esto asegura que los usuarios siempre vean las imágenes correctamente
+        // y no consumimos demasiado espacio en Redis
+
+        return NextResponse.json(result)
+  } catch (error: any) {
+    // Si las tablas no existen, devolver array vacío
+    if (error?.code === 'ER_NO_SUCH_TABLE') {
+      return NextResponse.json({ posts: [] })
+    }
+    
+    console.error('Get posts error:', error)
+    return NextResponse.json({ posts: [] })
+  }
+}
+
+function getTimeAgo(date: Date): string {
+  const now = new Date()
+  const diff = now.getTime() - new Date(date).getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (minutes < 1) return 'hace unos segundos'
+  if (minutes < 60) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
+  if (hours < 24) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
+  return `hace ${days} día${days > 1 ? 's' : ''}`
+}
+
+function isNewPost(date: Date): boolean {
+  const now = new Date()
+  const diff = now.getTime() - new Date(date).getTime()
+  const hours = diff / (1000 * 60 * 60)
+  return hours < 24
+}
+
