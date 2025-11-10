@@ -168,10 +168,14 @@ export default function ForumsPage() {
                               r/{subforum.name}
                             </h2>
                             {!subforum.is_public && (
-                              <Lock className="w-5 h-5 text-gray-500" title="Comunidad privada" />
+                              <span title="Comunidad privada">
+                                <Lock className="w-5 h-5 text-gray-500" />
+                              </span>
                             )}
                             {subforum.is_public && (
-                              <Globe className="w-5 h-5 text-green-500" title="Comunidad pública" />
+                              <span title="Comunidad pública">
+                                <Globe className="w-5 h-5 text-green-500" />
+                              </span>
                             )}
                           </div>
                           {subforum.description && (

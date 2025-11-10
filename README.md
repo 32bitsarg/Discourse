@@ -1,115 +1,168 @@
-# Discourse - Plataforma de Foros
+<div align="center">
 
-Plataforma de foros estilo Reddit donde los usuarios pueden crear y administrar sus propias comunidades.
+# 🗨️ Discourse
 
-## 🚀 Tecnologías
+![Discourse Badge](https://img.shields.io/badge/Discourse-Community%20Platform-6366f1?style=for-the-badge&logo=discourse&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?style=for-the-badge&logo=typescript&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
-- **Next.js 16** - Framework de React
-- **TypeScript** - Tipado estático
-- **Tailwind CSS** - Estilos
-- **Framer Motion** - Animaciones
-- **MySQL** - Base de datos
-- **mysql2** - Cliente MySQL
+**Plataforma de foros estilo Reddit donde los usuarios pueden crear y administrar sus propias comunidades.**
+
+[Características](#-características) • [Instalación](#-instalación) • [Configuración](#-configuración) • [Desarrollo](#-desarrollo)
+
+</div>
+
+---
+
+## ✨ Características
+
+- 🎯 **Comunidades Personalizadas** - Crea y administra tus propias comunidades
+- 🔐 **Sistema de Membresía** - Unión con aprobación o acceso abierto
+- ⬆️⬇️ **Sistema de Votos** - Upvote y downvote para posts y comentarios
+- 💬 **Comentarios Anidados** - Discusiones en tiempo real
+- 📝 **Editor Rico** - Markdown con soporte para imágenes y videos
+- 🔍 **Feed Inteligente** - Posts destacados de tus comunidades
+- 📱 **Totalmente Responsive** - Diseño adaptativo para todos los dispositivos
+- ⚡ **Optimizado** - Cache con Redis para máximo rendimiento
+- 🎨 **Tema Moderno** - Interfaz limpia y minimalista
+
+## 🛠️ Stack Tecnológico
+
+| Categoría | Tecnología |
+|-----------|-----------|
+| **Framework** | Next.js 16 (App Router) |
+| **Lenguaje** | TypeScript |
+| **Estilos** | Tailwind CSS |
+| **Animaciones** | Framer Motion |
+| **Base de Datos** | MySQL 8.0 |
+| **Cache** | Upstash Redis |
+| **Autenticación** | Cookie-based Sessions |
+| **Markdown** | react-markdown |
 
 ## 📦 Instalación
 
+### Requisitos Previos
+
+- Node.js 18+ 
+- MySQL 8.0+
+- Cuenta de Upstash Redis (gratis)
+
+### Pasos de Instalación
+
+1. **Clona el repositorio**
+```bash
+git clone https://github.com/tu-usuario/discourse.git
+cd discourse
+```
+
+2. **Instala las dependencias**
 ```bash
 npm install
 ```
 
-## 🗄️ Configuración de Base de Datos
-
-1. Copia el archivo `.env.example` a `.env.local`:
-
+3. **Configura las variables de entorno**
 ```bash
 cp .env.example .env.local
 ```
 
-2. Edita `.env.local` y completa con tus credenciales reales:
-
+Edita `.env.local` con tus credenciales:
 ```env
 DB_HOST=tu_host_mysql
+DB_PORT=3306
 DB_USER=tu_usuario_mysql
 DB_PASSWORD=tu_password_mysql
 DB_NAME=tu_nombre_base_datos
+
 UPSTASH_REDIS_REST_URL=tu_url_upstash
 UPSTASH_REDIS_REST_TOKEN=tu_token_upstash
-SESSION_SECRET=genera_un_secret_aleatorio
+
+SESSION_SECRET=genera_un_secret_aleatorio_seguro
 ```
 
-3. Ejecuta el esquema SQL en tu base de datos MySQL:
-
+4. **Crea las tablas de la base de datos**
 ```bash
-# Opción 1: Usando el script automatizado (recomendado)
-node scripts/create-tables.js
+npm run create-tables
 ```
 
+5. **(Opcional) Inserta datos de ejemplo**
 ```bash
-# Opción 2: Importar directamente el archivo SQL
-mysql -h tu_host -u tu_usuario -p tu_base_datos < lib/database.sql
-```
-
-O ejecuta el contenido de `lib/database.sql` directamente en phpMyAdmin o tu cliente MySQL.
-
-4. (Opcional) Inserta datos de ejemplo:
-
-```bash
-# Usando el script Node.js
 node scripts/seed.js
 ```
 
-O descomenta la sección de datos de ejemplo en `lib/database.sql` y ejecútala.
-
-**Nota:** Los usuarios de ejemplo tienen la contraseña `password123`:
-- juan@example.com / password123
-- maria@example.com / password123
-
-## 🏃 Desarrollo
+## 🚀 Desarrollo
 
 ```bash
+# Inicia el servidor de desarrollo
 npm run dev
+
+# Abre http://localhost:3000 en tu navegador
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
-
-## 🏗️ Build
+## 🏗️ Build de Producción
 
 ```bash
+# Crea el build optimizado
 npm run build
+
+# Inicia el servidor de producción
 npm start
 ```
 
-## 📝 Características
+## 📁 Estructura del Proyecto
 
-- ✨ Interfaz estilo Reddit
-- 🎨 Tema claro y moderno
-- 🗨️ Sistema de foros y subforos
-- 👥 Los usuarios pueden crear sus propias comunidades
-- ⬆️ Sistema de votos (upvote/downvote)
-- 💬 Sistema de comentarios
-- 📱 Totalmente responsive
+```
+discourse/
+├── app/                    # Next.js App Router
+│   ├── api/               # API Routes
+│   ├── post/              # Páginas de posts
+│   ├── r/                 # Páginas de comunidades
+│   └── user/              # Páginas de usuarios
+├── components/            # Componentes React
+├── lib/                   # Utilidades y configuraciones
+│   ├── db.ts             # Conexión MySQL
+│   ├── redis.ts          # Cliente Redis
+│   └── database.sql      # Esquema SQL
+├── public/                # Archivos estáticos
+└── scripts/              # Scripts de migración
+```
 
-## 🎮 Estructura de Foros
+## 🔐 Seguridad
 
-- **General** - Discusiones generales
-- **Tecnología** - Tecnología y programación
-- **Comunidad** - Discusiones de la comunidad
-- **Soporte** - Ayuda y soporte técnico
+- ✅ Variables de entorno para credenciales
+- ✅ Passwords hasheados con bcrypt
+- ✅ Cookies httpOnly para sesiones
+- ✅ Validación de inputs
+- ✅ Protección contra SQL injection
 
-Los usuarios registrados pueden crear sus propias comunidades personalizadas.
+## 🤝 Contribuir
 
-## 🔧 Características Implementadas
+Las contribuciones son bienvenidas. Por favor:
 
-✅ Sistema de autenticación (Login/Registro)
-✅ Creación de comunidades por usuarios registrados
-✅ Sistema de votos
-✅ Interfaz estilo Reddit con tema claro
-✅ Conexión a MySQL
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-## 🔧 Próximos Pasos
+## 📄 Licencia
 
-1. Sistema de comentarios completo
-2. Búsqueda de posts y comunidades
-3. Sistema de notificaciones
-4. Panel de administración de comunidades
-5. Perfiles de usuario
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más información.
+
+## 👤 Autor
+
+**Tu Nombre**
+
+- GitHub: [@tu-usuario](https://github.com/tu-usuario)
+- Email: tu-email@ejemplo.com
+
+---
+
+<div align="center">
+
+Hecho con ❤️ usando Next.js
+
+[⬆ Volver arriba](#-discourse)
+
+</div>

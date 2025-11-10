@@ -112,10 +112,14 @@ export default function CommunityPage() {
                       r/{community.name}
                     </h1>
                     {!community.is_public && (
-                      <Lock className="w-5 h-5 text-gray-500" title="Comunidad privada" />
+                      <span title="Comunidad privada">
+                        <Lock className="w-5 h-5 text-gray-500" />
+                      </span>
                     )}
                     {community.is_public && (
-                      <Globe className="w-5 h-5 text-green-500" title="Comunidad pública" />
+                      <span title="Comunidad pública">
+                        <Globe className="w-5 h-5 text-green-500" />
+                      </span>
                     )}
                   </div>
                   <p className="text-sm text-gray-500">
