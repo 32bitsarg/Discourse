@@ -19,7 +19,7 @@ export default function Header() {
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const navLinks = [
-    { name: t.nav.home, href: '/' },
+    { name: t.nav.home, href: '/feed' },
     { name: t.nav.forums, href: '/forums' },
     { name: t.nav.trends, href: '/hot' },
     { name: t.nav.new, href: '/new' },
@@ -114,7 +114,7 @@ export default function Header() {
         <nav className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Logo */}
-            <Link href="/">
+            <Link href="/feed">
               <motion.div
                 className="flex items-center gap-2 text-xl sm:text-2xl font-black cursor-pointer"
                 whileHover={{ scale: 1.05 }}

@@ -20,7 +20,7 @@ export default function BottomNavigation() {
   const [user, setUser] = useState<{ id: number; username: string } | null>(null)
 
   const navItems: NavItem[] = [
-    { name: t.nav.home, href: '/', icon: Home },
+    { name: t.nav.home, href: '/feed', icon: Home },
     { name: t.nav.forums, href: '/forums', icon: Users },
     { name: t.mobile.create, href: '#', icon: Plus, badge: undefined }, // Se maneja con FAB
     { name: t.auth.profile, href: '/user', icon: User },
@@ -39,8 +39,8 @@ export default function BottomNavigation() {
   }, [])
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/'
+    if (href === '/feed') {
+      return pathname === '/feed' || pathname === '/'
     }
     return pathname?.startsWith(href)
   }

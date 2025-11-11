@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "create-tables": "node scripts/create-tables.js",
+    "migrate-profiles": "node scripts/migrate-enriched-profiles.js",
     "migrate-votes": "node scripts/migrate-votes-table.js",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",

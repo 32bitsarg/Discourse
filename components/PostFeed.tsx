@@ -32,9 +32,16 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
       setLoadingMore(true)
     }
     
-    const url = subforumId 
-      ? `/api/posts?filter=${filter}&subforum_id=${subforumId}&page=${pageNum}&limit=10`
-      : `/api/posts?filter=${filter}&page=${pageNum}&limit=10`
+    let url: string
+    if (filter === 'following') {
+      url = `/api/feed/following?page=${pageNum}&limit=10`
+    } else if (filter === 'for-you') {
+      url = `/api/feed/for-you?page=${pageNum}&limit=10`
+    } else {
+      url = subforumId 
+        ? `/api/posts?filter=${filter}&subforum_id=${subforumId}&page=${pageNum}&limit=10`
+        : `/api/posts?filter=${filter}&page=${pageNum}&limit=10`
+    }
     
     console.log('[PostFeed] loadPosts:', { url, pageNum, append })
     
@@ -63,7 +70,8 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           setPosts(data.posts || [])
           console.log('[PostFeed] Posts reemplazados:', data.posts?.length || 0)
         }
-        const newHasMore = data.pagination?.hasMore || false
+        // Soporte para diferentes formatos de respuesta
+        const newHasMore = data.pagination?.hasMore ?? data.hasMore ?? false
         setHasMore(newHasMore)
         setPage(pageNum)
         lastUpdateRef.current = Date.now()

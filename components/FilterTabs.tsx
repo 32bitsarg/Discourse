@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Home, TrendingUp, Zap, Clock } from 'lucide-react'
+import { Home, TrendingUp, Zap, Clock, Users, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
 
@@ -14,7 +14,9 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   const [activeFilter, setActiveFilter] = useState('all')
 
   const filters = [
+    { id: 'for-you', name: t.post.forYou, icon: Sparkles },
     { id: 'all', name: t.post.all, icon: Home },
+    { id: 'following', name: t.post.following, icon: Users },
     { id: 'hot', name: t.post.trends, icon: TrendingUp },
     { id: 'new', name: t.post.new, icon: Zap },
     { id: 'top', name: t.post.top, icon: Clock },
@@ -45,7 +47,13 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
           >
             <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{filter.name}</span>
-            <span className="sm:hidden">{filter.id === 'hot' ? t.post.hot : filter.id === 'new' ? t.post.new : filter.name}</span>
+            <span className="sm:hidden">
+              {filter.id === 'hot' ? t.post.hot : 
+               filter.id === 'new' ? t.post.new : 
+               filter.id === 'for-you' ? t.post.forYou :
+               filter.id === 'following' ? t.post.following :
+               filter.name}
+            </span>
           </motion.button>
         )
       })}

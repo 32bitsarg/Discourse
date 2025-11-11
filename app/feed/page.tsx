@@ -1,0 +1,25 @@
+'use client'
+
+import { useState, useRef } from 'react'
+import PostFeed from '@/components/PostFeed'
+import CreatePostBox from '@/components/CreatePostBox'
+import FilterTabs from '@/components/FilterTabs'
+
+export default function FeedPage() {
+  const [filter, setFilter] = useState('for-you')
+  const postFeedRef = useRef<{ refresh: () => void }>(null)
+
+  return (
+    <div className="space-y-4">
+      <FilterTabs onFilterChange={setFilter} />
+      <CreatePostBox onPostCreated={() => {
+        // Actualizar el feed sin recargar la página
+        if (postFeedRef.current) {
+          postFeedRef.current.refresh()
+        }
+      }} />
+      <PostFeed ref={postFeedRef} filter={filter} />
+    </div>
+  )
+}
+

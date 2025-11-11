@@ -8,6 +8,7 @@ import { ArrowUp, ArrowDown, MessageCircle, Share2, Bookmark, ArrowLeft } from '
 import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
+import { useViewTracking, useBehaviorTracking } from '@/hooks/useBehaviorTracking'
 
 export default function PostPage() {
   const { t } = useI18n()
@@ -20,6 +21,12 @@ export default function PostPage() {
   const [vote, setVote] = useState<'up' | 'down' | null>(null)
   const [voteCount, setVoteCount] = useState(0)
   const [timeAgo, setTimeAgo] = useState(t.common.seconds)
+  
+  const postIdNum = postId ? parseInt(postId) : undefined
+  const { trackBehavior } = useBehaviorTracking()
+  
+  // Trackear visualización del post completo
+  useViewTracking(postIdNum)
 
   // Función para calcular tiempo transcurrido
   const calculateTimeAgo = (date: string | Date): string => {
@@ -89,6 +96,15 @@ export default function PostPage() {
   }, [postId])
 
   const handleVote = async (type: 'up' | 'down') => {
+    // Trackear voto
+    if (postIdNum) {
+      trackBehavior({
+        postId: postIdNum,
+        actionType: 'vote',
+        metadata: { voteType: type },
+      })
+    }
+    
     try {
       const res = await fetch(`/api/posts/${postId}/vote`, {
         method: 'POST',
@@ -236,11 +252,31 @@ export default function PostPage() {
                   <span className="hidden sm:inline">{post.comment_count} {t.post.comments}</span>
                   <span className="sm:hidden">{post.comment_count}</span>
                 </button>
-                <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm">
+                <button 
+                  onClick={() => {
+                    if (postIdNum) {
+                      trackBehavior({
+                        postId: postIdNum,
+                        actionType: 'share',
+                      })
+                    }
+                  }}
+                  className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm"
+                >
                   <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">{t.post.share}</span>
                 </button>
-                <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm">
+                <button 
+                  onClick={() => {
+                    if (postIdNum) {
+                      trackBehavior({
+                        postId: postIdNum,
+                        actionType: 'save',
+                      })
+                    }
+                  }}
+                  className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm"
+                >
                   <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">{t.post.save}</span>
                 </button>

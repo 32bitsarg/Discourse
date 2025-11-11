@@ -1,25 +1,7 @@
-'use client'
-
-import { useState, useRef } from 'react'
-import PostFeed from '@/components/PostFeed'
-import CreatePostBox from '@/components/CreatePostBox'
-import FilterTabs from '@/components/FilterTabs'
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  const [filter, setFilter] = useState('all')
-  const postFeedRef = useRef<{ refresh: () => void }>(null)
-
-  return (
-    <div className="space-y-4">
-      <FilterTabs onFilterChange={setFilter} />
-      <CreatePostBox onPostCreated={() => {
-        // Actualizar el feed sin recargar la página
-        if (postFeedRef.current) {
-          postFeedRef.current.refresh()
-        }
-      }} />
-      <PostFeed ref={postFeedRef} filter={filter} />
-    </div>
-  )
+  // Redirigir a la landing page
+  redirect('/landing')
 }
 

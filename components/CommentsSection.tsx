@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { MessageCircle, Send, ArrowUp, ArrowDown } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useBehaviorTracking } from '@/hooks/useBehaviorTracking'
 
 interface Comment {
   id: number
@@ -22,6 +23,7 @@ interface CommentsSectionProps {
 
 export default function CommentsSection({ postId }: CommentsSectionProps) {
   const { t } = useI18n()
+  const { trackBehavior } = useBehaviorTracking()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
@@ -100,7 +102,16 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         throw new Error(error.message || 'Error al crear el comentario')
       }
 
+      const commentText = newComment.trim()
       setNewComment('')
+      
+      // Trackear comentario (acción prioritaria)
+      trackBehavior({
+        postId,
+        actionType: 'comment',
+        metadata: { commentLength: commentText.length },
+      })
+      
       loadComments() // Recargar comentarios
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al crear el comentario')

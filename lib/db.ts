@@ -25,3 +25,8 @@ const pool = mysql.createPool(getDbConfig())
 
 export default pool
 
+// Función helper para obtener una conexión del pool
+export async function getConnection() {
+  return pool
+}
+

@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   avatar_url VARCHAR(255),
   bio TEXT,
+  banner_url VARCHAR(500),
+  website VARCHAR(255),
+  location VARCHAR(100),
+  theme_color VARCHAR(7) DEFAULT '#6366f1',
   karma INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -131,6 +135,80 @@ CREATE TABLE IF NOT EXISTS subforum_members (
   INDEX idx_subforum (subforum_id),
   INDEX idx_user (user_id),
   INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- User social links
+CREATE TABLE IF NOT EXISTS user_social_links (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  platform VARCHAR(50) NOT NULL,
+  url VARCHAR(500) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user (user_id),
+  INDEX idx_platform (platform)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- User projects/portfolio
+CREATE TABLE IF NOT EXISTS user_projects (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  image_url VARCHAR(500),
+  project_url VARCHAR(500),
+  category VARCHAR(50),
+  display_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user (user_id),
+  INDEX idx_category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- User follows (following system)
+CREATE TABLE IF NOT EXISTS user_follows (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  follower_id INT NOT NULL,
+  following_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_follow (follower_id, following_id),
+  INDEX idx_follower (follower_id),
+  INDEX idx_following (following_id),
+  CHECK (follower_id != following_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- User interests (for recommendation algorithm)
+CREATE TABLE IF NOT EXISTS user_interests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  weight DECIMAL(3,2) DEFAULT 1.0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_user_interest (user_id, category),
+  INDEX idx_user (user_id),
+  INDEX idx_category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- User behavior tracking (for recommendation algorithm)
+CREATE TABLE IF NOT EXISTS user_behavior (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  post_id INT,
+  action_type VARCHAR(50) NOT NULL,
+  duration_seconds INT,
+  metadata JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  INDEX idx_user (user_id),
+  INDEX idx_post (post_id),
+  INDEX idx_action (action_type),
+  INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================

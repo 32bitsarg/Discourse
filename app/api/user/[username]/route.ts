@@ -10,7 +10,7 @@ export async function GET(
 
     // Obtener información del usuario
     const [users] = await pool.execute(
-      'SELECT id, username, email, karma, created_at FROM users WHERE username = ?',
+      'SELECT id, username, email, avatar_url, bio, banner_url, website, location, theme_color, karma, created_at FROM users WHERE username = ?',
       [username]
     ) as any[]
 
@@ -22,6 +22,28 @@ export async function GET(
     }
 
     const user = users[0]
+
+    // Obtener links sociales
+    const [socialLinks] = await pool.execute(
+      'SELECT id, platform, url FROM user_social_links WHERE user_id = ? ORDER BY platform',
+      [user.id]
+    ) as any[]
+
+    // Obtener proyectos
+    const [projects] = await pool.execute(
+      'SELECT id, title, description, image_url, project_url, category FROM user_projects WHERE user_id = ? ORDER BY display_order, created_at DESC',
+      [user.id]
+    ) as any[]
+
+    // Obtener contadores de follows
+    const [followers] = await pool.execute(
+      'SELECT COUNT(*) as count FROM user_follows WHERE following_id = ?',
+      [user.id]
+    ) as any[]
+    const [following] = await pool.execute(
+      'SELECT COUNT(*) as count FROM user_follows WHERE follower_id = ?',
+      [user.id]
+    ) as any[]
 
     // Obtener posts del usuario
     const [posts] = await pool.execute(`
@@ -66,7 +88,13 @@ export async function GET(
     })
 
     return NextResponse.json({
-      user,
+      user: {
+        ...user,
+        socialLinks: Array.isArray(socialLinks) ? socialLinks : [],
+        projects: Array.isArray(projects) ? projects : [],
+        followers: Array.isArray(followers) && followers.length > 0 ? (followers[0] as any).count : 0,
+        following: Array.isArray(following) && following.length > 0 ? (following[0] as any).count : 0,
+      },
       posts: formattedPosts,
     })
   } catch (error) {

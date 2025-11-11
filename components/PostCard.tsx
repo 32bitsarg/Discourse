@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion'
 import { ArrowUp, ArrowDown, MessageCircle, Share2, Bookmark } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import PostContentRenderer from './PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
+import { useBehaviorTracking, useViewTracking } from '@/hooks/useBehaviorTracking'
 
 interface PostCardProps {
   id: string
@@ -37,9 +38,41 @@ export default function PostCard({
   isFromMemberCommunity = false,
 }: PostCardProps) {
   const { t } = useI18n()
+  const { trackBehavior } = useBehaviorTracking()
+  const postIdNum = parseInt(id)
+  const startTimeRef = useRef<number | null>(null)
+  
   const [vote, setVote] = useState<'up' | 'down' | null>(null)
   const [voteCount, setVoteCount] = useState(upvotes)
   const [timeAgo, setTimeAgo] = useState(t.common.seconds)
+
+  // Trackear visualización del post en el feed (optimizado - solo una vez)
+  useEffect(() => {
+    if (!isNaN(postIdNum)) {
+      startTimeRef.current = Date.now()
+      
+      // Trackear view inicial (el sistema de batching manejará la frecuencia)
+      trackBehavior({
+        postId: postIdNum,
+        actionType: 'view',
+      })
+
+      // Trackear duración final solo si el usuario pasó tiempo significativo (> 10 segundos)
+      return () => {
+        if (startTimeRef.current) {
+          const duration = Math.floor((Date.now() - startTimeRef.current) / 1000)
+          if (duration >= 10) {
+            trackBehavior({
+              postId: postIdNum,
+              actionType: 'view',
+              durationSeconds: duration,
+              metadata: { final: true, source: 'feed' },
+            })
+          }
+        }
+      }
+    }
+  }, [postIdNum, trackBehavior])
 
   // Función para calcular tiempo transcurrido
   const calculateTimeAgo = (date: string | Date): string => {
@@ -77,6 +110,14 @@ export default function PostCard({
   }, [createdAt])
 
   const handleVote = async (type: 'up' | 'down') => {
+    // Trackear voto (acción prioritaria - se procesará inmediatamente si hay batch lleno)
+    if (!isNaN(postIdNum)) {
+      trackBehavior({
+        postId: postIdNum,
+        actionType: 'vote',
+        metadata: { voteType: type },
+      })
+    }
     try {
       const res = await fetch(`/api/posts/${id}/vote`, {
         method: 'POST',
@@ -193,7 +234,19 @@ export default function PostCard({
           </div>
 
           {/* Title */}
-          <Link href={`/post/${id}`} className="block mb-2">
+          <Link 
+            href={`/post/${id}`}
+            onClick={() => {
+              if (!isNaN(postIdNum)) {
+                trackBehavior({
+                  postId: postIdNum,
+                  actionType: 'click',
+                  metadata: { target: 'title' },
+                })
+              }
+            }}
+            className="block mb-2"
+          >
             <h2 className="text-base sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer line-clamp-2">
               {title}
             </h2>
@@ -208,17 +261,46 @@ export default function PostCard({
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
             <Link
               href={`/post/${id}`}
+              onClick={() => {
+                if (!isNaN(postIdNum)) {
+                  trackBehavior({
+                    postId: postIdNum,
+                    actionType: 'click',
+                    metadata: { target: 'comments' },
+                  })
+                }
+              }}
               className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm"
             >
               <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{comments} {t.post.comments}</span>
               <span className="sm:hidden">{comments}</span>
             </Link>
-            <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm">
+            <button 
+              onClick={() => {
+                if (!isNaN(postIdNum)) {
+                  trackBehavior({
+                    postId: postIdNum,
+                    actionType: 'share',
+                  })
+                }
+              }}
+              className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm"
+            >
               <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t.post.share}</span>
             </button>
-            <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm">
+            <button 
+              onClick={() => {
+                if (!isNaN(postIdNum)) {
+                  trackBehavior({
+                    postId: postIdNum,
+                    actionType: 'save',
+                  })
+                }
+              }}
+              className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm"
+            >
               <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t.post.save}</span>
             </button>

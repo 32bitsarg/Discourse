@@ -7,8 +7,9 @@ import { I18nProvider } from '@/lib/i18n/context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Discourse - Forum Platform',
-  description: 'Discourse - Create and manage your own communities. Forums, discussions and more.',
+    title: 'Discourse - Alternativa a Reddit en Español | Comunidad Virtual y Foro de Discusión',
+    description: 'Discourse es la mejor alternativa a Reddit en español. Crea y gestiona comunidades virtuales, foros de discusión, comunidades de usuarios y plataformas colaborativas. Herramientas de community engagement y gestión de comunidades.',
+    keywords: 'reddit español, alternativa a reddit, comunidad virtual, construir comunidad, foro comunitario, debate online, foro de discusión, como crear comunidad, reddit clone, crear red social, plataforma colaborativa, comunidad de usuarios, red social alternativa, foro interactivo, community engagement, branded community, comunidad de marca, gestión de comunidades, community board, build community',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

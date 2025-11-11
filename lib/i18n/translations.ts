@@ -57,6 +57,8 @@ export interface Translations {
     trends: string
     newPosts: string
     popularPosts: string
+    following: string
+    forYou: string
   }
   
   // Community
@@ -103,6 +105,20 @@ export interface Translations {
     memberSince: string
     publications: string
     notFound: string
+    followers: string
+    following: string
+    follow: string
+    unfollow: string
+    editProfile: string
+    bio: string
+    website: string
+    location: string
+    socialLinks: string
+    projects: string
+    addProject: string
+    addSocialLink: string
+    save: string
+    cancel: string
   }
   
   // Common
@@ -204,6 +220,8 @@ export const translations: Record<Language, Translations> = {
       trends: 'Trends',
       newPosts: 'New posts',
       popularPosts: 'Popular and most commented posts',
+      following: 'Following',
+      forYou: 'For You',
     },
     community: {
       communities: 'Communities',
@@ -244,6 +262,20 @@ export const translations: Record<Language, Translations> = {
       memberSince: 'Member since',
       publications: 'publications',
       notFound: 'User not found',
+      followers: 'Followers',
+      following: 'Following',
+      follow: 'Follow',
+      unfollow: 'Unfollow',
+      editProfile: 'Edit Profile',
+      bio: 'Bio',
+      website: 'Website',
+      location: 'Location',
+      socialLinks: 'Social Links',
+      projects: 'Projects',
+      addProject: 'Add Project',
+      addSocialLink: 'Add Social Link',
+      save: 'Save',
+      cancel: 'Cancel',
     },
     common: {
       loading: 'Loading...',
@@ -337,6 +369,8 @@ export const translations: Record<Language, Translations> = {
       trends: 'Tendencias',
       newPosts: 'Los posts más recientes de la comunidad',
       popularPosts: 'Los posts más populares y comentados de la comunidad',
+      following: 'Siguiendo',
+      forYou: 'Para Ti',
     },
     community: {
       communities: 'Comunidades',
@@ -377,6 +411,20 @@ export const translations: Record<Language, Translations> = {
       memberSince: 'Miembro desde',
       publications: 'publicaciones',
       notFound: 'Usuario no encontrado',
+      followers: 'Seguidores',
+      following: 'Siguiendo',
+      follow: 'Seguir',
+      unfollow: 'Dejar de seguir',
+      editProfile: 'Editar Perfil',
+      bio: 'Biografía',
+      website: 'Sitio Web',
+      location: 'Ubicación',
+      socialLinks: 'Enlaces Sociales',
+      projects: 'Proyectos',
+      addProject: 'Agregar Proyecto',
+      addSocialLink: 'Agregar Enlace Social',
+      save: 'Guardar',
+      cancel: 'Cancelar',
     },
     common: {
       loading: 'Cargando...',
