@@ -13,7 +13,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose, onSwitchToRegister, onLogin }: LoginModalProps) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -79,7 +79,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister, onLogi
                 className="w-full px-4 py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-4"
               >
                 <Twitter className="w-5 h-5" />
-                {t.language === 'es' ? 'Continuar con X' : 'Continue with X'}
+                {language === 'es' ? 'Continuar con X' : 'Continue with X'}
               </button>
 
               <div className="relative mb-4">
@@ -88,7 +88,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister, onLogi
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white text-gray-500">
-                    {t.language === 'es' ? 'o' : 'or'}
+                    {language === 'es' ? 'o' : 'or'}
                   </span>
                 </div>
               </div>

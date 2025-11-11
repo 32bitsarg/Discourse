@@ -13,7 +13,7 @@ interface RegisterModalProps {
 }
 
 export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegister }: RegisterModalProps) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -94,7 +94,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
                 className="w-full px-4 py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-4"
               >
                 <Twitter className="w-5 h-5" />
-                {t.language === 'es' ? 'Registrarse con X' : 'Sign up with X'}
+                {language === 'es' ? 'Registrarse con X' : 'Sign up with X'}
               </button>
 
               <div className="relative mb-4">
@@ -103,7 +103,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white text-gray-500">
-                    {t.language === 'es' ? 'o' : 'or'}
+                    {language === 'es' ? 'o' : 'or'}
                   </span>
                 </div>
               </div>
