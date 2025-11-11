@@ -72,6 +72,7 @@ export interface Translations {
     createdBy: string
     description: string
     name: string
+    uniqueName: string
     public: string
     private: string
     requiresApproval: string
@@ -214,6 +215,7 @@ export const translations: Record<Language, Translations> = {
       createdBy: 'Created by',
       description: 'Description',
       name: 'Name',
+      uniqueName: 'Name must be unique and can only contain letters, numbers, and hyphens',
       public: 'Public',
       private: 'Private',
       requiresApproval: 'Requires Approval',
@@ -344,6 +346,7 @@ export const translations: Record<Language, Translations> = {
       createdBy: 'Creado por',
       description: 'Descripción',
       name: 'Nombre',
+      uniqueName: 'El nombre debe ser único y solo puede contener letras, números y guiones',
       public: 'Público',
       private: 'Privado',
       requiresApproval: 'Requiere Aprobación',
