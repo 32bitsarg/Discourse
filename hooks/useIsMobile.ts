@@ -7,7 +7,25 @@ import { useState, useEffect } from 'react'
  * Considera móvil/tablet si el ancho es menor a 1024px
  */
 export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(false)
+  // Inicializar con detección inmediata si estamos en el cliente
+  const [isMobile, setIsMobile] = useState(() => {
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined') {
+      // En SSR, asumir desktop (se corregirá en el cliente)
+      return false
+    }
+    
+    // Verificar user agent primero (más rápido y confiable)
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera || ''
+    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
+    
+    // Verificar ancho de pantalla
+    const isMobileWidth = window.innerWidth < 1024
+    
+    // Es móvil si cumple cualquiera de las condiciones
+    // Priorizar user agent para detección más precisa
+    return isMobileUA || isMobileWidth
+  })
 
   useEffect(() => {
     // Función para verificar si es móvil
@@ -16,14 +34,14 @@ export function useIsMobile(): boolean {
       const isMobileWidth = window.innerWidth < 1024
       
       // Verificar user agent como respaldo
-      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera || ''
       const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())
       
       // Es móvil si cumple cualquiera de las condiciones
       setIsMobile(isMobileWidth || (isMobileUA && window.innerWidth < 1024))
     }
 
-    // Verificar al montar
+    // Verificar al montar (por si acaso cambió algo)
     checkIsMobile()
 
     // Escuchar cambios de tamaño

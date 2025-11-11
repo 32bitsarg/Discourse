@@ -11,7 +11,7 @@ interface ForumLayoutProps {
 
 export default function ForumLayout({ children }: ForumLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 hidden lg:block">
       <Header />
       <div className="flex max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 pt-16 sm:pt-20 pb-6 sm:pb-8">
         {/* Sidebar - Izquierda (oculto en móviles) */}

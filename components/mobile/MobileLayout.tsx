@@ -22,11 +22,11 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
   }, [pathname])
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 safe-area-bottom">
+    <div className="min-h-screen bg-gray-50 pb-20 safe-area-bottom overflow-x-hidden lg:hidden">
       <MobileHeader />
       
       {/* Contenido principal con padding para header y bottom nav */}
-      <main className="pt-14 pb-4 px-3 max-w-md mx-auto w-full">
+      <main className="pt-14 pb-4 px-3 sm:px-4 max-w-md mx-auto w-full">
         {children}
       </main>
 
