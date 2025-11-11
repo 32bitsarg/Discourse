@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { UserPlus, UserMinus, CheckCircle, Clock } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface JoinCommunityButtonProps {
   subforumId: number
@@ -15,6 +16,7 @@ export default function JoinCommunityButton({
   isPublic, 
   requiresApproval 
 }: JoinCommunityButtonProps) {
+  const { t } = useI18n()
   const [membershipStatus, setMembershipStatus] = useState<{
     isMember: boolean
     status: 'pending' | 'approved' | 'rejected' | null
@@ -110,7 +112,7 @@ export default function JoinCommunityButton({
         whileTap={{ scale: joining ? 1 : 0.98 }}
       >
         <UserMinus className="w-4 h-4" />
-        {joining ? 'Saliendo...' : 'Salir'}
+        {joining ? t.common.loading : t.community.leave}
       </motion.button>
     )
   }
@@ -119,7 +121,7 @@ export default function JoinCommunityButton({
     return (
       <div className="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg flex items-center gap-2 text-sm font-medium border border-yellow-200">
         <Clock className="w-4 h-4" />
-        Pendiente
+        {t.community.joinRequest}
       </div>
     )
   }
@@ -133,7 +135,7 @@ export default function JoinCommunityButton({
       whileTap={{ scale: joining ? 1 : 0.98 }}
     >
       <UserPlus className="w-4 h-4" />
-      {joining ? 'Uniéndose...' : 'Unirse'}
+      {joining ? t.common.loading : t.community.join}
     </motion.button>
   )
 }

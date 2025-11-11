@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Hash, FileText, Lock } from 'lucide-react'
 import { useState } from 'react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface CreateSubforumModalProps {
   isOpen: boolean
@@ -11,6 +12,7 @@ interface CreateSubforumModalProps {
 }
 
 export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: CreateSubforumModalProps) {
+  const { t } = useI18n()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isPublic, setIsPublic] = useState(true)
@@ -60,7 +62,7 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
               exit={{ scale: 0.9, y: 20 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Crear Nueva Comunidad</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t.community.createCommunity}</h2>
                 <button
                   onClick={onClose}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -72,7 +74,7 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nombre de la comunidad
+                    {t.community.name}
                   </label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -87,27 +89,27 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    El nombre debe ser único y solo puede contener letras, números y guiones
+                    {t.community.uniqueName}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Descripción
+                    {t.community.description}
                   </label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Describe tu comunidad..."
+                      placeholder={t.community.description}
                       rows={3}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
                       maxLength={200}
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    {description.length}/200 caracteres
+                    {description.length}/200 {t.common.characters}
                   </p>
                 </div>
 
@@ -131,7 +133,7 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                         <Lock className="w-5 h-5 text-gray-500" />
                       )}
                       <span className="text-sm font-medium text-gray-700">
-                        Comunidad pública
+                        {t.community.public}
                       </span>
                     </div>
                   </label>
@@ -145,7 +147,7 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                         className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                       />
                       <span className="text-sm text-gray-600">
-                        Requiere aprobación para unirse (incluso siendo pública)
+                        {t.community.requiresApproval}
                       </span>
                     </label>
                   )}
@@ -154,7 +156,7 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                     <div className="ml-8 text-sm text-gray-600">
                       <p className="flex items-center gap-2">
                         <Lock className="w-4 h-4" />
-                        Comunidad privada: Los usuarios necesitarán aprobación para unirse
+                        {t.community.privateDescription}
                       </p>
                     </div>
                   )}
@@ -166,13 +168,13 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                     onClick={onClose}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
                   >
-                    Cancelar
+                    {t.common.cancel}
                   </button>
                   <button
                     type="submit"
                     className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
                   >
-                    Crear Comunidad
+                    {t.community.createCommunity}
                   </button>
                 </div>
               </form>

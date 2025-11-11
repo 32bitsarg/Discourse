@@ -10,6 +10,7 @@ interface CommunityRequestsPanelProps {
 }
 
 export default function CommunityRequestsPanel({ subforumId, userRole }: CommunityRequestsPanelProps) {
+  const { t } = useI18n()
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -42,14 +43,14 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
 
       if (!res.ok) {
         const error = await res.json()
-        alert(error.message || 'Error al gestionar la solicitud')
+        alert(error.message || t.common.error)
         return
       }
 
       // Recargar solicitudes
       loadRequests()
     } catch (error) {
-      alert('Error al gestionar la solicitud')
+      alert(t.common.error)
     }
   }
 
@@ -68,9 +69,9 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-2">
           <Users className="w-5 h-5 text-primary-600" />
-          <h3 className="font-semibold text-gray-900">Solicitudes pendientes</h3>
+          <h3 className="font-semibold text-gray-900">{t.community.requests}</h3>
         </div>
-        <p className="text-sm text-gray-500">No hay solicitudes pendientes</p>
+        <p className="text-sm text-gray-500">{t.community.noRequests}</p>
       </div>
     )
   }
@@ -80,7 +81,7 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
       <div className="flex items-center gap-2 mb-4">
         <Clock className="w-5 h-5 text-yellow-600" />
         <h3 className="font-semibold text-gray-900">
-          Solicitudes pendientes ({requests.length})
+          {t.community.requests} ({requests.length})
         </h3>
       </div>
       <div className="space-y-3">
@@ -95,11 +96,11 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-900">u/{request.username}</span>
                 {request.karma !== undefined && (
-                  <span className="text-xs text-gray-500">Karma: {request.karma}</span>
+                  <span className="text-xs text-gray-500">{t.user.karma}: {request.karma}</span>
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Solicitó unirse {new Date(request.requested_at).toLocaleDateString('es-AR')}
+                {t.community.requestedJoin} {new Date(request.requested_at).toLocaleDateString()}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -108,7 +109,7 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
                 className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="Aprobar"
+                title={t.community.approve}
               >
                 <UserCheck className="w-4 h-4" />
               </motion.button>
@@ -117,7 +118,7 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
                 className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="Rechazar"
+                title={t.community.reject}
               >
                 <UserX className="w-4 h-4" />
               </motion.button>

@@ -6,8 +6,10 @@ import Link from 'next/link'
 import { Menu, X, User, LogOut, ChevronDown } from 'lucide-react'
 import LoginModal from '../LoginModal'
 import RegisterModal from '../RegisterModal'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function MobileHeader() {
+  const { t } = useI18n()
   const [user, setUser] = useState<{ username: string; id: number } | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
@@ -129,7 +131,7 @@ export default function MobileHeader() {
                         className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <User className="w-4 h-4" />
-                        Perfil
+                        {t.auth.profile}
                       </Link>
                       <button
                         onClick={() => {
@@ -139,7 +141,7 @@ export default function MobileHeader() {
                         className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-200"
                       >
                         <LogOut className="w-4 h-4" />
-                        Cerrar sesión
+                        {t.auth.logout}
                       </button>
                     </motion.div>
                   )}
@@ -152,7 +154,7 @@ export default function MobileHeader() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Entrar
+                {t.auth.login}
               </motion.button>
             )}
           </div>

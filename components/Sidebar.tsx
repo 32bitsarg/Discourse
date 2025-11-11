@@ -5,8 +5,10 @@ import { useState, useEffect } from 'react'
 import { Home, TrendingUp, Zap, Star, Plus } from 'lucide-react'
 import Link from 'next/link'
 import CreateSubforumModal from './CreateSubforumModal'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function Sidebar() {
+  const { t } = useI18n()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [user, setUser] = useState<{ id: number; username: string } | null>(null)
   const [stats, setStats] = useState({ members: 0, postsToday: 0, subforums: 0 })
@@ -88,7 +90,7 @@ export default function Sidebar() {
         transition={{ duration: 0.5 }}
       >
         <h3 className="text-gray-900 font-bold mb-3 text-sm uppercase tracking-wider">
-          Navegación Rápida
+          {t.sidebar.quickNav}
         </h3>
         <div className="space-y-2">
           <Link href="/">
@@ -97,7 +99,7 @@ export default function Sidebar() {
               whileHover={{ x: 4 }}
             >
               <Home className="w-5 h-5 text-primary-400 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Inicio</span>
+              <span className="text-sm font-medium">{t.nav.home}</span>
             </motion.div>
           </Link>
           <Link href="/?filter=hot">
@@ -106,7 +108,7 @@ export default function Sidebar() {
               whileHover={{ x: 4 }}
             >
               <TrendingUp className="w-5 h-5 text-orange-400 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Tendencias</span>
+              <span className="text-sm font-medium">{t.nav.trends}</span>
             </motion.div>
           </Link>
           <Link href="/?filter=new">
@@ -115,7 +117,7 @@ export default function Sidebar() {
               whileHover={{ x: 4 }}
             >
               <Zap className="w-5 h-5 text-green-400 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Nuevo</span>
+              <span className="text-sm font-medium">{t.nav.new}</span>
             </motion.div>
           </Link>
         </div>
@@ -130,7 +132,7 @@ export default function Sidebar() {
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">
-            Comunidades
+            {t.community.communities}
           </h3>
           <motion.button
             onClick={handleCreateClick}
@@ -139,19 +141,19 @@ export default function Sidebar() {
             whileTap={{ scale: 0.95 }}
           >
             <Plus className="w-3 h-3" />
-            Crear
+            {t.community.createCommunity}
           </motion.button>
         </div>
         
         {communities.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 text-sm mb-2">No hay comunidades aún</p>
+            <p className="text-gray-500 text-sm mb-2">{t.community.noCommunities}</p>
             {user && (
               <button
                 onClick={handleCreateClick}
                 className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
               >
-                Crea la primera
+                {t.community.createFirst}
               </button>
             )}
           </div>
@@ -190,19 +192,19 @@ export default function Sidebar() {
       >
         <div className="flex items-center gap-2 mb-3">
           <Star className="w-5 h-5 text-yellow-500" />
-          <h3 className="text-gray-900 font-bold text-sm">Discourse</h3>
+          <h3 className="text-gray-900 font-bold text-sm">{t.sidebar.stats}</h3>
         </div>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between text-gray-700">
-            <span>Miembros</span>
+            <span>{t.community.members}</span>
             <span className="text-gray-900 font-semibold">{stats.members}</span>
           </div>
           <div className="flex justify-between text-gray-700">
-            <span>Posts Hoy</span>
+            <span>{t.community.postsToday}</span>
             <span className="text-gray-900 font-semibold">{stats.postsToday}</span>
           </div>
           <div className="flex justify-between text-gray-700">
-            <span>Comunidades</span>
+            <span>{t.community.communities}</span>
             <span className="text-gray-900 font-semibold">{stats.subforums}</span>
           </div>
         </div>

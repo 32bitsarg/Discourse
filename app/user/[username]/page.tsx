@@ -5,8 +5,10 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, User, Mail, Calendar, MessageSquare, ArrowUp, ArrowDown } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function UserProfilePage() {
+  const { t } = useI18n()
   const params = useParams()
   const router = useRouter()
   const username = params.username as string
@@ -59,12 +61,12 @@ export default function UserProfilePage() {
   if (!user) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-500 text-lg">Usuario no encontrado</p>
+        <p className="text-gray-500 text-lg">{t.user.notFound}</p>
         <button
           onClick={() => router.push('/')}
           className="mt-4 text-primary-600 hover:text-primary-700"
         >
-          Volver al inicio
+          {t.community.backToHome}
         </button>
       </div>
     )
@@ -81,7 +83,7 @@ export default function UserProfilePage() {
             whileHover={{ x: -4 }}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Volver</span>
+            <span className="text-sm">{t.post.back}</span>
           </motion.div>
         </Link>
 
@@ -107,17 +109,17 @@ export default function UserProfilePage() {
                 {user.created_at && (
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    <span>Miembro desde {new Date(user.created_at).getFullYear()}</span>
+                    <span>{t.user.memberSince} {new Date(user.created_at).getFullYear()}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1">
                   <MessageSquare className="w-4 h-4" />
-                  <span>{posts.length} publicaciones</span>
+                  <span>{posts.length} {t.user.publications}</span>
                 </div>
               </div>
               {user.karma !== undefined && (
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Karma:</span>
+                  <span className="text-sm text-gray-600">{t.user.karma}:</span>
                   <span className="text-lg font-bold text-primary-600">{user.karma}</span>
                 </div>
               )}
@@ -127,12 +129,12 @@ export default function UserProfilePage() {
 
         {/* Posts del usuario */}
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900">Publicaciones</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t.user.publications}</h2>
           {posts.length === 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
               <p className="text-gray-500">
-                {isOwnProfile ? 'Aún no has publicado nada' : 'Este usuario aún no ha publicado nada'}
+                {isOwnProfile ? t.user.publications : t.user.publications}
               </p>
             </div>
           ) : (
@@ -170,7 +172,7 @@ export default function UserProfilePage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <MessageSquare className="w-4 h-4" />
-                        <span>{post.comment_count} comentarios</span>
+                        <span>{post.comment_count} {t.post.comments}</span>
                       </div>
                     </div>
                   </div>

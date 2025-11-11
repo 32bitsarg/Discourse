@@ -5,8 +5,10 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Users, MessageSquare, Lock, Globe, Plus, Search } from 'lucide-react'
 import CreateSubforumModal from '@/components/CreateSubforumModal'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function ForumsPage() {
+  const { t } = useI18n()
   const [subforums, setSubforums] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<{ id: number; username: string } | null>(null)
@@ -89,8 +91,8 @@ export default function ForumsPage() {
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Comunidades</h1>
-              <p className="text-sm sm:text-base text-gray-600">Descubre y únete a comunidades de tu interés</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{t.community.communities}</h1>
+              <p className="text-sm sm:text-base text-gray-600">{t.community.communities}</p>
             </div>
             {user && (
               <motion.button
@@ -100,8 +102,8 @@ export default function ForumsPage() {
                 whileTap={{ scale: 0.95 }}
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Crear Comunidad</span>
-                <span className="sm:hidden">Crear</span>
+                <span className="hidden sm:inline">{t.community.createCommunity}</span>
+                <span className="sm:hidden">{t.mobile.create}</span>
               </motion.button>
             )}
           </div>
@@ -111,7 +113,7 @@ export default function ForumsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar comunidades..."
+              placeholder={t.community.searchCommunities}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -133,14 +135,14 @@ export default function ForumsPage() {
         ) : filteredSubforums.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <p className="text-gray-500 text-lg mb-4">
-              {searchQuery ? 'No se encontraron comunidades' : 'No hay comunidades aún'}
+              {searchQuery ? t.community.notFound : t.community.noCommunities}
             </p>
             {user && !searchQuery && (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
                 className="text-primary-600 hover:text-primary-700 font-semibold"
               >
-                Crea la primera comunidad
+                {t.community.createFirst}
               </button>
             )}
           </div>
@@ -191,20 +193,20 @@ export default function ForumsPage() {
                       <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
                         <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="font-semibold">{subforum.member_count || 0}</span>
-                        <span className="hidden sm:inline">miembros</span>
+                        <span className="hidden sm:inline">{t.community.members}</span>
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
                         <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="font-semibold">{subforum.post_count || 0}</span>
-                        <span className="hidden sm:inline">posts</span>
+                        <span className="hidden sm:inline">{t.community.posts}</span>
                       </div>
                       {subforum.requires_approval && (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-600">
-                          <span>Requiere aprobación</span>
+                          <span>{t.community.requiresApproval}</span>
                         </div>
                       )}
                       <div className="ml-auto text-xs text-gray-500 whitespace-nowrap">
-                        <span className="hidden sm:inline">Creado por </span>u/{subforum.creator_username || 'Anónimo'}
+                        <span className="hidden sm:inline">{t.community.createdBy} </span>u/{subforum.creator_username || 'Anónimo'}
                       </div>
                     </div>
                   </div>

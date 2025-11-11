@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X } from 'lucide-react'
 import CreatePostBox from '../CreatePostBox'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function FloatingActionButton() {
+  const { t } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<{ id: number; username: string } | null>(null)
 
@@ -76,7 +78,7 @@ export default function FloatingActionButton() {
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 safe-area-top">
-                <h2 className="text-lg font-bold text-gray-900">Crear Publicación</h2>
+                <h2 className="text-lg font-bold text-gray-900">{t.post.create}</h2>
                 <motion.button
                   onClick={() => setIsOpen(false)}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors"

@@ -9,8 +9,10 @@ import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import JoinCommunityButton from '@/components/JoinCommunityButton'
 import CommunityRequestsPanel from '@/components/CommunityRequestsPanel'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function CommunityPage() {
+  const { t } = useI18n()
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
@@ -64,12 +66,12 @@ export default function CommunityPage() {
   if (!community) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-500 text-lg">Comunidad no encontrada</p>
+        <p className="text-gray-500 text-lg">{t.community.notFound}</p>
         <button
           onClick={() => router.push('/')}
           className="mt-4 text-primary-600 hover:text-primary-700"
         >
-          Volver al inicio
+          {t.community.backToHome}
         </button>
       </div>
     )
@@ -84,7 +86,7 @@ export default function CommunityPage() {
             whileHover={{ x: -4 }}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Volver</span>
+            <span className="text-sm">{t.post.back}</span>
           </motion.div>
         </Link>
 
@@ -106,18 +108,18 @@ export default function CommunityPage() {
                       r/{community.name}
                     </h1>
                     {!community.is_public && (
-                      <span title="Comunidad privada">
+                      <span title={t.community.private}>
                         <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                       </span>
                     )}
                     {community.is_public && (
-                      <span title="Comunidad pública">
+                      <span title={t.community.public}>
                         <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                       </span>
                     )}
                   </div>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                    Creado por u/{community.creator_username}
+                    {t.community.createdBy} u/{community.creator_username}
                   </p>
                 </div>
               </div>
@@ -139,16 +141,16 @@ export default function CommunityPage() {
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
               <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="font-semibold">{community.member_count}</span>
-              <span className="hidden sm:inline">miembros</span>
+              <span className="hidden sm:inline">{t.community.members}</span>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
               <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="font-semibold">{community.post_count}</span>
-              <span className="hidden sm:inline">posts</span>
+              <span className="hidden sm:inline">{t.community.posts}</span>
             </div>
             {community.requires_approval && (
               <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-600">
-                <span>Requiere aprobación</span>
+                <span>{t.community.requiresApproval}</span>
               </div>
             )}
           </div>

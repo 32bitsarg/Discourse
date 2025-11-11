@@ -2,15 +2,20 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import LayoutWrapper from '@/components/LayoutWrapper'
+import { I18nProvider } from '@/lib/i18n/context'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Discourse - Plataforma de Foros',
-  description: 'Discourse - Crea y administra tus propias comunidades. Foros, discusiones y más.',
+  title: 'Discourse - Forum Platform',
+  description: 'Discourse - Create and manage your own communities. Forums, discussions and more.',
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
     apple: '/favicon.svg',
+    shortcut: '/favicon.svg',
   },
   manifest: '/manifest.json',
   themeColor: '#6366f1',
@@ -34,9 +39,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <LayoutWrapper>{children}</LayoutWrapper>
+        <I18nProvider>
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </I18nProvider>
       </body>
     </html>
   )

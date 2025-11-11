@@ -14,6 +14,7 @@ import {
   Code,
   Quote
 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface RichTextEditorProps {
   value: string
@@ -28,6 +29,7 @@ export default function RichTextEditor({
   placeholder = 'Escribe tu publicación aquí...',
   rows = 8 
 }: RichTextEditorProps) {
+  const { t } = useI18n()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isUploading, setIsUploading] = useState(false)
 
@@ -107,14 +109,14 @@ export default function RichTextEditor({
   }
 
   const handleImageUrl = () => {
-    const url = prompt('Ingresa la URL de la imagen:')
+    const url = prompt(t.editor.enterImageUrl)
     if (url) {
-      insertText(`\n![Imagen](${url})\n`)
+      insertText(`\n![${t.common.loading}](${url})\n`)
     }
   }
 
   const handleVideoUrl = () => {
-    const url = prompt('Ingresa la URL del video (YouTube, Vimeo, etc.):')
+    const url = prompt(t.editor.enterVideoUrl)
     if (url) {
       // Detectar si es YouTube o Vimeo
       if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -134,22 +136,22 @@ export default function RichTextEditor({
   }
 
   const toolbarButtons = [
-    { icon: Bold, action: () => insertText('**', '**'), title: 'Negrita' },
-    { icon: Italic, action: () => insertText('*', '*'), title: 'Cursiva' },
-    { icon: Underline, action: () => insertText('<u>', '</u>'), title: 'Subrayado' },
-    { icon: Code, action: () => insertText('`', '`'), title: 'Código' },
-    { icon: Quote, action: () => insertText('> ', ''), title: 'Cita' },
-    { icon: List, action: () => insertText('- ', ''), title: 'Lista' },
-    { icon: ListOrdered, action: () => insertText('1. ', ''), title: 'Lista numerada' },
+    { icon: Bold, action: () => insertText('**', '**'), title: t.editor.bold },
+    { icon: Italic, action: () => insertText('*', '*'), title: t.editor.italic },
+    { icon: Underline, action: () => insertText('<u>', '</u>'), title: t.editor.underline },
+    { icon: Code, action: () => insertText('`', '`'), title: t.editor.code },
+    { icon: Quote, action: () => insertText('> ', ''), title: t.editor.quote },
+    { icon: List, action: () => insertText('- ', ''), title: t.editor.list },
+    { icon: ListOrdered, action: () => insertText('1. ', ''), title: t.editor.orderedList },
     { icon: LinkIcon, action: () => {
-      const url = prompt('Ingresa la URL:')
+      const url = prompt(t.editor.enterUrl)
       if (url) {
-        const text = prompt('Ingresa el texto del enlace:', url) || url
+        const text = prompt(t.editor.enterLinkText, url) || url
         insertText(`[${text}](${url})`)
       }
-    }, title: 'Enlace' },
-    { icon: Image, action: handleImageUrl, title: 'Imagen (URL)' },
-    { icon: Video, action: handleVideoUrl, title: 'Video (URL)' },
+    }, title: t.editor.link },
+    { icon: Image, action: handleImageUrl, title: t.editor.imageUrl },
+    { icon: Video, action: handleVideoUrl, title: t.editor.videoUrl },
   ]
 
   return (
@@ -172,7 +174,7 @@ export default function RichTextEditor({
         ))}
         <div className="flex-1" />
         <div className="text-xs text-gray-500 px-2">
-          {isUploading && 'Subiendo...'}
+          {isUploading && t.common.loading}
         </div>
       </div>
 
@@ -182,14 +184,14 @@ export default function RichTextEditor({
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder || t.editor.writeHere}
           className="w-full flex-1 px-4 py-3 border-0 focus:ring-0 resize-none text-base"
         />
       </div>
 
       {/* Preview toggle (opcional) */}
       <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex-shrink-0">
-        <span>💡 Tip: Usa Markdown para formato. Ejemplo: **negrita**, *cursiva*, [enlace](url)</span>
+        <span>{t.editor.tipMarkdown}</span>
       </div>
     </div>
   )

@@ -3,20 +3,22 @@
 import { motion } from 'framer-motion'
 import { Home, TrendingUp, Zap, Clock } from 'lucide-react'
 import { useState, useEffect } from 'react'
-
-const filters = [
-  { id: 'all', name: 'Todo', icon: Home },
-  { id: 'hot', name: 'Tendencias', icon: TrendingUp },
-  { id: 'new', name: 'Nuevo', icon: Zap },
-  { id: 'top', name: 'Top', icon: Clock },
-]
+import { useI18n } from '@/lib/i18n/context'
 
 interface FilterTabsProps {
   onFilterChange?: (filter: string) => void
 }
 
 export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
+  const { t } = useI18n()
   const [activeFilter, setActiveFilter] = useState('all')
+
+  const filters = [
+    { id: 'all', name: t.post.all, icon: Home },
+    { id: 'hot', name: t.post.trends, icon: TrendingUp },
+    { id: 'new', name: t.post.new, icon: Zap },
+    { id: 'top', name: t.post.top, icon: Clock },
+  ]
 
   useEffect(() => {
     if (onFilterChange) {
@@ -43,7 +45,7 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
           >
             <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{filter.name}</span>
-            <span className="sm:hidden">{filter.name === 'Tendencias' ? 'Hot' : filter.name === 'Nuevo' ? 'New' : filter.name}</span>
+            <span className="sm:hidden">{filter.id === 'hot' ? t.post.hot : filter.id === 'new' ? t.post.new : filter.name}</span>
           </motion.button>
         )
       })}

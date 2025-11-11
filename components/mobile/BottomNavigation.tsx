@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Home, Users, Plus, User, Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface NavItem {
   name: string
@@ -13,16 +14,17 @@ interface NavItem {
   badge?: number
 }
 
-const navItems: NavItem[] = [
-  { name: 'Inicio', href: '/', icon: Home },
-  { name: 'Foros', href: '/forums', icon: Users },
-  { name: 'Crear', href: '#', icon: Plus, badge: undefined }, // Se maneja con FAB
-  { name: 'Perfil', href: '/user', icon: User },
-]
-
 export default function BottomNavigation() {
+  const { t } = useI18n()
   const pathname = usePathname()
   const [user, setUser] = useState<{ id: number; username: string } | null>(null)
+
+  const navItems: NavItem[] = [
+    { name: t.nav.home, href: '/', icon: Home },
+    { name: t.nav.forums, href: '/forums', icon: Users },
+    { name: t.mobile.create, href: '#', icon: Plus, badge: undefined }, // Se maneja con FAB
+    { name: t.auth.profile, href: '/user', icon: User },
+  ]
 
   // Verificar usuario para mostrar perfil correcto
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function BottomNavigation() {
                   <div className="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-purple-600 flex items-center justify-center shadow-lg">
                     <Plus className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xs font-medium text-gray-600 mt-1">Crear</span>
+                  <span className="text-xs font-medium text-gray-600 mt-1">{t.mobile.create}</span>
                 </motion.button>
               )
             }

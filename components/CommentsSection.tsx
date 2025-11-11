@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { MessageCircle, Send, ArrowUp, ArrowDown } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface Comment {
   id: number
@@ -20,6 +21,7 @@ interface CommentsSectionProps {
 }
 
 export default function CommentsSection({ postId }: CommentsSectionProps) {
+  const { t } = useI18n()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
@@ -211,7 +213,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       <div className="flex items-center gap-2 mb-4">
         <MessageCircle className="w-5 h-5 text-primary-600" />
         <h2 className="text-lg font-bold text-gray-900">
-          Comentarios ({comments.length})
+          {t.post.comments} ({comments.length})
         </h2>
       </div>
 
@@ -221,7 +223,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Escribe un comentario..."
+            placeholder={t.post.writeComment}
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none mb-2"
             required
@@ -235,7 +237,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
               whileTap={{ scale: submitting ? 1 : 0.98 }}
             >
               <Send className="w-4 h-4" />
-              {submitting ? 'Publicando...' : 'Comentar'}
+              {submitting ? t.post.commenting : t.post.comment}
             </motion.button>
           </div>
         </form>
@@ -245,9 +247,9 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       {!user && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-600">
           <Link href="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
-            Inicia sesión
+            {t.auth.signIn}
           </Link>
-          {' '}para comentar
+          {' '}{t.post.loginToComment}
         </div>
       )}
 
@@ -265,7 +267,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       ) : comments.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-          <p>No hay comentarios aún. ¡Sé el primero en comentar!</p>
+          <p>{t.post.comments}</p>
         </div>
       ) : (
         <div className="space-y-4">

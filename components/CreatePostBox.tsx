@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { useState, useEffect, useRef } from 'react'
 import { Image as ImageIcon, Video, X, Send, Trash2 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface CreatePostBoxProps {
   defaultSubforumId?: number
@@ -10,6 +11,7 @@ interface CreatePostBoxProps {
 }
 
 export default function CreatePostBox({ defaultSubforumId, onPostCreated }: CreatePostBoxProps) {
+  const { t } = useI18n()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('') // Contenido completo con imágenes
   const [displayContent, setDisplayContent] = useState('') // Contenido visible en textarea (sin imágenes)
@@ -243,17 +245,17 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
     setError('')
 
     if (!user) {
-      alert('Debes iniciar sesión para crear una publicación')
+      alert(t.post.create)
       return
     }
 
     if (!content.trim()) {
-      setError('El contenido es requerido')
+      setError(t.common.error)
       return
     }
 
     if (!subforumId) {
-      setError('Debes seleccionar una comunidad')
+      setError(t.community.notFound)
       return
     }
 
@@ -267,7 +269,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
 
       if (!res.ok) {
         const error = await res.json()
-        throw new Error(error.message || 'Error al crear el post')
+        throw new Error(error.message || t.common.error)
       }
 
       // Limpiar formulario
@@ -285,7 +287,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
         window.location.reload()
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear el post')
+      setError(err instanceof Error ? err.message : t.common.error)
     } finally {
       setLoading(false)
     }
@@ -294,7 +296,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
   if (!user) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 text-center text-gray-500">
-        <p>Inicia sesión para crear una publicación</p>
+        <p>{t.post.loginToComment}</p>
       </div>
     )
   }
@@ -321,11 +323,11 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
             className="mb-4"
           >
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Comunidad
+              {t.community.communities}
             </label>
             {subforums.length === 0 ? (
               <div className="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
-                No perteneces a ninguna comunidad. Únete a una comunidad primero.
+                {t.community.noCommunities}
               </div>
             ) : (
               <select
@@ -368,7 +370,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               >
-                <option value="">Selecciona una comunidad</option>
+                <option value="">{t.post.selectCommunity}</option>
                 {subforums.map((subforum) => (
                   <option key={subforum.id} value={subforum.id}>
                     r/{subforum.name}
@@ -406,11 +408,11 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                   }
                 }, 200)
               }}
-              placeholder="Título de tu publicación..."
+              placeholder={t.post.title}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               maxLength={255}
             />
-            <p className="text-xs text-gray-500 mt-1">{title.length}/255 caracteres</p>
+            <p className="text-xs text-gray-500 mt-1">{title.length}/255 {t.common.characters}</p>
           </motion.div>
         )}
 
@@ -453,7 +455,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                   }
                 }, 300)
               }}
-              placeholder="¿Qué estás pensando?"
+              placeholder={t.post.whatAreYouThinking}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
               rows={3}
             />
@@ -471,7 +473,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                 const [, alt, src] = imgMatch
                 const cleanSrc = src.replace(/\s+/g, '').trim()
                 if (cleanSrc.startsWith('data:image/')) {
-                  images.push({ alt: alt || 'Imagen', src: cleanSrc, fullMatch: match })
+                  images.push({ alt: alt || t.common.loading, src: cleanSrc, fullMatch: match })
                 }
               }
             })
@@ -495,7 +497,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                         updateContent(newContent)
                       }}
                       className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                      title="Eliminar imagen"
+                      title={t.common.delete}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -515,7 +517,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
               className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-primary-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
             >
               <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Foto</span>
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t.editor.imageUrl}</span>
             </button>
             <button
               type="button"
@@ -523,7 +525,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
               className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-green-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
             >
               <Video className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Video</span>
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t.editor.videoUrl}</span>
             </button>
           </div>
 
@@ -539,12 +541,12 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
               whileTap={{ scale: loading ? 1 : 0.98 }}
             >
               {loading ? (
-                <span className="hidden sm:inline">Publicando...</span>
+                <span className="hidden sm:inline">{t.post.publishing}</span>
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Publicar</span>
-                  <span className="sm:hidden">Publicar</span>
+                  <span className="hidden sm:inline">{t.post.publish}</span>
+                  <span className="sm:hidden">{t.post.publish}</span>
                 </>
               )}
             </motion.button>

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, UserPlus } from 'lucide-react'
 import { useState } from 'react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface RegisterModalProps {
   isOpen: boolean
@@ -12,6 +13,7 @@ interface RegisterModalProps {
 }
 
 export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegister }: RegisterModalProps) {
+  const { t } = useI18n()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,12 +26,12 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError(t.common.error)
       return
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+      setError(t.common.error)
       return
     }
 
@@ -43,7 +45,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
       setConfirmPassword('')
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrarse')
+      setError(err instanceof Error ? err.message : t.common.error)
     } finally {
       setLoading(false)
     }
@@ -74,7 +76,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
               exit={{ scale: 0.9, y: 20 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Crear Cuenta</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{t.auth.signUp}</h2>
                 <button
                   onClick={onClose}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -92,7 +94,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Nombre de usuario
+                    {t.auth.username}
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -111,7 +113,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email
+                    {t.auth.email}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -128,7 +130,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Contraseña
+                    {t.auth.password}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -146,7 +148,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Confirmar Contraseña
+                    {t.auth.confirmPassword}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -171,7 +173,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
                   ) : (
                     <>
                       <UserPlus className="w-5 h-5" />
-                      Crear Cuenta
+                      {t.auth.signUp}
                     </>
                   )}
                 </button>
@@ -179,12 +181,12 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
 
               <div className="mt-4 text-center">
                 <p className="text-sm text-gray-600">
-                  ¿Ya tienes cuenta?{' '}
+                  {t.auth.haveAccount}{' '}
                   <button
                     onClick={onSwitchToLogin}
                     className="text-primary-600 hover:text-primary-700 font-semibold"
                   >
-                    Inicia sesión aquí
+                    {t.auth.loginHere}
                   </button>
                 </p>
               </div>

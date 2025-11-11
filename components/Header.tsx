@@ -6,15 +6,10 @@ import { Menu, X, LogIn, UserPlus, User, LogOut, ChevronDown } from 'lucide-reac
 import Link from 'next/link'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
-
-const navLinks = [
-  { name: 'Inicio', href: '/' },
-  { name: 'Foros', href: '/forums' },
-  { name: 'Tendencias', href: '/hot' },
-  { name: 'Nuevo', href: '/new' },
-]
+import { useI18n } from '@/lib/i18n/context'
 
 export default function Header() {
+  const { t } = useI18n()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
@@ -22,6 +17,13 @@ export default function Header() {
   const [user, setUser] = useState<{ username: string; id: number } | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const navLinks = [
+    { name: t.nav.home, href: '/' },
+    { name: t.nav.forums, href: '/forums' },
+    { name: t.nav.trends, href: '/hot' },
+    { name: t.nav.new, href: '/new' },
+  ]
 
   useEffect(() => {
     const handleScroll = () => {
@@ -169,7 +171,7 @@ export default function Header() {
                           className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           <User className="w-4 h-4" />
-                          Perfil
+                          {t.auth.profile}
                         </Link>
                         <button
                           onClick={() => {
@@ -179,7 +181,7 @@ export default function Header() {
                           className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-200"
                         >
                           <LogOut className="w-4 h-4" />
-                          Cerrar sesión
+                          {t.auth.logout}
                         </button>
                       </motion.div>
                     )}
@@ -194,8 +196,8 @@ export default function Header() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Iniciar Sesión</span>
-                    <span className="sm:hidden">Entrar</span>
+                    <span className="hidden sm:inline">{t.auth.signIn}</span>
+                    <span className="sm:hidden">{t.auth.login}</span>
                   </motion.button>
                   <motion.button
                     onClick={() => setIsRegisterOpen(true)}
@@ -204,8 +206,8 @@ export default function Header() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Registrarse</span>
-                    <span className="sm:hidden">Registro</span>
+                    <span className="hidden sm:inline">{t.auth.signUp}</span>
+                    <span className="sm:hidden">{t.auth.register}</span>
                   </motion.button>
                 </>
               )}
@@ -253,7 +255,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium"
                       >
                         <User className="w-4 h-4" />
-                        Perfil
+                        {t.auth.profile}
                       </Link>
                       <button
                         onClick={() => {
@@ -263,7 +265,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium"
                       >
                         <LogOut className="w-4 h-4" />
-                        Cerrar sesión
+                        {t.auth.logout}
                       </button>
                     </>
                   ) : (
@@ -276,7 +278,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
                       >
                         <LogIn className="w-4 h-4" />
-                        Iniciar Sesión
+                        {t.auth.signIn}
                       </button>
                       <button
                         onClick={() => {
@@ -286,7 +288,7 @@ export default function Header() {
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors text-sm font-medium"
                       >
                         <UserPlus className="w-4 h-4" />
-                        Registrarse
+                        {t.auth.signUp}
                       </button>
                     </>
                   )}

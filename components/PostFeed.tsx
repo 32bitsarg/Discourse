@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import PostCard from './PostCard'
+import { useI18n } from '@/lib/i18n/context'
 
 interface PostFeedProps {
   filter?: string
@@ -13,6 +14,7 @@ export interface PostFeedRef {
 }
 
 const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subforumId }, ref) => {
+  const { t } = useI18n()
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -280,7 +282,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">😢</div>
-          <p className="text-gray-500 text-lg font-medium">No hay más publicaciones</p>
+          <p className="text-gray-500 text-lg font-medium">{t.post.noMorePosts}</p>
         </div>
       )}
     </div>

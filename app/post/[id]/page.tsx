@@ -7,8 +7,10 @@ import Link from 'next/link'
 import { ArrowUp, ArrowDown, MessageCircle, Share2, Bookmark, ArrowLeft } from 'lucide-react'
 import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
+import { useI18n } from '@/lib/i18n/context'
 
 export default function PostPage() {
+  const { t } = useI18n()
   const params = useParams()
   const router = useRouter()
   const postId = params.id as string
@@ -17,7 +19,7 @@ export default function PostPage() {
   const [loading, setLoading] = useState(true)
   const [vote, setVote] = useState<'up' | 'down' | null>(null)
   const [voteCount, setVoteCount] = useState(0)
-  const [timeAgo, setTimeAgo] = useState('hace unos segundos')
+  const [timeAgo, setTimeAgo] = useState(t.common.seconds)
 
   // Función para calcular tiempo transcurrido
   const calculateTimeAgo = (date: string | Date): string => {
@@ -28,10 +30,10 @@ export default function PostPage() {
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (minutes < 1) return 'hace unos segundos'
-    if (minutes < 60) return `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
-    if (hours < 24) return `hace ${hours} hora${hours > 1 ? 's' : ''}`
-    return `hace ${days} día${days > 1 ? 's' : ''}`
+    if (minutes < 1) return t.common.seconds
+    if (minutes < 60) return `${t.post.ago} ${minutes} ${minutes > 1 ? t.common.minutes : t.common.minutes.slice(0, -1)}`
+    if (hours < 24) return `${t.post.ago} ${hours} ${hours > 1 ? t.common.hours : t.common.hours.slice(0, -1)}`
+    return `${t.post.ago} ${days} ${days > 1 ? t.common.days : t.common.days.slice(0, -1)}`
   }
 
   // Actualizar el tiempo dinámicamente
@@ -131,12 +133,12 @@ export default function PostPage() {
   if (!post) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-500 text-lg">Post no encontrado</p>
+        <p className="text-gray-500 text-lg">{t.common.error}</p>
         <button
           onClick={() => router.push('/')}
           className="mt-4 text-primary-600 hover:text-primary-700"
         >
-          Volver al inicio
+          {t.community.backToHome}
         </button>
       </div>
     )
@@ -151,7 +153,7 @@ export default function PostPage() {
           whileHover={{ x: -4 }}
         >
           <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Volver</span>
+          <span className="text-sm">{t.post.back}</span>
         </motion.button>
 
         {/* Post */}
@@ -201,7 +203,7 @@ export default function PostPage() {
                   r/{post.subforum_name}
                 </Link>
                 <span className="text-gray-600 hidden sm:inline">•</span>
-                <span className="text-xs text-gray-500 hidden sm:inline">Publicado por</span>
+                <span className="text-xs text-gray-500 hidden sm:inline">{t.post.postedBy}</span>
                 <Link href={`/user/${post.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate">
                   <span className="hidden sm:inline">u/</span>{post.author_username}
                 </Link>
@@ -211,7 +213,7 @@ export default function PostPage() {
                   <>
                     <span className="text-gray-600 hidden sm:inline">•</span>
                     <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
-                      🔥 Hot
+                      🔥 {t.post.hot}
                     </span>
                   </>
                 )}
@@ -231,16 +233,16 @@ export default function PostPage() {
               <div className="flex items-center gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200 flex-wrap">
                 <button className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm">
                   <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{post.comment_count} comentarios</span>
+                  <span className="hidden sm:inline">{post.comment_count} {t.post.comments}</span>
                   <span className="sm:hidden">{post.comment_count}</span>
                 </button>
                 <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm">
                   <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Compartir</span>
+                  <span className="hidden sm:inline">{t.post.share}</span>
                 </button>
                 <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm">
                   <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Guardar</span>
+                  <span className="hidden sm:inline">{t.post.save}</span>
                 </button>
               </div>
             </div>
