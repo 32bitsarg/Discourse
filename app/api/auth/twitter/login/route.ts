@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import crypto from 'crypto'
 
 // GET - Iniciar OAuth flow para login/registro con Twitter
 export async function GET(request: NextRequest) {
@@ -39,7 +40,11 @@ export async function GET(request: NextRequest) {
     // Generar un state aleatorio para seguridad
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     
-    // Guardar el state en una cookie para verificarlo en el callback
+    // Generar PKCE code verifier y challenge
+    const codeVerifier = crypto.randomBytes(32).toString('base64url')
+    const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url')
+    
+    // Guardar el state y code_verifier en cookies para verificarlos en el callback
     const cookieStore = await cookies()
     cookieStore.set('twitter_oauth_state', state, {
       httpOnly: true,
@@ -47,17 +52,23 @@ export async function GET(request: NextRequest) {
       sameSite: 'lax',
       maxAge: 600 // 10 minutos
     })
+    cookieStore.set('twitter_oauth_code_verifier', codeVerifier, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 600 // 10 minutos
+    })
 
-    // Scopes mínimos necesarios para login
-    const twitterScopes = ['tweet.read', 'users.read', 'offline.access']
+    // Scopes mínimos necesarios para login - solo los esenciales
+    const twitterScopes = ['users.read', 'offline.access']
     const authUrl = `https://twitter.com/i/oauth2/authorize?` +
       `response_type=code&` +
       `client_id=${twitterClientId}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `scope=${encodeURIComponent(twitterScopes.join(' '))}&` +
       `state=${state}&` +
-      `code_challenge=challenge&` +
-      `code_challenge_method=plain`
+      `code_challenge=${codeChallenge}&` +
+      `code_challenge_method=S256`
 
     console.log('Twitter OAuth - Auth URL:', authUrl.replace(/client_id=[^&]+/, 'client_id=***'))
 

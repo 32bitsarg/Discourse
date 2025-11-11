@@ -24,18 +24,28 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verificar el state
+    // Verificar el state y obtener el code_verifier
     const cookieStore = await cookies()
     const savedState = cookieStore.get('twitter_oauth_state')?.value
+    const codeVerifier = cookieStore.get('twitter_oauth_code_verifier')?.value
     
     if (!savedState || savedState !== state) {
+      console.error('Invalid state - possible CSRF attack')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=invalid_state`
       )
     }
 
-    // Limpiar la cookie
+    if (!codeVerifier) {
+      console.error('Missing code_verifier')
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=missing_code_verifier`
+      )
+    }
+
+    // Limpiar las cookies
     cookieStore.delete('twitter_oauth_state')
+    cookieStore.delete('twitter_oauth_code_verifier')
 
     const twitterClientId = process.env.TWITTER_CLIENT_ID
     const twitterClientSecret = process.env.TWITTER_CLIENT_SECRET
@@ -73,13 +83,13 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${Buffer.from(`${twitterClientId}:${twitterClientSecret}`).toString('base64')}`
       },
-      body: new URLSearchParams({
-        code,
-        grant_type: 'authorization_code',
-        client_id: twitterClientId,
-        redirect_uri: redirectUri,
-        code_verifier: 'challenge'
-      })
+          body: new URLSearchParams({
+            code,
+            grant_type: 'authorization_code',
+            client_id: twitterClientId,
+            redirect_uri: redirectUri,
+            code_verifier: codeVerifier
+          })
     })
 
     if (!twitterTokenRes.ok) {
