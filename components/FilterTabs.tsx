@@ -25,7 +25,7 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   }, [activeFilter, onFilterChange])
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-2 flex gap-2">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 sm:p-2 flex gap-1 sm:gap-2 overflow-x-auto">
       {filters.map((filter) => {
         const Icon = filter.icon
         const isActive = activeFilter === filter.id
@@ -33,7 +33,7 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
           <motion.button
             key={filter.id}
             onClick={() => setActiveFilter(filter.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all whitespace-nowrap flex-shrink-0 ${
               isActive
                 ? 'bg-primary-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -41,8 +41,9 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Icon className="w-4 h-4" />
-            {filter.name}
+            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{filter.name}</span>
+            <span className="sm:hidden">{filter.name === 'Tendencias' ? 'Hot' : filter.name === 'Nuevo' ? 'New' : filter.name}</span>
           </motion.button>
         )
       })}

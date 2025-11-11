@@ -168,55 +168,55 @@ export default function PostPage() {
         >
           <div className="flex">
             {/* Vote Section */}
-            <div className="flex flex-col items-center p-2 bg-gray-50">
+            <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50">
               <motion.button
                 onClick={() => handleVote('up')}
-                className={`p-1 rounded hover:bg-gray-200 transition-colors ${
+                className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
                   vote === 'up' ? 'text-orange-500' : 'text-gray-500'
                 }`}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <ArrowUp className="w-5 h-5" />
+                <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.button>
-              <span className={`text-sm font-bold py-1 ${
+              <span className={`text-xs sm:text-sm font-bold py-0.5 sm:py-1 ${
                 vote === 'up' ? 'text-orange-500' : vote === 'down' ? 'text-blue-500' : 'text-gray-700'
               }`}>
                 {voteCount}
               </span>
               <motion.button
                 onClick={() => handleVote('down')}
-                className={`p-1 rounded hover:bg-gray-200 transition-colors ${
+                className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
                   vote === 'down' ? 'text-blue-500' : 'text-gray-500'
                 }`}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <ArrowDown className="w-5 h-5" />
+                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-6">
+            <div className="flex-1 p-3 sm:p-6 min-w-0">
               {/* Header */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 flex-wrap">
                 <Link
                   href={`/r/${post.subforum_slug}`}
-                  className="text-xs font-semibold text-primary-600 hover:text-primary-700"
+                  className="text-xs font-semibold text-primary-600 hover:text-primary-700 truncate"
                 >
                   r/{post.subforum_name}
                 </Link>
-                <span className="text-gray-600">•</span>
-                <span className="text-xs text-gray-500">Publicado por</span>
-                <Link href={`/user/${post.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900">
-                  u/{post.author_username}
+                <span className="text-gray-600 hidden sm:inline">•</span>
+                <span className="text-xs text-gray-500 hidden sm:inline">Publicado por</span>
+                <Link href={`/user/${post.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate">
+                  <span className="hidden sm:inline">u/</span>{post.author_username}
                 </Link>
-                <span className="text-gray-400">•</span>
-                <span className="text-xs text-gray-500">{timeAgo}</span>
+                <span className="text-gray-400 hidden sm:inline">•</span>
+                <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
                 {post.is_hot && (
                   <>
-                    <span className="text-gray-600">•</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold">
+                    <span className="text-gray-600 hidden sm:inline">•</span>
+                    <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
                       🔥 Hot
                     </span>
                   </>
@@ -224,28 +224,29 @@ export default function PostPage() {
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
                 {post.title}
               </h1>
 
               {/* Content */}
-              <div className="prose max-w-none mb-6">
+              <div className="prose prose-sm sm:prose-base max-w-none mb-4 sm:mb-6">
                 <PostContentRenderer content={post.content} />
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-                <button className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-sm">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>{post.comment_count} comentarios</span>
+              <div className="flex items-center gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200 flex-wrap">
+                <button className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm">
+                  <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{post.comment_count} comentarios</span>
+                  <span className="sm:hidden">{post.comment_count}</span>
                 </button>
-                <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-sm">
-                  <Share2 className="w-4 h-4" />
-                  <span>Compartir</span>
+                <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm">
+                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Compartir</span>
                 </button>
-                <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-sm">
-                  <Bookmark className="w-4 h-4" />
-                  <span>Guardar</span>
+                <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm">
+                  <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Guardar</span>
                 </button>
               </div>
             </div>

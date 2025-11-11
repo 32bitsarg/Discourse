@@ -305,7 +305,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
       className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
       initial={false}
     >
-      <form onSubmit={handleSubmit} className="p-4">
+      <form onSubmit={handleSubmit} className="p-3 sm:p-4">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
             {error}
@@ -454,8 +454,8 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                 }, 300)
               }}
               placeholder="¿Qué estás pensando?"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none min-h-[100px]"
-              rows={4}
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none min-h-[80px] sm:min-h-[100px] text-sm sm:text-base"
+              rows={3}
             />
           </div>
           
@@ -507,23 +507,23 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
         </div>
 
         {/* Botones de acción */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between pt-3 border-t border-gray-200 gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               type="button"
               onClick={handleImageUpload}
-              className="flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-primary-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
             >
-              <ImageIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Foto</span>
+              <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Foto</span>
             </button>
             <button
               type="button"
               onClick={handleVideoUpload}
-              className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-green-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
             >
-              <Video className="w-5 h-5" />
-              <span className="text-sm font-medium">Video</span>
+              <Video className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Video</span>
             </button>
           </div>
 
@@ -532,18 +532,19 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
             <motion.button
               type="submit"
               disabled={loading || !content.trim() || !subforumId}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 sm:px-6 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
             >
               {loading ? (
-                'Publicando...'
+                <span className="hidden sm:inline">Publicando...</span>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
-                  Publicar
+                  <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Publicar</span>
+                  <span className="sm:hidden">Publicar</span>
                 </>
               )}
             </motion.button>

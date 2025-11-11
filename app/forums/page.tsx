@@ -85,24 +85,25 @@ export default function ForumsPage() {
 
         {/* Header */}
         <motion.div
-          className="bg-white rounded-lg border border-gray-200 shadow-sm p-6"
+          className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Comunidades</h1>
-              <p className="text-gray-600">Descubre y únete a comunidades de tu interés</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Comunidades</h1>
+              <p className="text-sm sm:text-base text-gray-600">Descubre y únete a comunidades de tu interés</p>
             </div>
             {user && (
               <motion.button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 text-sm sm:text-base self-start sm:self-auto"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Plus className="w-4 h-4" />
-                Crear Comunidad
+                <span className="hidden sm:inline">Crear Comunidad</span>
+                <span className="sm:hidden">Crear</span>
               </motion.button>
             )}
           </div>
@@ -156,15 +157,15 @@ export default function ForumsPage() {
                 whileHover={{ scale: 1.01 }}
               >
                 <Link href={`/r/${subforum.slug}`}>
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0">
                           r/
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h2 className="text-xl font-bold text-gray-900">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
                               r/{subforum.name}
                             </h2>
                             {!subforum.is_public && (
@@ -188,24 +189,24 @@ export default function ForumsPage() {
                     </div>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Users className="w-4 h-4" />
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                        <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="font-semibold">{subforum.member_count || 0}</span>
-                        <span>miembros</span>
+                        <span className="hidden sm:inline">miembros</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MessageSquare className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                        <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="font-semibold">{subforum.post_count || 0}</span>
-                        <span>posts</span>
+                        <span className="hidden sm:inline">posts</span>
                       </div>
                       {subforum.requires_approval && (
-                        <div className="flex items-center gap-2 text-sm text-yellow-600">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-600">
                           <span>Requiere aprobación</span>
                         </div>
                       )}
-                      <div className="ml-auto text-xs text-gray-500">
-                        Creado por u/{subforum.creator_username || 'Anónimo'}
+                      <div className="ml-auto text-xs text-gray-500 whitespace-nowrap">
+                        <span className="hidden sm:inline">Creado por </span>u/{subforum.creator_username || 'Anónimo'}
                       </div>
                     </div>
                   </div>

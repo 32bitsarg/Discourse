@@ -96,42 +96,42 @@ export default function CommunityPage() {
 
         {/* Header de la comunidad */}
         <motion.div
-          className="bg-white rounded-lg border border-gray-200 shadow-sm p-6"
+          className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0">
                   r/
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
                       r/{community.name}
                     </h1>
                     {!community.is_public && (
                       <span title="Comunidad privada">
-                        <Lock className="w-5 h-5 text-gray-500" />
+                        <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
                       </span>
                     )}
                     {community.is_public && (
                       <span title="Comunidad pública">
-                        <Globe className="w-5 h-5 text-green-500" />
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     Creado por u/{community.creator_username}
                   </p>
                 </div>
               </div>
               {community.description && (
-                <p className="text-gray-700 mt-3">{community.description}</p>
+                <p className="text-sm sm:text-base text-gray-700 mt-3">{community.description}</p>
               )}
             </div>
-            <div className="ml-4">
+            <div className="sm:ml-4 flex-shrink-0">
               <JoinCommunityButton
                 subforumId={community.id}
                 isPublic={community.is_public}
@@ -141,19 +141,19 @@ export default function CommunityPage() {
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Users className="w-4 h-4" />
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="font-semibold">{community.member_count}</span>
-              <span>miembros</span>
+              <span className="hidden sm:inline">miembros</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <MessageSquare className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="font-semibold">{community.post_count}</span>
-              <span>posts</span>
+              <span className="hidden sm:inline">posts</span>
             </div>
             {community.requires_approval && (
-              <div className="flex items-center gap-2 text-sm text-yellow-600">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-yellow-600">
                 <span>Requiere aprobación</span>
               </div>
             )}

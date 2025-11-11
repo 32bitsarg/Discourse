@@ -128,61 +128,61 @@ export default function PostCard({
     >
       <div className="flex">
         {/* Vote Section */}
-        <div className="flex flex-col items-center p-2 bg-gray-50">
+        <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50">
           <motion.button
             onClick={() => handleVote('up')}
-            className={`p-1 rounded hover:bg-gray-200 transition-colors ${
+            className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
               vote === 'up' ? 'text-orange-500' : 'text-gray-500'
             }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <ArrowUp className="w-5 h-5" />
+            <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
           </motion.button>
-          <span className={`text-sm font-bold py-1 ${
+          <span className={`text-xs sm:text-sm font-bold py-0.5 sm:py-1 ${
             vote === 'up' ? 'text-orange-500' : vote === 'down' ? 'text-blue-500' : 'text-gray-700'
           }`}>
             {voteCount}
           </span>
           <motion.button
             onClick={() => handleVote('down')}
-            className={`p-1 rounded hover:bg-gray-200 transition-colors ${
+            className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
               vote === 'down' ? 'text-blue-500' : 'text-gray-500'
             }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <ArrowDown className="w-5 h-5" />
+            <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
           </motion.button>
         </div>
 
         {/* Content Section */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-3 sm:p-4 min-w-0">
           {/* Header */}
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
             <Link
               href={`/r/${forum}`}
-              className="text-xs font-semibold text-primary-600 hover:text-primary-700"
+              className="text-xs font-semibold text-primary-600 hover:text-primary-700 truncate"
             >
               r/{forum}
             </Link>
-            <span className="text-gray-600">•</span>
-            <span className="text-xs text-gray-500">Publicado por</span>
-            <Link href={`/user/${author}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900">
-              u/{author}
+            <span className="text-gray-600 hidden sm:inline">•</span>
+            <span className="text-xs text-gray-500 hidden sm:inline">Publicado por</span>
+            <Link href={`/user/${author}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate">
+              <span className="hidden sm:inline">u/</span>{author}
             </Link>
-            <span className="text-gray-400">•</span>
-            <span className="text-xs text-gray-500">{timeAgo}</span>
+            <span className="text-gray-400 hidden sm:inline">•</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
             {(isHot || isNew) && (
               <>
-                <span className="text-gray-600">•</span>
+                <span className="text-gray-600 hidden sm:inline">•</span>
                 {isHot && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold">
+                  <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
                     🔥 Hot
                   </span>
                 )}
                 {isNew && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-semibold">
+                  <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-semibold whitespace-nowrap">
                     ✨ Nuevo
                   </span>
                 )}
@@ -192,7 +192,7 @@ export default function PostCard({
 
           {/* Title */}
           <Link href={`/post/${id}`} className="block mb-2">
-            <h2 className="text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer line-clamp-2">
               {title}
             </h2>
           </Link>
@@ -203,21 +203,22 @@ export default function PostCard({
               </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
             <Link
               href={`/post/${id}`}
-              className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-sm"
+              className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>{comments} comentarios</span>
+              <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{comments} comentarios</span>
+              <span className="sm:hidden">{comments}</span>
             </Link>
-            <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-sm">
-              <Share2 className="w-4 h-4" />
-              <span>Compartir</span>
+            <button className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm">
+              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Compartir</span>
             </button>
-            <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-sm">
-              <Bookmark className="w-4 h-4" />
-              <span>Guardar</span>
+            <button className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm">
+              <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Guardar</span>
             </button>
           </div>
         </div>
