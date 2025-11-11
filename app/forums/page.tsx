@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Users, MessageSquare, Lock, Globe, Plus, Search } from 'lucide-react'
-import ForumLayout from '@/components/ForumLayout'
 import CreateSubforumModal from '@/components/CreateSubforumModal'
 
 export default function ForumsPage() {
@@ -75,8 +74,7 @@ export default function ForumsPage() {
   )
 
   return (
-    <ForumLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <CreateSubforumModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
@@ -216,7 +214,6 @@ export default function ForumsPage() {
           </div>
         )}
       </div>
-    </ForumLayout>
   )
 }
 

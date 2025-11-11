@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, Users, MessageSquare, Lock, Globe } from 'lucide-react'
-import ForumLayout from '@/components/ForumLayout'
 import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import JoinCommunityButton from '@/components/JoinCommunityButton'
@@ -55,33 +54,28 @@ export default function CommunityPage() {
 
   if (loading) {
     return (
-      <ForumLayout>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-        </div>
-      </ForumLayout>
+      <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+      </div>
     )
   }
 
   if (!community) {
     return (
-      <ForumLayout>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">Comunidad no encontrada</p>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 text-primary-600 hover:text-primary-700"
-          >
-            Volver al inicio
-          </button>
-        </div>
-      </ForumLayout>
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <p className="text-gray-500 text-lg">Comunidad no encontrada</p>
+        <button
+          onClick={() => router.push('/')}
+          className="mt-4 text-primary-600 hover:text-primary-700"
+        >
+          Volver al inicio
+        </button>
+      </div>
     )
   }
 
   return (
-    <ForumLayout>
       <div className="space-y-4">
         {/* Botón volver */}
         <Link href="/">
@@ -182,7 +176,6 @@ export default function CommunityPage() {
             {/* Posts de la comunidad */}
             <PostFeed ref={postFeedRef} filter="all" subforumId={parseInt(community.id)} />
       </div>
-    </ForumLayout>
   )
 }
 

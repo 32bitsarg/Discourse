@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, User, Mail, Calendar, MessageSquare, ArrowUp, ArrowDown } from 'lucide-react'
-import ForumLayout from '@/components/ForumLayout'
 
 export default function UserProfilePage() {
   const params = useParams()
@@ -50,35 +49,30 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <ForumLayout>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-        </div>
-      </ForumLayout>
+      <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+      </div>
     )
   }
 
   if (!user) {
     return (
-      <ForumLayout>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">Usuario no encontrado</p>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 text-primary-600 hover:text-primary-700"
-          >
-            Volver al inicio
-          </button>
-        </div>
-      </ForumLayout>
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <p className="text-gray-500 text-lg">Usuario no encontrado</p>
+        <button
+          onClick={() => router.push('/')}
+          className="mt-4 text-primary-600 hover:text-primary-700"
+        >
+          Volver al inicio
+        </button>
+      </div>
     )
   }
 
   const isOwnProfile = currentUser?.username === username
 
   return (
-    <ForumLayout>
       <div className="space-y-4">
         {/* Botón volver */}
         <Link href="/">
@@ -186,7 +180,6 @@ export default function UserProfilePage() {
           )}
         </div>
       </div>
-    </ForumLayout>
   )
 }
 

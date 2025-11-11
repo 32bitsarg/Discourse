@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowUp, ArrowDown, MessageCircle, Share2, Bookmark, ArrowLeft } from 'lucide-react'
-import ForumLayout from '@/components/ForumLayout'
 import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
 
@@ -121,34 +120,29 @@ export default function PostPage() {
 
   if (loading) {
     return (
-      <ForumLayout>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-        </div>
-      </ForumLayout>
+      <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+      </div>
     )
   }
 
   if (!post) {
     return (
-      <ForumLayout>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">Post no encontrado</p>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 text-primary-600 hover:text-primary-700"
-          >
-            Volver al inicio
-          </button>
-        </div>
-      </ForumLayout>
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <p className="text-gray-500 text-lg">Post no encontrado</p>
+        <button
+          onClick={() => router.push('/')}
+          className="mt-4 text-primary-600 hover:text-primary-700"
+        >
+          Volver al inicio
+        </button>
+      </div>
     )
   }
 
   return (
-    <ForumLayout>
       <div className="space-y-4">
         {/* Botón volver */}
         <motion.button
@@ -256,7 +250,6 @@ export default function PostPage() {
         {/* Comments Section */}
         <CommentsSection postId={parseInt(postId)} />
       </div>
-    </ForumLayout>
   )
 }
 
