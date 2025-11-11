@@ -32,16 +32,25 @@ class BehaviorTracker {
   private isProcessing = false
 
   constructor() {
-    // Cargar eventos pendientes de localStorage al iniciar
-    this.loadFromStorage()
-    
-    // Procesar eventos pendientes al iniciar
-    if (this.queue.length > 0) {
-      this.processBatch()
+    // Solo cargar desde storage si estamos en el cliente
+    if (typeof window !== 'undefined') {
+      // Cargar eventos pendientes de localStorage al iniciar
+      this.loadFromStorage()
+      
+      // Procesar eventos pendientes al iniciar
+      if (this.queue.length > 0) {
+        // Usar setTimeout para evitar ejecutar durante SSR
+        setTimeout(() => {
+          this.processBatch()
+        }, 1000)
+      }
     }
   }
 
   private loadFromStorage() {
+    // Solo acceder a localStorage en el cliente
+    if (typeof window === 'undefined') return
+    
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
@@ -59,6 +68,9 @@ class BehaviorTracker {
   }
 
   private saveToStorage() {
+    // Solo acceder a localStorage en el cliente
+    if (typeof window === 'undefined') return
+    
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.queue))
     } catch (error) {
@@ -182,35 +194,59 @@ class BehaviorTracker {
   }
 }
 
-// Instancia singleton del tracker
-const tracker = new BehaviorTracker()
+// Instancia singleton del tracker (lazy initialization)
+let tracker: BehaviorTracker | null = null
+let cleanupInterval: NodeJS.Timeout | null = null
 
-// Limpiar eventos antiguos periódicamente
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const events = JSON.parse(stored) as QueuedEvent[]
-        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-        const filtered = events.filter(e => e.timestamp > oneDayAgo)
-        if (filtered.length !== events.length) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+function getTracker(): BehaviorTracker {
+  // Solo crear tracker en el cliente
+  if (typeof window === 'undefined') {
+    // Retornar instancia dummy para SSR
+    return {
+      addEvent: () => {},
+      flush: async () => {},
+    } as any
+  }
+
+  if (!tracker) {
+    tracker = new BehaviorTracker()
+    
+    // Iniciar limpieza periódica solo una vez
+    if (!cleanupInterval) {
+      cleanupInterval = setInterval(() => {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY)
+          if (stored) {
+            const events = JSON.parse(stored) as QueuedEvent[]
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
+            const filtered = events.filter(e => e.timestamp > oneDayAgo)
+            if (filtered.length !== events.length) {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+            }
+          }
+        } catch (error) {
+          console.debug('Error cleaning old events:', error)
         }
-      }
-    } catch (error) {
-      console.debug('Error cleaning old events:', error)
+      }, 60 * 60 * 1000) // Cada hora
     }
-  }, 60 * 60 * 1000) // Cada hora
+  }
+
+  return tracker
 }
 
 export function useBehaviorTracking() {
   const trackBehavior = useCallback((options: TrackBehaviorOptions) => {
-    tracker.addEvent(options)
+    // Solo trackear en el cliente
+    if (typeof window !== 'undefined') {
+      getTracker().addEvent(options)
+    }
   }, [])
 
   const flushTracking = useCallback(() => {
-    return tracker.flush()
+    if (typeof window !== 'undefined') {
+      return getTracker().flush()
+    }
+    return Promise.resolve()
   }, [])
 
   return { trackBehavior, flushTracking }
