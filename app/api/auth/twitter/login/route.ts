@@ -12,8 +12,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    // Obtener la URL base - verificar tanto NEXT_PUBLIC_BASE_URL como construir desde request
+    let baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    
+    // Si no está configurado, intentar construir desde el request
+    if (!baseUrl) {
+      const protocol = request.headers.get('x-forwarded-proto') || 'https'
+      const host = request.headers.get('host') || request.headers.get('x-forwarded-host')
+      if (host) {
+        baseUrl = `${protocol}://${host}`
+      } else {
+        baseUrl = 'http://localhost:3000'
+      }
+    }
+    
+    // Asegurarse de que no tenga trailing slash
+    baseUrl = baseUrl.replace(/\/$/, '')
+    
     const redirectUri = `${baseUrl}/api/auth/twitter/login/callback`
+
+    // Log para debugging
+    console.log('Twitter OAuth - Base URL:', baseUrl)
+    console.log('Twitter OAuth - Redirect URI:', redirectUri)
+    console.log('Twitter OAuth - Client ID:', twitterClientId ? 'Set' : 'Missing')
 
     // Generar un state aleatorio para seguridad
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -27,7 +48,8 @@ export async function GET(request: NextRequest) {
       maxAge: 600 // 10 minutos
     })
 
-    const twitterScopes = ['tweet.read', 'tweet.write', 'users.read', 'offline.access']
+    // Scopes mínimos necesarios para login
+    const twitterScopes = ['tweet.read', 'users.read', 'offline.access']
     const authUrl = `https://twitter.com/i/oauth2/authorize?` +
       `response_type=code&` +
       `client_id=${twitterClientId}&` +
@@ -36,6 +58,8 @@ export async function GET(request: NextRequest) {
       `state=${state}&` +
       `code_challenge=challenge&` +
       `code_challenge_method=plain`
+
+    console.log('Twitter OAuth - Auth URL:', authUrl.replace(/client_id=[^&]+/, 'client_id=***'))
 
     return NextResponse.redirect(authUrl)
   } catch (error: any) {

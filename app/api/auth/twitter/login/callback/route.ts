@@ -44,8 +44,27 @@ export async function GET(request: NextRequest) {
       throw new Error('Twitter credentials not configured')
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    // Obtener la URL base - verificar tanto NEXT_PUBLIC_BASE_URL como construir desde request
+    let baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    
+    // Si no está configurado, intentar construir desde el request
+    if (!baseUrl) {
+      const protocol = request.headers.get('x-forwarded-proto') || 'https'
+      const host = request.headers.get('host') || request.headers.get('x-forwarded-host')
+      if (host) {
+        baseUrl = `${protocol}://${host}`
+      } else {
+        baseUrl = 'http://localhost:3000'
+      }
+    }
+    
+    // Asegurarse de que no tenga trailing slash
+    baseUrl = baseUrl.replace(/\/$/, '')
+    
     const redirectUri = `${baseUrl}/api/auth/twitter/login/callback`
+    
+    console.log('Twitter OAuth Callback - Base URL:', baseUrl)
+    console.log('Twitter OAuth Callback - Redirect URI:', redirectUri)
 
     // Intercambiar código por token
     const twitterTokenRes = await fetch('https://api.twitter.com/2/oauth2/token', {
@@ -66,7 +85,11 @@ export async function GET(request: NextRequest) {
     if (!twitterTokenRes.ok) {
       const errorText = await twitterTokenRes.text()
       console.error('Twitter token exchange error:', errorText)
-      throw new Error('Failed to exchange Twitter token')
+      console.error('Redirect URI used:', redirectUri)
+      console.error('Code received:', code ? 'yes' : 'no')
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=token_exchange_failed&details=${encodeURIComponent(errorText)}`
+      )
     }
 
     const tokenData = await twitterTokenRes.json()
@@ -236,6 +259,7 @@ export async function GET(request: NextRequest) {
     )
   } catch (error: any) {
     console.error('Error in Twitter login callback:', error)
+    console.error('Error stack:', error.stack)
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=${encodeURIComponent(error.message || 'oauth_error')}`
     )
