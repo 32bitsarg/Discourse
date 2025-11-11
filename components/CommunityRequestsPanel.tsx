@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { UserCheck, UserX, Clock, Users } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/context'
 
 interface CommunityRequestsPanelProps {
   subforumId: number
