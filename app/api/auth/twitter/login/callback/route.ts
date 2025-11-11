@@ -104,33 +104,60 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await twitterTokenRes.json()
 
-    // Obtener información del usuario de Twitter usando API v1.1 (gratuita)
-    // OAuth 2.0 funciona con API v1.1 también
-    const twitterUserRes = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
+    // Obtener información del usuario de Twitter
+    // Intentar primero con API v2 (incluida en el nivel gratuito para autenticación)
+    // Si falla, intentar con v1.1
+    let twitterData: any = null
+    let adaptedTwitterData: any = null
+    
+    // Intentar con API v2 primero (users/me está disponible en nivel gratuito para OAuth 2.0)
+    const twitterV2Res = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,username', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`
       }
     })
 
-    if (!twitterUserRes.ok) {
-      const errorText = await twitterUserRes.text()
-      console.error('Twitter API v1.1 error:', errorText)
-      throw new Error('Failed to fetch Twitter user info')
+    if (twitterV2Res.ok) {
+      const twitterV2Data = await twitterV2Res.json()
+      if (twitterV2Data.data) {
+        adaptedTwitterData = {
+          id: twitterV2Data.data.id,
+          username: twitterV2Data.data.username,
+          email: null, // API v2 no proporciona email sin scopes adicionales
+          profile_image_url: twitterV2Data.data.profile_image_url?.replace('_normal', '_400x400') || null,
+          profile_banner_url: null // API v2 no proporciona banner directamente
+        }
+        twitterData = twitterV2Data.data
+      }
     }
 
-    const twitterData = await twitterUserRes.json()
+    // Si v2 falla, intentar con v1.1 como fallback
+    if (!adaptedTwitterData) {
+      const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`
+        }
+      })
 
-    if (!twitterData || !twitterData.id_str) {
+      if (twitterV1Res.ok) {
+        const twitterV1Data = await twitterV1Res.json()
+        adaptedTwitterData = {
+          id: twitterV1Data.id_str,
+          username: twitterV1Data.screen_name,
+          email: twitterV1Data.email || null,
+          profile_image_url: twitterV1Data.profile_image_url_https?.replace('_normal', '_400x400') || null,
+          profile_banner_url: twitterV1Data.profile_banner_url || null
+        }
+        twitterData = twitterV1Data
+      } else {
+        const errorText = await twitterV1Res.text()
+        console.error('Twitter API v1.1 error:', errorText)
+        throw new Error('Failed to fetch Twitter user info')
+      }
+    }
+
+    if (!adaptedTwitterData || !adaptedTwitterData.id) {
       throw new Error('No user data from Twitter')
-    }
-    
-    // Adaptar datos de v1.1 a nuestro formato
-    const adaptedTwitterData = {
-      id: twitterData.id_str,
-      username: twitterData.screen_name,
-      email: twitterData.email || null,
-      profile_image_url: twitterData.profile_image_url_https?.replace('_normal', '_400x400') || null,
-      profile_banner_url: twitterData.profile_banner_url || null
     }
 
     const connection = await getConnection()
@@ -268,7 +295,7 @@ export async function GET(request: NextRequest) {
         ]
       )
 
-      // Importar avatar y banner (ya los tenemos de la API v1.1)
+      // Importar avatar y banner si están disponibles
       if (adaptedTwitterData.profile_image_url || adaptedTwitterData.profile_banner_url) {
         const updateFields: string[] = []
         const updateValues: any[] = []
@@ -286,6 +313,15 @@ export async function GET(request: NextRequest) {
             `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
             updateValues
           )
+        }
+      }
+      
+      // Si no tenemos banner (porque usamos v2), intentar obtenerlo de v1.1
+      if (!adaptedTwitterData.profile_banner_url && tokenData.access_token) {
+        try {
+          await importProfileMedia(userId, tokenData.access_token, 'twitter')
+        } catch (e) {
+          // Ignorar error, no crítico
         }
       }
     }
