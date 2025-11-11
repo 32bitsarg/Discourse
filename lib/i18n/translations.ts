@@ -87,6 +87,7 @@ export interface Translations {
     searchCommunities: string
     notFound: string
     backToHome: string
+    privateDescription: string
   }
   
   // Sidebar
@@ -141,6 +142,7 @@ export interface Translations {
     enterImageUrl: string
     enterVideoUrl: string
     writeHere: string
+    tipMarkdown: string
   }
   
   // Mobile
@@ -230,6 +232,7 @@ export const translations: Record<Language, Translations> = {
       searchCommunities: 'Search communities...',
       notFound: 'Community not found',
       backToHome: 'Back to home',
+      privateDescription: 'Private community: Users will need approval to join',
     },
     sidebar: {
       quickNav: 'Quick Navigation',
@@ -276,6 +279,7 @@ export const translations: Record<Language, Translations> = {
       enterImageUrl: 'Enter image URL:',
       enterVideoUrl: 'Enter video URL:',
       writeHere: 'Write your publication here...',
+      tipMarkdown: '💡 Tip: Use Markdown for formatting. Example: **bold**, *italic*, [link](url)',
     },
     mobile: {
       create: 'Create',
@@ -408,6 +412,7 @@ export const translations: Record<Language, Translations> = {
       enterImageUrl: 'Ingresa la URL de la imagen:',
       enterVideoUrl: 'Ingresa la URL del video:',
       writeHere: 'Escribe tu publicación aquí...',
+      tipMarkdown: '💡 Tip: Usa Markdown para formato. Ejemplo: **negrita**, *cursiva*, [enlace](url)',
     },
     mobile: {
       create: 'Crear',
