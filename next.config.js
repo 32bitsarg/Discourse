@@ -21,10 +21,6 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Deshabilitar Turbopack explícitamente para evitar conflictos
-  experimental: {
-    turbo: undefined,
-  },
   // Configuración para Capacitor (cuando se use)
   // output: 'export', // Descomentar cuando quieras generar build estático para Capacitor
   // images: {
