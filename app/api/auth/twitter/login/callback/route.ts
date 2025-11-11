@@ -13,16 +13,23 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error')
 
     if (error) {
+      console.error('Twitter OAuth Error from callback:', error)
+      const errorDescription = searchParams.get('error_description')
+      console.error('Twitter OAuth Error Description:', errorDescription)
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=${error}`
+        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=${error}&description=${encodeURIComponent(errorDescription || '')}`
       )
     }
 
     if (!code || !state) {
+      console.error('Missing OAuth params - Code:', code ? 'yes' : 'no', 'State:', state ? 'yes' : 'no')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=missing_params`
       )
     }
+    
+    console.log('Twitter OAuth Callback - Code received:', code ? 'yes' : 'no')
+    console.log('Twitter OAuth Callback - State received:', state ? 'yes' : 'no')
 
     // Verificar el state y obtener el code_verifier
     const cookieStore = await cookies()

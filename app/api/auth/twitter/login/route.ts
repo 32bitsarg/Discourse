@@ -32,11 +32,6 @@ export async function GET(request: NextRequest) {
     
     const redirectUri = `${baseUrl}/api/auth/twitter/login/callback`
 
-    // Log para debugging
-    console.log('Twitter OAuth - Base URL:', baseUrl)
-    console.log('Twitter OAuth - Redirect URI:', redirectUri)
-    console.log('Twitter OAuth - Client ID:', twitterClientId ? 'Set' : 'Missing')
-
     // Generar un state aleatorio para seguridad
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     
@@ -70,6 +65,12 @@ export async function GET(request: NextRequest) {
       `code_challenge=${codeChallenge}&` +
       `code_challenge_method=S256`
 
+    // Log para debugging
+    console.log('Twitter OAuth - Base URL:', baseUrl)
+    console.log('Twitter OAuth - Redirect URI:', redirectUri)
+    console.log('Twitter OAuth - Client ID:', twitterClientId ? 'Set' : 'Missing')
+    console.log('Twitter OAuth - Scopes:', twitterScopes.join(' '))
+    console.log('Twitter OAuth - Code Challenge Method: S256')
     console.log('Twitter OAuth - Auth URL:', authUrl.replace(/client_id=[^&]+/, 'client_id=***'))
 
     return NextResponse.redirect(authUrl)
