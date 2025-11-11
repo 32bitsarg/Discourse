@@ -2,7 +2,8 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: process.env.NODE_ENV === 'development' || process.env.VERCEL === '1',
+  buildExcludes: [/middleware-manifest.json$/],
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,
@@ -20,6 +21,10 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Deshabilitar Turbopack explícitamente para evitar conflictos
+  experimental: {
+    turbo: undefined,
+  },
   // Configuración para Capacitor (cuando se use)
   // output: 'export', // Descomentar cuando quieras generar build estático para Capacitor
   // images: {
