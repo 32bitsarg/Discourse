@@ -12,32 +12,17 @@ async function importProfileMedia(userId: number, accessToken: string, platform:
 
     switch (platform) {
       case 'twitter':
-        // Obtener información del usuario de Twitter
-        const twitterRes = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,url', {
+        // Usar API v1.1 (gratuita) en lugar de v2
+        const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
           headers: {
             'Authorization': `Bearer ${accessToken}`
           }
         })
         
-        if (twitterRes.ok) {
-          const twitterData = await twitterRes.json()
-          if (twitterData.data) {
-            avatarUrl = twitterData.data.profile_image_url?.replace('_normal', '_400x400') || null
-            // Intentar obtener banner con API v1.1
-            try {
-              const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`
-                }
-              })
-              if (twitterV1Res.ok) {
-                const twitterV1Data = await twitterV1Res.json()
-                bannerUrl = twitterV1Data.profile_banner_url || null
-              }
-            } catch (e) {
-              // Ignorar error de v1.1
-            }
-          }
+        if (twitterV1Res.ok) {
+          const twitterData = await twitterV1Res.json()
+          avatarUrl = twitterData.profile_image_url_https?.replace('_normal', '_400x400') || null
+          bannerUrl = twitterData.profile_banner_url || null
         }
         break
 

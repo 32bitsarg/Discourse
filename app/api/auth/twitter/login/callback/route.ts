@@ -104,22 +104,33 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await twitterTokenRes.json()
 
-    // Obtener información del usuario de Twitter
-    const twitterUserRes = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,username,email', {
+    // Obtener información del usuario de Twitter usando API v1.1 (gratuita)
+    // OAuth 2.0 funciona con API v1.1 también
+    const twitterUserRes = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`
       }
     })
 
     if (!twitterUserRes.ok) {
+      const errorText = await twitterUserRes.text()
+      console.error('Twitter API v1.1 error:', errorText)
       throw new Error('Failed to fetch Twitter user info')
     }
 
-    const twitterUser = await twitterUserRes.json()
-    const twitterData = twitterUser.data
+    const twitterData = await twitterUserRes.json()
 
-    if (!twitterData) {
+    if (!twitterData || !twitterData.id_str) {
       throw new Error('No user data from Twitter')
+    }
+    
+    // Adaptar datos de v1.1 a nuestro formato
+    const adaptedTwitterData = {
+      id: twitterData.id_str,
+      username: twitterData.screen_name,
+      email: twitterData.email || null,
+      profile_image_url: twitterData.profile_image_url_https?.replace('_normal', '_400x400') || null,
+      profile_banner_url: twitterData.profile_banner_url || null
     }
 
     const connection = await getConnection()
@@ -127,7 +138,7 @@ export async function GET(request: NextRequest) {
     // Buscar si ya existe un usuario con este Twitter ID
     const [existingConnections] = await connection.execute(
       'SELECT user_id FROM user_platform_connections WHERE platform = ? AND platform_user_id = ? AND is_active = TRUE',
-      ['twitter', twitterData.id]
+      ['twitter', adaptedTwitterData.id]
     )
 
     let userId: number
@@ -151,54 +162,54 @@ export async function GET(request: NextRequest) {
           tokenData.expires_in || 7200,
           userId,
           'twitter',
-          twitterData.id
+          adaptedTwitterData.id
         ]
       )
     } else {
       // Nuevo usuario - crear cuenta
       // Generar email si no está disponible (Twitter no siempre proporciona email)
-      let email = twitterData.email || `twitter_${twitterData.id}@temp.local`
+      let email = adaptedTwitterData.email || `twitter_${adaptedTwitterData.id}@temp.local`
       
       // Si el email es temporal, verificar que no exista otro usuario con ese patrón
-      if (email.includes('@temp.local')) {
-        const [emailCheck] = await connection.execute(
-          'SELECT id FROM users WHERE email = ?',
-          [email]
-        )
-        
-        if (Array.isArray(emailCheck) && emailCheck.length > 0) {
-          // Generar un email único
-          email = `twitter_${twitterData.id}_${Date.now()}@temp.local`
-        }
-      } else {
-        // Verificar si el email ya existe
-        const existingUser = await getUserByEmail(email)
-        if (existingUser) {
-          // Si existe, conectar la cuenta de Twitter a este usuario
-          userId = existingUser.id
-          
-          // Guardar la conexión
-          await connection.execute(
-            `INSERT INTO user_platform_connections 
-             (user_id, platform, platform_user_id, platform_username, access_token, refresh_token, token_expires_at, is_active, metadata)
-             VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), TRUE, ?)
-             ON DUPLICATE KEY UPDATE
-               access_token = VALUES(access_token),
-               refresh_token = VALUES(refresh_token),
-               token_expires_at = VALUES(token_expires_at),
-               is_active = TRUE,
-               updated_at = NOW()`,
-            [
-              userId,
-              'twitter',
-              twitterData.id,
-              twitterData.username,
-              tokenData.access_token,
-              tokenData.refresh_token || null,
-              tokenData.expires_in || 7200,
-              JSON.stringify(twitterData)
-            ]
+        if (email.includes('@temp.local')) {
+          const [emailCheck] = await connection.execute(
+            'SELECT id FROM users WHERE email = ?',
+            [email]
           )
+          
+          if (Array.isArray(emailCheck) && emailCheck.length > 0) {
+            // Generar un email único
+            email = `twitter_${adaptedTwitterData.id}_${Date.now()}@temp.local`
+          }
+        } else {
+          // Verificar si el email ya existe
+          const existingUser = await getUserByEmail(email)
+          if (existingUser) {
+            // Si existe, conectar la cuenta de Twitter a este usuario
+            userId = existingUser.id
+            
+            // Guardar la conexión
+            await connection.execute(
+              `INSERT INTO user_platform_connections 
+               (user_id, platform, platform_user_id, platform_username, access_token, refresh_token, token_expires_at, is_active, metadata)
+               VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), TRUE, ?)
+               ON DUPLICATE KEY UPDATE
+                 access_token = VALUES(access_token),
+                 refresh_token = VALUES(refresh_token),
+                 token_expires_at = VALUES(token_expires_at),
+                 is_active = TRUE,
+                 updated_at = NOW()`,
+              [
+                userId,
+                'twitter',
+                adaptedTwitterData.id,
+                adaptedTwitterData.username,
+                tokenData.access_token,
+                tokenData.refresh_token || null,
+                tokenData.expires_in || 7200,
+                JSON.stringify(adaptedTwitterData)
+              ]
+            )
 
           // Importar avatar y banner
           await importProfileMedia(userId, tokenData.access_token, 'twitter')
@@ -213,7 +224,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Crear nuevo usuario
-      const username = twitterData.username || `twitter_${twitterData.id}`
+      const username = adaptedTwitterData.username || `twitter_${adaptedTwitterData.id}`
       
       // Verificar que el username no exista, si existe agregar sufijo
       let finalUsername = username
@@ -248,17 +259,35 @@ export async function GET(request: NextRequest) {
         [
           userId,
           'twitter',
-          twitterData.id,
-          twitterData.username,
+          adaptedTwitterData.id,
+          adaptedTwitterData.username,
           tokenData.access_token,
           tokenData.refresh_token || null,
           tokenData.expires_in || 7200,
-          JSON.stringify(twitterData)
+          JSON.stringify(adaptedTwitterData)
         ]
       )
 
-      // Importar avatar y banner
-      await importProfileMedia(userId, tokenData.access_token, 'twitter')
+      // Importar avatar y banner (ya los tenemos de la API v1.1)
+      if (adaptedTwitterData.profile_image_url || adaptedTwitterData.profile_banner_url) {
+        const updateFields: string[] = []
+        const updateValues: any[] = []
+        if (adaptedTwitterData.profile_image_url) {
+          updateFields.push('avatar_url = ?')
+          updateValues.push(adaptedTwitterData.profile_image_url)
+        }
+        if (adaptedTwitterData.profile_banner_url) {
+          updateFields.push('banner_url = ?')
+          updateValues.push(adaptedTwitterData.profile_banner_url)
+        }
+        if (updateFields.length > 0) {
+          updateValues.push(userId)
+          await connection.execute(
+            `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+            updateValues
+          )
+        }
+      }
     }
 
     // Iniciar sesión
@@ -276,7 +305,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Función helper para importar avatar y banner
+// Función helper para importar avatar y banner usando API v1.1 (gratuita)
 async function importProfileMedia(userId: number, accessToken: string, platform: string) {
   const connection = await getConnection()
   
@@ -286,26 +315,14 @@ async function importProfileMedia(userId: number, accessToken: string, platform:
 
     switch (platform) {
       case 'twitter':
-        const twitterRes = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url', {
+        // Usar API v1.1 que es gratuita
+        const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         })
-        if (twitterRes.ok) {
-          const twitterData = await twitterRes.json()
-          if (twitterData.data) {
-            avatarUrl = twitterData.data.profile_image_url?.replace('_normal', '_400x400') || null
-            // Intentar obtener banner con API v1.1
-            try {
-              const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-              })
-              if (twitterV1Res.ok) {
-                const twitterV1Data = await twitterV1Res.json()
-                bannerUrl = twitterV1Data.profile_banner_url || null
-              }
-            } catch (e) {
-              // Ignorar error de v1.1
-            }
-          }
+        if (twitterV1Res.ok) {
+          const twitterData = await twitterV1Res.json()
+          avatarUrl = twitterData.profile_image_url_https?.replace('_normal', '_400x400') || null
+          bannerUrl = twitterData.profile_banner_url || null
         }
         break
     }

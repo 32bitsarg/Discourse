@@ -70,8 +70,8 @@ export async function GET(
 
         tokenData = await twitterTokenRes.json()
 
-        // Obtener información del usuario
-        const twitterUserRes = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,username', {
+        // Obtener información del usuario usando API v1.1 (gratuita)
+        const twitterUserRes = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
           headers: {
             'Authorization': `Bearer ${tokenData.access_token}`
           }
@@ -80,9 +80,9 @@ export async function GET(
         if (twitterUserRes.ok) {
           const twitterUser = await twitterUserRes.json()
           userInfo = {
-            platform_user_id: twitterUser.data.id,
-            platform_username: twitterUser.data.username,
-            metadata: twitterUser.data
+            platform_user_id: twitterUser.id_str,
+            platform_username: twitterUser.screen_name,
+            metadata: twitterUser
           }
         }
         break
@@ -178,14 +178,14 @@ async function importProfileMedia(userId: number, accessToken: string, platform:
 
     switch (platform) {
       case 'twitter':
-        const twitterRes = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url', {
+        // Usar API v1.1 (gratuita)
+        const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         })
-        if (twitterRes.ok) {
-          const twitterData = await twitterRes.json()
-          if (twitterData.data) {
-            avatarUrl = twitterData.data.profile_image_url?.replace('_normal', '_400x400') || null
-          }
+        if (twitterV1Res.ok) {
+          const twitterData = await twitterV1Res.json()
+          avatarUrl = twitterData.profile_image_url_https?.replace('_normal', '_400x400') || null
+          bannerUrl = twitterData.profile_banner_url || null
         }
         break
 
