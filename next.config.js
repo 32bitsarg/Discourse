@@ -1,22 +1,27 @@
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development' || process.env.VERCEL === '1',
-  buildExcludes: [/middleware-manifest.json$/],
-  runtimeCaching: [
-    {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'offlineCache',
-        expiration: {
-          maxEntries: 200,
+// Solo aplicar PWA si no estamos en Vercel (para evitar conflictos con Turbopack)
+const isVercel = process.env.VERCEL === '1'
+
+const withPWA = isVercel 
+  ? (config) => config // No aplicar PWA en Vercel
+  : require('next-pwa')({
+      dest: 'public',
+      register: true,
+      skipWaiting: true,
+      disable: process.env.NODE_ENV === 'development',
+      buildExcludes: [/middleware-manifest.json$/],
+      runtimeCaching: [
+        {
+          urlPattern: /^https?.*/,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'offlineCache',
+            expiration: {
+              maxEntries: 200,
+            },
+          },
         },
-      },
-    },
-  ],
-})
+      ],
+    })
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
