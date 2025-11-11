@@ -119,6 +119,9 @@ export interface Translations {
     addSocialLink: string
     save: string
     cancel: string
+    interests: string
+    selectInterests: string
+    interestsDescription: string
   }
   
   // Common
@@ -276,6 +279,9 @@ export const translations: Record<Language, Translations> = {
       addSocialLink: 'Add Social Link',
       save: 'Save',
       cancel: 'Cancel',
+      interests: 'Interests',
+      selectInterests: 'Select your interests',
+      interestsDescription: 'Select topics you\'re interested in to personalize your feed',
     },
     common: {
       loading: 'Loading...',
@@ -425,6 +431,9 @@ export const translations: Record<Language, Translations> = {
       addSocialLink: 'Agregar Enlace Social',
       save: 'Guardar',
       cancel: 'Cancelar',
+      interests: 'Intereses',
+      selectInterests: 'Selecciona tus intereses',
+      interestsDescription: 'Selecciona temas de tu interés para personalizar tu feed',
     },
     common: {
       loading: 'Cargando...',

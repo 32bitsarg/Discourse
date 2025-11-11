@@ -7,6 +7,7 @@ import Link from 'next/link'
 import PostContentRenderer from './PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
 import { useBehaviorTracking, useViewTracking } from '@/hooks/useBehaviorTracking'
+import SharePostButton from './SharePostButton'
 
 interface PostCardProps {
   id: string
@@ -276,20 +277,20 @@ export default function PostCard({
               <span className="hidden sm:inline">{comments} {t.post.comments}</span>
               <span className="sm:hidden">{comments}</span>
             </Link>
-            <button 
-              onClick={() => {
+            <SharePostButton
+              postId={postIdNum}
+              postTitle={title}
+              postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${id}`}
+              onShareComplete={() => {
                 if (!isNaN(postIdNum)) {
                   trackBehavior({
                     postId: postIdNum,
                     actionType: 'share',
+                    metadata: { source: 'postcard' },
                   })
                 }
               }}
-              className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm"
-            >
-              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{t.post.share}</span>
-            </button>
+            />
             <button 
               onClick={() => {
                 if (!isNaN(postIdNum)) {

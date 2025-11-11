@@ -77,7 +77,7 @@ export default function UserProfilePage() {
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">{t.user.notFound}</p>
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/feed')}
           className="mt-4 text-primary-600 hover:text-primary-700"
         >
           {t.community.backToHome}
@@ -92,7 +92,7 @@ export default function UserProfilePage() {
   return (
     <div className="space-y-4">
       {/* Botón volver */}
-      <Link href="/">
+      <Link href="/feed">
         <motion.div
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
           whileHover={{ x: -4 }}

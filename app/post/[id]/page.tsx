@@ -9,6 +9,7 @@ import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
 import { useViewTracking, useBehaviorTracking } from '@/hooks/useBehaviorTracking'
+import SharePostButton from '@/components/SharePostButton'
 
 export default function PostPage() {
   const { t } = useI18n()
@@ -252,20 +253,20 @@ export default function PostPage() {
                   <span className="hidden sm:inline">{post.comment_count} {t.post.comments}</span>
                   <span className="sm:hidden">{post.comment_count}</span>
                 </button>
-                <button 
-                  onClick={() => {
+                <SharePostButton
+                  postId={postIdNum || 0}
+                  postTitle={post?.title || ''}
+                  postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${postId}`}
+                  onShareComplete={() => {
                     if (postIdNum) {
                       trackBehavior({
                         postId: postIdNum,
                         actionType: 'share',
+                        metadata: { source: 'postpage' },
                       })
                     }
                   }}
-                  className="flex items-center gap-1 text-gray-600 hover:text-green-600 transition-colors text-xs sm:text-sm"
-                >
-                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{t.post.share}</span>
-                </button>
+                />
                 <button 
                   onClick={() => {
                     if (postIdNum) {

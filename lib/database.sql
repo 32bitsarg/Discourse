@@ -211,6 +211,73 @@ CREATE TABLE IF NOT EXISTS user_behavior (
   INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- External platform connections (Twitter, Instagram, etc.)
+CREATE TABLE IF NOT EXISTS user_platform_connections (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  platform VARCHAR(50) NOT NULL, -- 'twitter', 'instagram', 'facebook', 'linkedin', 'tiktok'
+  platform_user_id VARCHAR(255), -- ID del usuario en la plataforma externa
+  platform_username VARCHAR(255), -- Username en la plataforma externa
+  access_token TEXT, -- Token de acceso OAuth (encriptado en producción)
+  refresh_token TEXT, -- Token de refresh OAuth
+  token_expires_at TIMESTAMP NULL, -- Cuando expira el token
+  is_active BOOLEAN DEFAULT TRUE,
+  auto_share BOOLEAN DEFAULT FALSE, -- Compartir automáticamente posts
+  auto_sync BOOLEAN DEFAULT FALSE, -- Sincronizar contenido automáticamente
+  sync_frequency VARCHAR(20) DEFAULT 'daily', -- 'hourly', 'daily', 'weekly'
+  last_sync_at TIMESTAMP NULL,
+  metadata JSON, -- Información adicional de la plataforma
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_user_platform (user_id, platform),
+  INDEX idx_user (user_id),
+  INDEX idx_platform (platform),
+  INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Shared posts to external platforms
+CREATE TABLE IF NOT EXISTS post_shares (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT NOT NULL,
+  user_id INT NOT NULL,
+  platform VARCHAR(50) NOT NULL,
+  platform_post_id VARCHAR(255), -- ID del post en la plataforma externa
+  share_url VARCHAR(500), -- URL del post compartido
+  status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'success', 'failed'
+  error_message TEXT,
+  shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_post (post_id),
+  INDEX idx_user (user_id),
+  INDEX idx_platform (platform),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Imported content from external platforms
+CREATE TABLE IF NOT EXISTS imported_content (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  platform VARCHAR(50) NOT NULL,
+  platform_content_id VARCHAR(255) NOT NULL, -- ID del contenido en la plataforma externa
+  platform_content_url VARCHAR(500), -- URL original del contenido
+  post_id INT, -- ID del post creado aquí (si se importó como post)
+  content_type VARCHAR(50) NOT NULL, -- 'post', 'image', 'video', 'story'
+  title TEXT,
+  content TEXT,
+  media_urls JSON, -- Array de URLs de imágenes/videos
+  imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_synced_at TIMESTAMP NULL,
+  metadata JSON, -- Información adicional del contenido original
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL,
+  UNIQUE KEY unique_platform_content (platform, platform_content_id),
+  INDEX idx_user (user_id),
+  INDEX idx_platform (platform),
+  INDEX idx_post (post_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ============================================
 -- DATOS DE EJEMPLO (OPCIONAL)
 -- ============================================

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import InterestsManager from '@/components/InterestsManager'
+import PlatformConnections from '@/components/PlatformConnections'
 
 interface EditProfileModalProps {
   user: any
@@ -223,6 +225,16 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
                 <Plus className="w-4 h-4" />
               </button>
             </div>
+          </div>
+
+          {/* Interests */}
+          <div>
+            <InterestsManager />
+          </div>
+
+          {/* Platform Connections */}
+          <div>
+            <PlatformConnections />
           </div>
 
           {/* Projects */}
