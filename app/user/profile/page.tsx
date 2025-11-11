@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EditProfileModal from '@/components/EditProfileModal'
 import { useI18n } from '@/lib/i18n/context'
 
-export default function ProfileSettingsPage() {
+function ProfileSettingsContent() {
   const { t, language } = useI18n()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -96,6 +96,18 @@ export default function ProfileSettingsPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function ProfileSettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <ProfileSettingsContent />
+    </Suspense>
   )
 }
 
