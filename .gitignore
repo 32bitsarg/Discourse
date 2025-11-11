@@ -162,7 +162,7 @@ service-account.json
 *.backup
 *.old
 
-# Package manager lock files (opcional - algunos prefieren incluirlos)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+# Capacitor
+android/
+ios/
+.capacitor/

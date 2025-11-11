@@ -105,3 +105,25 @@ html {
   background: linear-gradient(180deg, #2563eb, #7c3aed);
 }
 
+/* Safe Area para iOS (notch y home indicator) */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevenir scroll horizontal en móviles */
+body {
+  overflow-x: hidden;
+}
+
+/* Mejorar touch targets en móviles */
+@media (max-width: 1023px) {
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
