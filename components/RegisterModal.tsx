@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Lock, User, UserPlus } from 'lucide-react'
+import { X, Mail, Lock, User, UserPlus, Twitter } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '@/lib/i18n/context'
 
@@ -83,6 +83,29 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
                 >
                   <X className="w-6 h-6" />
                 </button>
+              </div>
+
+              {/* Botón de Twitter/X */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = '/api/auth/twitter/login'
+                }}
+                className="w-full px-4 py-2.5 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-4"
+              >
+                <Twitter className="w-5 h-5" />
+                {t.language === 'es' ? 'Registrarse con X' : 'Sign up with X'}
+              </button>
+
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">
+                    {t.language === 'es' ? 'o' : 'or'}
+                  </span>
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
