@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
             JSON.stringify(content.metadata || {})
           ]
         )
-        results.push({ ...content, imported: true, post_id: postId })
+        results.push({ ...content, imported: true, updated: false, post_id: postId })
       }
     }
 
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       imported: results.filter(r => r.imported).length,
-      updated: results.filter(r => r.updated).length,
+      updated: results.filter(r => r.updated === true).length,
       content: results
     })
   } catch (error: any) {
