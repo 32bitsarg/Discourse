@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import PostFeed from '@/components/PostFeed'
+import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import FilterTabs from '@/components/FilterTabs'
 import { useI18n } from '@/lib/i18n/context'
@@ -13,7 +13,7 @@ function FeedContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [filter, setFilter] = useState('for-you')
-  const postFeedRef = useRef<{ refresh: () => void }>(null)
+  const postFeedRef = useRef<PostFeedRef>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
