@@ -40,17 +40,19 @@ export default function PostContentRenderer({ content }: PostContentRendererProp
       // Limpiar saltos de línea y espacios en URLs base64
       let cleanSrc = src.replace(/\s+/g, '').trim()
       
-      if (cleanSrc.startsWith('data:')) {
+      if (cleanSrc.startsWith('data:image/')) {
         // Base64 image - asegurar que esté completa y tenga el formato correcto
         if (cleanSrc.length > 100 && cleanSrc.includes('base64,')) { // Base64 mínimo razonable
+          // Escapar comillas dobles para evitar problemas en HTML
+          const escapedSrc = cleanSrc.replace(/"/g, '&quot;')
           const placeholder = `__IMAGE_PLACEHOLDER_${imagePlaceholders.length}__`
-          imagePlaceholders.push(`<div class="my-4"><img src="${cleanSrc}" alt="${alt || 'Imagen'}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: none;" /></div>`)
+          imagePlaceholders.push(`<div class="my-4"><img src="${escapedSrc}" alt="${(alt || 'Imagen').replace(/"/g, '&quot;')}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: 600px; object-fit: contain;" /></div>`)
           return placeholder
         }
-      } else if (cleanSrc && !cleanSrc.startsWith('<')) {
-        // URL image (no HTML)
+      } else if (cleanSrc && !cleanSrc.startsWith('<') && !cleanSrc.startsWith('data:')) {
+        // URL image (no HTML, no base64)
         const placeholder = `__IMAGE_PLACEHOLDER_${imagePlaceholders.length}__`
-        imagePlaceholders.push(`<div class="my-4"><img src="${cleanSrc}" alt="${alt || 'Imagen'}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: none;" /></div>`)
+        imagePlaceholders.push(`<div class="my-4"><img src="${cleanSrc.replace(/"/g, '&quot;')}" alt="${(alt || 'Imagen').replace(/"/g, '&quot;')}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: 600px; object-fit: contain;" /></div>`)
         return placeholder
       }
       return match // Si no cumple condiciones, devolver original
@@ -61,8 +63,9 @@ export default function PostContentRenderer({ content }: PostContentRendererProp
     html = html.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=\s]+/gs, (match) => {
       const cleanMatch = match.replace(/\s+/g, '').trim()
       if (cleanMatch.length > 100 && cleanMatch.includes('base64,')) {
+        const escapedMatch = cleanMatch.replace(/"/g, '&quot;')
         const placeholder = `__IMAGE_PLACEHOLDER_${imagePlaceholders.length}__`
-        imagePlaceholders.push(`<div class="my-4"><img src="${cleanMatch}" alt="Imagen" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: none;" /></div>`)
+        imagePlaceholders.push(`<div class="my-4"><img src="${escapedMatch}" alt="Imagen" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: 600px; object-fit: contain;" /></div>`)
         return placeholder
       }
       return match

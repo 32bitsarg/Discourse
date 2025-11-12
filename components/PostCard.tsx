@@ -8,6 +8,7 @@ import PostContentRenderer from './PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
 import { useBehaviorTracking, useViewTracking } from '@/hooks/useBehaviorTracking'
 import SharePostButton from './SharePostButton'
+import AdminBadge from './AdminBadge'
 
 interface PostCardProps {
   id: string
@@ -212,8 +213,10 @@ export default function PostCard({
             </Link>
             <span className="text-gray-600 hidden sm:inline">•</span>
             <span className="text-xs text-gray-500 hidden sm:inline">{t.post.postedBy}</span>
-            <Link href={`/user/${author}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate">
-              <span className="hidden sm:inline">u/</span>{author}
+            <Link href={`/user/${author}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate flex items-center gap-1">
+              <span className="hidden sm:inline">u/</span>
+              <span>{author}</span>
+              <AdminBadge username={author} />
             </Link>
             <span className="text-gray-400 hidden sm:inline">•</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>

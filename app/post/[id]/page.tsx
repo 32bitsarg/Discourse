@@ -10,6 +10,7 @@ import PostContentRenderer from '@/components/PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
 import { useViewTracking, useBehaviorTracking } from '@/hooks/useBehaviorTracking'
 import SharePostButton from '@/components/SharePostButton'
+import AdminBadge from '@/components/AdminBadge'
 
 export default function PostPage() {
   const { t } = useI18n()
@@ -221,8 +222,10 @@ export default function PostPage() {
                 </Link>
                 <span className="text-gray-600 hidden sm:inline">•</span>
                 <span className="text-xs text-gray-500 hidden sm:inline">{t.post.postedBy}</span>
-                <Link href={`/user/${post.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate">
-                  <span className="hidden sm:inline">u/</span>{post.author_username}
+                <Link href={`/user/${post.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate flex items-center gap-1">
+                  <span className="hidden sm:inline">u/</span>
+                  <span>{post.author_username}</span>
+                  <AdminBadge username={post.author_username} />
                 </Link>
                 <span className="text-gray-400 hidden sm:inline">•</span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
