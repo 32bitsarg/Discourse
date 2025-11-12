@@ -39,11 +39,12 @@ export default function AdminBadge({ username, role = 'admin' }: AdminBadgeProps
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${config.bgColor} ${config.textColor}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${config.bgColor} ${config.textColor}`}
       title={config.label}
+      style={{ height: '18px' }}
     >
-      <Check className="w-2.5 h-2.5" />
-      <span>{config.label}</span>
+      <Check className="w-2.5 h-2.5 flex-shrink-0" />
+      <span className="leading-none">{config.label}</span>
     </span>
   )
 }
