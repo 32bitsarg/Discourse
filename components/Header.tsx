@@ -1,8 +1,8 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect, useRef } from 'react'
-import { Menu, X, LogIn, UserPlus, User, LogOut, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Menu, X, LogIn, UserPlus, User, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
@@ -16,9 +16,7 @@ export default function Header() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [avatarErrors, setAvatarErrors] = useState<{ [key: number]: boolean }>({})
-  const userMenuRef = useRef<HTMLDivElement>(null)
 
   const navLinks = [
     { name: t.nav.home, href: '/feed' },
@@ -48,22 +46,6 @@ export default function Header() {
       .catch(() => {})
   }, [])
 
-  // Cerrar el menú del usuario al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false)
-      }
-    }
-
-    if (isUserMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isUserMenuOpen])
 
   const handleLogin = async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {
@@ -162,10 +144,9 @@ export default function Header() {
             {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
               {user ? (
-                <div className="relative" ref={userMenuRef}>
-                  <motion.button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                <Link href={`/user/${user.username}`}>
+                  <motion.div
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -184,54 +165,8 @@ export default function Header() {
                       </div>
                     )}
                     <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">{user.username}</span>
-                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-600 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {isUserMenuOpen && (
-                      <motion.div
-                        className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Link
-                          href={`/user/${user.username}`}
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          {user.avatar_url && !avatarErrors[user.id] ? (
-                            <img
-                              src={user.avatar_url}
-                              alt={user.username}
-                              className="w-5 h-5 rounded-full object-cover border border-gray-300"
-                              onError={() => setAvatarErrors(prev => ({ ...prev, [user.id]: true }))}
-                            />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-xs">
-                              {user.username.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div className="flex flex-col">
-                            <span className="font-medium">{user.username}</span>
-                            <span className="text-xs text-gray-500">{t.auth.profile}</span>
-                          </div>
-                        </Link>
-                        <button
-                          onClick={() => {
-                            handleLogout()
-                            setIsUserMenuOpen(false)
-                          }}
-                          className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-200"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          {t.auth.logout}
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                  </motion.div>
+                </Link>
               ) : (
                 <>
                   <motion.button

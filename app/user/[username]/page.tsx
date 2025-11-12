@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, User, Mail, Calendar, MessageSquare, MapPin, Globe, Github, Twitter, Linkedin, ExternalLink, Edit, Trash2, X } from 'lucide-react'
+import { ArrowLeft, User, Mail, Calendar, MessageSquare, MapPin, Globe, Github, Twitter, Linkedin, ExternalLink, Edit, Trash2, X, LogOut } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
 import FollowButton from '@/components/FollowButton'
 import EditProfileModal from '@/components/EditProfileModal'
@@ -192,13 +192,28 @@ export default function UserProfilePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {isOwnProfile ? (
-                    <button
-                      onClick={() => setShowEditModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>{t.user.editProfile}</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>{t.user.editProfile}</span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                            await fetch('/api/auth/logout', { method: 'POST' })
+                            router.push('/feed')
+                            router.refresh()
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>{t.auth.logout}</span>
+                      </button>
+                    </>
                   ) : (
                     <FollowButton username={username} onFollowChange={loadProfile} />
                   )}

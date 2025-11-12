@@ -71,29 +71,31 @@ export default function PostPage() {
   }, [post?.created_at])
 
   useEffect(() => {
-    if (!communitySlug || !postSlug) return
+    if (!communitySlug || !postSlug) {
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
-    fetch(`/api/posts/by-slug?community=${communitySlug}&slug=${postSlug}`)
+    fetch(`/api/posts/by-slug?community=${encodeURIComponent(communitySlug)}&slug=${encodeURIComponent(postSlug)}`)
       .then(async res => {
-        const data = await res.json()
         if (!res.ok) {
+          setLoading(false)
           return
         }
-        if (data.message) {
+        const data = await res.json()
+        if (data.message || !data.id) {
+          setLoading(false)
           return
         }
-        if (data.id) {
-          setPost(data)
-          setVoteCount(data.upvotes - data.downvotes)
-          setVote(data.userVote || null)
-          setEditTitle(data.title)
-          setEditContent(data.content)
-        }
+        setPost(data)
+        setVoteCount(data.upvotes - data.downvotes)
+        setVote(data.userVote || null)
+        setEditTitle(data.title)
+        setEditContent(data.content)
+        setLoading(false)
       })
       .catch(err => {
-      })
-      .finally(() => {
         setLoading(false)
       })
   }, [communitySlug, postSlug])

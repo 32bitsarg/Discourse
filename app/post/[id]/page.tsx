@@ -30,6 +30,7 @@ export default function PostPage() {
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   
   const postIdNum = postId ? parseInt(postId) : undefined
   const { trackBehavior } = useBehaviorTracking()
@@ -75,38 +76,38 @@ export default function PostPage() {
   }, [post?.created_at])
 
   useEffect(() => {
-    if (!postId) return
+    if (!postId || isRedirecting) return
 
     setLoading(true)
     fetch(`/api/posts/${postId}`)
       .then(async res => {
-        const data = await res.json()
         if (!res.ok) {
+          setLoading(false)
           return
         }
-        if (data.message) {
+        const data = await res.json()
+        if (data.message || !data.id) {
+          setLoading(false)
           return
         }
-        if (data.id) {
-          // Si el post tiene slug, redirigir a la URL amigable
-          if (data.slug && data.subforum_slug) {
-            router.replace(`/r/${data.subforum_slug}/${data.slug}`)
-            return
-          }
-          setPost(data)
-          setVoteCount(data.upvotes - data.downvotes)
-          setVote(data.userVote || null)
-          setEditTitle(data.title)
-          setEditContent(data.content)
-        } else {
+        // Si el post tiene slug, redirigir a la URL amigable
+        if (data.slug && data.subforum_slug) {
+          setIsRedirecting(true)
+          router.replace(`/r/${data.subforum_slug}/${data.slug}`)
+          return
         }
-      })
-      .catch(err => {
-      })
-      .finally(() => {
+        // Si no tiene slug, mostrar el post normalmente
+        setPost(data)
+        setVoteCount(data.upvotes - data.downvotes)
+        setVote(data.userVote || null)
+        setEditTitle(data.title)
+        setEditContent(data.content)
         setLoading(false)
       })
-  }, [postId, router])
+      .catch(err => {
+        setLoading(false)
+      })
+  }, [postId, router, isRedirecting])
 
   const handleEdit = async () => {
     if (!editTitle.trim() || !editContent.trim()) {
