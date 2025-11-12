@@ -6,9 +6,56 @@ import { getConnection } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
+    
+    // Si no hay usuario, devolver feed público normal
     if (!user) {
-      // Si no hay usuario, devolver feed normal
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const { searchParams } = new URL(request.url)
+      const page = parseInt(searchParams.get('page') || '1')
+      const limit = parseInt(searchParams.get('limit') || '10')
+      const offset = (page - 1) * limit
+
+      const connection = await getConnection()
+      
+      const [posts] = await connection.execute(
+        `SELECT 
+          p.id,
+          p.title,
+          p.content,
+          p.upvotes,
+          p.downvotes,
+          p.comment_count,
+          p.is_hot,
+          p.created_at,
+          p.subforum_id,
+          u.id as author_id,
+          u.username as author_username,
+          u.avatar_url as author_avatar,
+          s.name as subforum_name,
+          s.slug as subforum_slug
+        FROM posts p
+        INNER JOIN users u ON p.author_id = u.id
+        INNER JOIN subforums s ON p.subforum_id = s.id
+        WHERE s.is_public = TRUE
+        ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?`,
+        [limit, offset]
+      )
+
+      const [total] = await connection.execute(
+        'SELECT COUNT(*) as count FROM posts p INNER JOIN subforums s ON p.subforum_id = s.id WHERE s.is_public = TRUE',
+        []
+      )
+
+      const totalCount = Array.isArray(total) && total.length > 0
+        ? (total[0] as any).count
+        : 0
+
+      return NextResponse.json({
+        posts: Array.isArray(posts) ? posts : [],
+        hasMore: offset + limit < totalCount,
+        page,
+        total: totalCount
+      })
     }
 
     const { searchParams } = new URL(request.url)

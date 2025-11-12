@@ -50,6 +50,33 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
     
     try {
       const res = await fetch(url)
+      
+      if (!res.ok) {
+        // Si hay error, intentar con feed público
+        if (filter === 'for-you' || filter === 'following') {
+          const fallbackUrl = `/api/posts?filter=all&page=${pageNum}&limit=10`
+          const fallbackRes = await fetch(fallbackUrl)
+          const fallbackData = await fallbackRes.json()
+          if (fallbackData.posts) {
+            if (append) {
+              setPosts(prev => {
+                const existingIds = new Set(prev.map(p => p.id))
+                const newPosts = fallbackData.posts.filter((p: any) => !existingIds.has(p.id))
+                return [...prev, ...newPosts]
+              })
+            } else {
+              setPosts(fallbackData.posts || [])
+            }
+            const newHasMore = fallbackData.pagination?.hasMore ?? fallbackData.hasMore ?? false
+            setHasMore(newHasMore)
+            setPage(pageNum)
+            lastUpdateRef.current = Date.now()
+          }
+          return
+        }
+        throw new Error(`HTTP error! status: ${res.status}`)
+      }
+      
       const data = await res.json()
       
       if (data.posts) {
@@ -66,8 +93,19 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
         setHasMore(newHasMore)
         setPage(pageNum)
         lastUpdateRef.current = Date.now()
+      } else {
+        // Si no hay posts en la respuesta, establecer array vacío
+        if (!append) {
+          setPosts([])
+        }
+        setHasMore(false)
       }
     } catch (error) {
+      // En caso de error, establecer posts vacío si no es append
+      if (!append) {
+        setPosts([])
+      }
+      setHasMore(false)
     } finally {
       if (showLoading && !append) {
         setLoading(false)

@@ -39,7 +39,7 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   }, [activeFilter, onFilterChange])
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 sm:p-2 flex gap-1 sm:gap-2 overflow-x-auto">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 sm:p-2 flex gap-1 sm:gap-2 overflow-x-auto justify-center">
       {filters.map((filter) => {
         const Icon = filter.icon
         const isActive = activeFilter === filter.id
