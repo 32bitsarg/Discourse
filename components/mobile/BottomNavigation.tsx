@@ -20,7 +20,7 @@ interface NavItem {
 export default function BottomNavigation() {
   const { t } = useI18n()
   const pathname = usePathname()
-  const [user, setUser] = useState<{ id: number; username: string } | null>(null)
+  const [user, setUser] = useState<{ id: number; username: string; avatar_url?: string | null } | null>(null)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
 
@@ -120,6 +120,9 @@ export default function BottomNavigation() {
               )
             }
 
+            // Si es el perfil y hay usuario, mostrar avatar
+            const isProfileItem = item.href === '/user' && user
+
             return (
               <Link
                 key={item.name}
@@ -132,11 +135,45 @@ export default function BottomNavigation() {
                   whileTap={{ scale: 0.9 }}
                 >
                   <div className="relative">
-                    <Icon
-                      className={`w-6 h-6 transition-colors ${
-                        active ? 'text-primary-600' : 'text-gray-500'
-                      }`}
-                    />
+                    {isProfileItem && user ? (
+                      user.avatar_url ? (
+                        <img
+                          src={user.avatar_url}
+                          alt={user.username}
+                          className={`w-6 h-6 rounded-full object-cover border-2 transition-colors ${
+                            active ? 'border-primary-600' : 'border-gray-300'
+                          }`}
+                          onError={(e) => {
+                            // Si falla la imagen, mostrar inicial
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              const fallback = document.createElement('div')
+                              fallback.className = `w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white ${
+                                active ? 'bg-primary-600' : 'bg-gray-500'
+                              }`
+                              fallback.textContent = user.username.charAt(0).toUpperCase()
+                              parent.appendChild(fallback)
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white ${
+                            active ? 'bg-primary-600' : 'bg-gray-500'
+                          }`}
+                        >
+                          {user.username.charAt(0).toUpperCase()}
+                        </div>
+                      )
+                    ) : (
+                      <Icon
+                        className={`w-6 h-6 transition-colors ${
+                          active ? 'text-primary-600' : 'text-gray-500'
+                        }`}
+                      />
+                    )}
                     {item.badge && item.badge > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
                         {item.badge > 9 ? '9+' : item.badge}

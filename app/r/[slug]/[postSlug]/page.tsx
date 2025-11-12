@@ -17,7 +17,8 @@ export default function PostPage() {
   const { t } = useI18n()
   const params = useParams()
   const router = useRouter()
-  const postId = params.id as string
+  const communitySlug = params.slug as string
+  const postSlug = params.postSlug as string
 
   const [post, setPost] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -31,13 +32,11 @@ export default function PostPage() {
   const [editContent, setEditContent] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   
-  const postIdNum = postId ? parseInt(postId) : undefined
+  const postIdNum = post?.id ? parseInt(post.id) : undefined
   const { trackBehavior } = useBehaviorTracking()
   
-  // Trackear visualización del post completo
   useViewTracking(postIdNum)
 
-  // Función para calcular tiempo transcurrido
   const calculateTimeAgo = (date: string | Date): string => {
     const now = new Date()
     const postDate = new Date(date)
@@ -52,20 +51,17 @@ export default function PostPage() {
     return `${t.post.ago} ${days} ${days > 1 ? t.common.days : t.common.days.slice(0, -1)}`
   }
 
-  // Actualizar el tiempo dinámicamente
   useEffect(() => {
     if (!post?.created_at) return
     
     setTimeAgo(calculateTimeAgo(post.created_at))
     
-    // Para posts muy recientes (< 1 hora), actualizar cada 30 segundos
-    // Para posts más antiguos, actualizar cada minuto
     const postDate = new Date(post.created_at)
     const now = new Date()
     const diff = now.getTime() - postDate.getTime()
     const hours = diff / (1000 * 60 * 60)
     
-    const intervalTime = hours < 1 ? 30000 : 60000 // 30 segundos si < 1 hora, 1 minuto si >= 1 hora
+    const intervalTime = hours < 1 ? 30000 : 60000
     
     const interval = setInterval(() => {
       setTimeAgo(calculateTimeAgo(post.created_at))
@@ -75,10 +71,10 @@ export default function PostPage() {
   }, [post?.created_at])
 
   useEffect(() => {
-    if (!postId) return
+    if (!communitySlug || !postSlug) return
 
     setLoading(true)
-    fetch(`/api/posts/${postId}`)
+    fetch(`/api/posts/by-slug?community=${communitySlug}&slug=${postSlug}`)
       .then(async res => {
         const data = await res.json()
         if (!res.ok) {
@@ -88,17 +84,11 @@ export default function PostPage() {
           return
         }
         if (data.id) {
-          // Si el post tiene slug, redirigir a la URL amigable
-          if (data.slug && data.subforum_slug) {
-            router.replace(`/r/${data.subforum_slug}/${data.slug}`)
-            return
-          }
           setPost(data)
           setVoteCount(data.upvotes - data.downvotes)
           setVote(data.userVote || null)
           setEditTitle(data.title)
           setEditContent(data.content)
-        } else {
         }
       })
       .catch(err => {
@@ -106,7 +96,7 @@ export default function PostPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [postId, router])
+  }, [communitySlug, postSlug])
 
   const handleEdit = async () => {
     if (!editTitle.trim() || !editContent.trim()) {
@@ -116,7 +106,7 @@ export default function PostPage() {
 
     setIsEditing(true)
     try {
-      const res = await fetch(`/api/posts/${postId}`, {
+      const res = await fetch(`/api/posts/${post.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim() }),
@@ -128,8 +118,7 @@ export default function PostPage() {
       }
 
       setShowEditModal(false)
-      // Recargar el post
-      const res2 = await fetch(`/api/posts/${postId}`)
+      const res2 = await fetch(`/api/posts/by-slug?community=${communitySlug}&slug=${postSlug}`)
       const data = await res2.json()
       if (data.id) {
         setPost(data)
@@ -146,7 +135,7 @@ export default function PostPage() {
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const res = await fetch(`/api/posts/${postId}`, {
+      const res = await fetch(`/api/posts/${post.id}`, {
         method: 'DELETE',
       })
 
@@ -155,7 +144,6 @@ export default function PostPage() {
         throw new Error(error.message || 'Error al eliminar el post')
       }
 
-      // Redirigir al feed
       router.push('/feed')
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al eliminar el post')
@@ -164,7 +152,6 @@ export default function PostPage() {
   }
 
   const handleVote = async (type: 'up' | 'down') => {
-    // Trackear voto
     if (postIdNum) {
       trackBehavior({
         postId: postIdNum,
@@ -174,7 +161,7 @@ export default function PostPage() {
     }
     
     try {
-      const res = await fetch(`/api/posts/${postId}/vote`, {
+      const res = await fetch(`/api/posts/${post.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voteType: type }),
@@ -191,16 +178,13 @@ export default function PostPage() {
 
       const data = await res.json()
       
-      // Actualizar el estado del voto inmediatamente
       setVote(data.voteType)
       
-      // Recargar el post para obtener datos actualizados
-      const postRes = await fetch(`/api/posts/${postId}`)
+      const postRes = await fetch(`/api/posts/by-slug?community=${communitySlug}&slug=${postSlug}`)
       const postData = await postRes.json()
       if (postData.id) {
         setPost(postData)
         setVoteCount(postData.upvotes - postData.downvotes)
-        // Asegurar que el voto se mantenga sincronizado
         setVote(postData.userVote || data.voteType)
       }
     } catch (error) {
@@ -222,7 +206,7 @@ export default function PostPage() {
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">{t.common.error}</p>
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/feed')}
           className="mt-4 text-primary-600 hover:text-primary-700"
         >
           {t.community.backToHome}
@@ -365,7 +349,7 @@ export default function PostPage() {
                 <SharePostButton
                   postId={postIdNum || 0}
                   postTitle={post?.title || ''}
-                  postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${postId}`}
+                  postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${communitySlug}/${postSlug}`}
                   onShareComplete={() => {
                     if (postIdNum) {
                       trackBehavior({
@@ -396,7 +380,7 @@ export default function PostPage() {
         </motion.article>
 
         {/* Comments Section */}
-        <CommentsSection postId={parseInt(postId)} />
+        <CommentsSection postId={parseInt(post.id)} />
 
         {/* Modal de edición */}
         {showEditModal && (
@@ -440,44 +424,6 @@ export default function PostPage() {
                         placeholder={t.post.writePost}
                       />
                     </div>
-                    {/* Vista previa de imágenes */}
-                    {(() => {
-                      const imageMatches = editContent.match(/!\[([^\]]*)\]\(([^)]+)\)/g) || []
-                      const images: Array<{ alt: string; src: string }> = []
-                      
-                      imageMatches.forEach(match => {
-                        const imgMatch = match.match(/!\[([^\]]*)\]\(([^)]+)\)/)
-                        if (imgMatch) {
-                          const [, alt, src] = imgMatch
-                          const cleanSrc = src.replace(/\s+/g, '').trim()
-                          if (cleanSrc.startsWith('data:image/') || (cleanSrc && !cleanSrc.startsWith('<') && !cleanSrc.startsWith('data:'))) {
-                            images.push({ alt: alt || 'Imagen', src: cleanSrc })
-                          }
-                        }
-                      })
-                      
-                      if (images.length === 0) return null
-                      
-                      return (
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                          <p className="text-sm font-semibold text-gray-700 mb-2">Vista previa de imágenes:</p>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {images.map((img, idx) => (
-                              <div key={idx} className="relative group">
-                                <img
-                                  src={img.src}
-                                  alt={img.alt}
-                                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none'
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })()}
                   </div>
                 </div>
               </div>

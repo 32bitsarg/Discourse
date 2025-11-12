@@ -255,7 +255,8 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           content={post.content}
           author={post.author_username}
           forum={post.subforum_slug}
-          subforum={post.subforum_name}
+          subforum={post.subforum_slug}
+          postSlug={post.slug}
           upvotes={post.upvotes - post.downvotes}
           comments={post.comment_count}
           createdAt={post.created_at}

@@ -32,9 +32,11 @@ export async function GET(request: NextRequest) {
 
     // Buscar posts
     const [posts] = await pool.execute(
-      `SELECT DISTINCT p.id, p.title, p.content, p.author_id, u.username as author_username
+      `SELECT DISTINCT p.id, p.title, p.slug, p.content, p.author_id, 
+              u.username as author_username, s.slug as subforum_slug
        FROM posts p
        LEFT JOIN users u ON p.author_id = u.id
+       LEFT JOIN subforums s ON p.subforum_id = s.id
        WHERE p.title LIKE ? OR p.content LIKE ?
        ORDER BY p.created_at DESC
        LIMIT 5`,
@@ -60,6 +62,8 @@ export async function GET(request: NextRequest) {
         type: 'post' as const,
         id: p.id,
         title: p.title,
+        slug: p.slug,
+        subforum_slug: p.subforum_slug,
         content: p.content?.substring(0, 100) + (p.content?.length > 100 ? '...' : ''),
         author: p.author_username,
       })),

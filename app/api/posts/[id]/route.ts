@@ -35,6 +35,7 @@ export async function GET(
       SELECT 
         p.id,
         p.title,
+        p.slug,
         p.content,
         p.upvotes,
         p.downvotes,

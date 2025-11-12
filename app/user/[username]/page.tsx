@@ -321,7 +321,7 @@ export default function UserProfilePage() {
                     <span>•</span>
                     <span>{post.timeAgo}</span>
                   </div>
-                  <Link href={`/post/${post.id}`}>
+                  <Link href={post.slug && post.subforum_slug ? `/r/${post.subforum_slug}/${post.slug}` : `/post/${post.id}`}>
                     <h3 className="text-sm sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors mb-1.5 sm:mb-2 cursor-pointer line-clamp-2">
                       {post.title}
                     </h3>

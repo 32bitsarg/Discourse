@@ -13,6 +13,7 @@
     "migrate-social": "node scripts/migrate-social-integrations.js",
     "migrate-edit-tracking": "node scripts/migrate-edit-tracking.js",
     "migrate-community-images": "node scripts/migrate-community-images.js",
+    "migrate-post-slugs": "node scripts/migrate-post-slugs.js",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync",

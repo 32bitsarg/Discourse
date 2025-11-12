@@ -13,7 +13,26 @@ interface FilterTabsProps {
 export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   const { t } = useI18n()
   const isMobile = useIsMobile()
-  const [activeFilter, setActiveFilter] = useState('for-you')
+  const [user, setUser] = useState<{ id: number } | null>(null)
+  const [activeFilter, setActiveFilter] = useState('hot')
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser(data.user)
+        }
+      })
+      .catch(() => {})
+  }, [])
+  
+  // Cambiar a 'for-you' cuando el usuario se autentica
+  useEffect(() => {
+    if (user && activeFilter === 'hot') {
+      setActiveFilter('for-you')
+    }
+  }, [user])
 
   const allFilters = [
     { id: 'for-you', name: t.post.forYou, icon: Sparkles },
@@ -30,7 +49,13 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
     { id: 'hot', name: t.post.trends, icon: TrendingUp },
   ]
 
-  const filters = isMobile ? mobileFilters : allFilters
+  const guestFilters = [
+    { id: 'hot', name: t.post.trends, icon: TrendingUp },
+    { id: 'all', name: t.post.all, icon: Home },
+    { id: 'new', name: t.post.new, icon: Zap },
+  ]
+
+  const filters = !user ? guestFilters : (isMobile ? mobileFilters : allFilters)
 
   useEffect(() => {
     if (onFilterChange) {

@@ -78,7 +78,11 @@ export default function SearchBar() {
     } else if (result.type === 'user') {
       router.push(`/user/${result.username}`)
     } else if (result.type === 'post') {
-      router.push(`/post/${result.id}`)
+      if (result.slug && result.subforum_slug) {
+        router.push(`/r/${result.subforum_slug}/${result.slug}`)
+      } else {
+        router.push(`/post/${result.id}`)
+      }
     }
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import pool from '@/lib/db'
 import { invalidateKeys } from '@/lib/redis'
+import { generateSlug, ensureUniqueSlug } from '@/lib/utils/slug'
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el subforum existe
     const [subforums] = await pool.execute(
-      'SELECT id, name FROM subforums WHERE id = ?',
+      'SELECT id, name, slug FROM subforums WHERE id = ?',
       [subforumId]
     ) as any[]
 
@@ -39,10 +40,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear el post
+    const subforum = subforums[0]
+
+    // Generar slug único para el post
+    const baseSlug = generateSlug(finalTitle)
+    const uniqueSlug = await ensureUniqueSlug(
+      baseSlug,
+      async (slug) => {
+        const [existing] = await pool.execute(
+          'SELECT id FROM posts WHERE slug = ?',
+          [slug]
+        ) as any[]
+        return existing.length > 0
+      }
+    )
+
+    // Crear el post con slug
     const [result] = await pool.execute(
-      'INSERT INTO posts (subforum_id, author_id, title, content) VALUES (?, ?, ?, ?)',
-      [subforumId, user.id, finalTitle, content]
+      'INSERT INTO posts (subforum_id, author_id, title, slug, content) VALUES (?, ?, ?, ?, ?)',
+      [subforumId, user.id, finalTitle, uniqueSlug, content]
     ) as any
 
     // Actualizar contador de posts en el subforum
@@ -64,7 +80,9 @@ export async function POST(request: NextRequest) {
       message: 'Post creado exitosamente',
       post: {
         id: result.insertId,
-        title,
+        title: finalTitle,
+        slug: uniqueSlug,
+        subforumSlug: subforum.slug,
         content,
         subforumId,
       },

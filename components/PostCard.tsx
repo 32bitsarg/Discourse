@@ -20,6 +20,7 @@ interface PostCardProps {
   author: string
   forum: string
   subforum?: string
+  postSlug?: string
   upvotes: number
   comments: number
   createdAt: string | Date
@@ -40,6 +41,7 @@ export default function PostCard({
   author,
   forum,
   subforum,
+  postSlug,
   upvotes,
   comments,
   createdAt,
@@ -292,7 +294,7 @@ export default function PostCard({
 
           {/* Title */}
           <Link 
-            href={`/post/${id}`}
+            href={postSlug && subforum ? `/r/${subforum}/${postSlug}` : `/post/${id}`}
             onClick={() => {
               if (!isNaN(postIdNum)) {
                 trackBehavior({
@@ -318,7 +320,7 @@ export default function PostCard({
           <div className="flex items-center justify-between mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5 sm:gap-4 flex-wrap">
               <Link
-                href={`/post/${id}`}
+                href={postSlug && subforum ? `/r/${subforum}/${postSlug}` : `/post/${id}`}
                 onClick={() => {
                   if (!isNaN(postIdNum)) {
                     trackBehavior({
@@ -337,7 +339,7 @@ export default function PostCard({
               <SharePostButton
                 postId={postIdNum}
                 postTitle={title}
-                postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${id}`}
+                postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}${postSlug && subforum ? `/r/${subforum}/${postSlug}` : `/post/${id}`}`}
                 onShareComplete={() => {
                   if (!isNaN(postIdNum)) {
                     trackBehavior({

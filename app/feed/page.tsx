@@ -12,7 +12,7 @@ function FeedContent() {
   const { t, language } = useI18n()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [filter, setFilter] = useState('for-you')
+  const [filter, setFilter] = useState('hot')
   const postFeedRef = useRef<PostFeedRef>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)

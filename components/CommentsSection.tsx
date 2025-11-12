@@ -214,86 +214,86 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
     return (
       <motion.div
-        className={`${depth > 0 ? 'ml-8 mt-2' : ''} border-l-2 border-gray-200 pl-4`}
+        className={`${depth > 0 ? 'ml-4 sm:ml-8 mt-1 sm:mt-2' : ''} border-l-2 border-gray-200 pl-2 sm:pl-4`}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        <div className="flex gap-3">
+        <div className="flex gap-1.5 sm:gap-3">
           {/* Vote buttons */}
-          <div className="flex flex-col items-center pt-1 gap-1">
+          <div className="flex flex-col items-center pt-0.5 sm:pt-1 gap-0.5 sm:gap-1">
             <button
               onClick={() => setVote(vote === 'up' ? null : 'up')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 vote === 'up' 
                   ? 'bg-green-100 text-green-600 hover:bg-green-200' 
                   : 'text-gray-400 hover:bg-gray-100'
               }`}
               title="Me gusta"
             >
-              <ThumbsUp className={`w-3 h-3 ${vote === 'up' ? 'fill-current' : ''}`} />
+              <ThumbsUp className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${vote === 'up' ? 'fill-current' : ''}`} />
             </button>
-            <span className={`text-xs font-semibold py-0.5 ${
+            <span className={`text-[10px] sm:text-xs font-semibold py-0.5 leading-tight ${
               vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-600'
             }`}>
               {voteCount}
             </span>
             <button
               onClick={() => setVote(vote === 'down' ? null : 'down')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 vote === 'down' 
                   ? 'bg-red-100 text-red-600 hover:bg-red-200' 
                   : 'text-gray-400 hover:bg-gray-100'
               }`}
               title="No me gusta"
             >
-              <ThumbsDown className={`w-3 h-3 ${vote === 'down' ? 'fill-current' : ''}`} />
+              <ThumbsDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${vote === 'down' ? 'fill-current' : ''}`} />
             </button>
           </div>
 
           {/* Content */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-xs font-semibold text-gray-700">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1 flex-wrap">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-700 truncate">
                 u/{comment.author_username}
               </span>
-              <span className="text-xs text-gray-500">{timeAgo}</span>
+              <span className="text-[10px] sm:text-xs text-gray-500">{timeAgo}</span>
               {comment.edited_at && (
                 <>
                   <span className="text-gray-400">•</span>
-                  <span className="text-xs text-gray-500 italic">
+                  <span className="text-[10px] sm:text-xs text-gray-500 italic">
                     {t.post.edited} {new Date(comment.edited_at).toLocaleDateString()}
                   </span>
                 </>
               )}
               {(comment.canEdit || comment.canDelete) && (
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-1 sm:gap-2 ml-auto">
                   {comment.canEdit && (
                     <button
                       onClick={() => {
                         setEditContent(comment.content)
                         setShowEditModal(true)
                       }}
-                      className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
+                      className="text-[10px] sm:text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-0.5 sm:gap-1"
                       title={t.post.edit}
                     >
-                      <Edit className="w-3 h-3" />
+                      <Edit className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     </button>
                   )}
                   {comment.canDelete && (
                     <button
                       onClick={() => setShowDeleteModal(true)}
-                      className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                      className="text-[10px] sm:text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-0.5 sm:gap-1"
                       title={t.post.delete}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     </button>
                   )}
                 </div>
               )}
             </div>
-            <p className="text-sm text-gray-700 mb-2">{comment.content}</p>
+            <p className="text-xs sm:text-sm text-gray-700 mb-1 sm:mb-2 break-words">{comment.content}</p>
             {depth < 3 && (
-              <button className="text-xs text-gray-500 hover:text-gray-700">
+              <button className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700">
                 Responder
               </button>
             )}
@@ -375,7 +375,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-1 sm:mt-2 space-y-1 sm:space-y-2">
             {comment.replies.map((reply) => (
               <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
             ))}
@@ -387,37 +387,37 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
   return (
     <motion.div
-      className="bg-white rounded-lg border border-gray-200 shadow-sm p-6"
+      className="bg-white rounded-lg border border-gray-200 shadow-sm p-2 sm:p-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <MessageCircle className="w-5 h-5 text-primary-600" />
-        <h2 className="text-lg font-bold text-gray-900">
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+        <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+        <h2 className="text-sm sm:text-lg font-bold text-gray-900">
           {t.post.comments} ({comments.length})
         </h2>
       </div>
 
       {/* Form para nuevo comentario - Solo visible si hay usuario logueado */}
       {user && (
-        <form onSubmit={handleSubmit} className="mb-6">
+        <form onSubmit={handleSubmit} className="mb-3 sm:mb-6">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder={t.post.writeComment}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none mb-2"
+            className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none mb-2"
             required
           />
           <div className="flex justify-end">
             <motion.button
               type="submit"
               disabled={!newComment.trim() || submitting}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
               whileHover={{ scale: submitting ? 1 : 1.02 }}
               whileTap={{ scale: submitting ? 1 : 0.98 }}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {submitting ? t.post.commenting : t.post.comment}
             </motion.button>
           </div>
@@ -426,7 +426,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       
       {/* Mensaje para usuarios no logueados */}
       {!user && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-600">
+        <div className="mb-3 sm:mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg text-center text-xs sm:text-sm text-gray-600">
           <Link href="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
             {t.auth.signIn}
           </Link>
@@ -436,22 +436,22 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
       {/* Lista de comentarios */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-full mb-1"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+              <div className="h-3 sm:h-4 bg-gray-200 rounded w-full mb-1"></div>
+              <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
             </div>
           ))}
         </div>
       ) : comments.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-          <p>{t.post.comments}</p>
+        <div className="text-center py-4 sm:py-8 text-gray-500">
+          <MessageCircle className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-gray-300" />
+          <p className="text-xs sm:text-base">{t.post.comments}</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-4">
           {comments.map((comment) => (
             <CommentItem key={comment.id} comment={comment} />
           ))}

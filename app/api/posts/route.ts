@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         p.id,
         p.title,
+        p.slug,
         p.content,
         p.upvotes,
         p.downvotes,
@@ -83,8 +84,8 @@ export async function GET(request: NextRequest) {
 
     // Aplicar filtros y ordenamiento
     if (filter === 'hot') {
-      query += ' AND p.is_hot = TRUE'
-      query += ' ORDER BY p.created_at DESC'
+      // Hot: ordenar por upvotes (me gusta) descendente, solo comunidades públicas
+      query += ' ORDER BY p.upvotes DESC, p.created_at DESC'
     } else if (filter === 'new') {
       query += ' ORDER BY p.created_at DESC'
     } else if (filter === 'top') {
@@ -195,9 +196,7 @@ export async function GET(request: NextRequest) {
           }
         }
         
-        if (filter === 'hot') {
-          countQuery += ' AND p.is_hot = TRUE'
-        }
+        // Para 'hot' no necesitamos filtrar por is_hot, solo ordenamos por upvotes
         
         const [countResult] = await pool.execute(countQuery, countParams) as any[]
         totalCount = countResult[0]?.total || 0
