@@ -98,6 +98,31 @@ async function migrate() {
       }
     }
 
+    // Agregar campo name_changed_at para rastrear cambios de nombre
+    try {
+      const [nameChangeColumns] = await connection.execute(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'subforums' AND COLUMN_NAME = 'name_changed_at'
+      `, [process.env.DB_NAME || 'discourse'])
+      
+      if (Array.isArray(nameChangeColumns) && nameChangeColumns.length === 0) {
+        await connection.execute(`
+          ALTER TABLE subforums 
+          ADD COLUMN name_changed_at TIMESTAMP NULL DEFAULT NULL
+        `)
+        console.log('✅ Campo name_changed_at agregado a subforums')
+      } else {
+        console.log('ℹ️  Campo name_changed_at ya existe')
+      }
+    } catch (error) {
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log('⚠️  Campo name_changed_at ya existe, omitiendo...')
+      } else {
+        throw error
+      }
+    }
+
     console.log('\n✅ Migración completada!')
     await connection.end()
   } catch (error) {

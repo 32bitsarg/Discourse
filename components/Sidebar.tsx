@@ -283,7 +283,7 @@ export default function Sidebar() {
                         >
                           {community.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium truncate group-hover:text-primary-600">
+                        <span className="font-medium truncate">
                           r/{community.name}
                         </span>
                         {isAdmin && (

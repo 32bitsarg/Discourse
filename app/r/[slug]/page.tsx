@@ -4,11 +4,12 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, Users, MessageSquare, Lock, Globe } from 'lucide-react'
+import { ArrowLeft, Users, MessageSquare, Lock, Globe, Edit } from 'lucide-react'
 import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import JoinCommunityButton from '@/components/JoinCommunityButton'
 import CommunityRequestsPanel from '@/components/CommunityRequestsPanel'
+import EditCommunityModal from '@/components/EditCommunityModal'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function CommunityPage() {
@@ -20,6 +21,8 @@ export default function CommunityPage() {
   const [community, setCommunity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userMembership, setUserMembership] = useState<{ isMember: boolean; role?: string } | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: number; username: string } | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
   const postFeedRef = useRef<PostFeedRef>(null)
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function CommunityPage() {
           
           // Verificar membresía del usuario
           if (authData.user) {
+            setCurrentUser(authData.user)
             fetch(`/api/subforums/${found.id}/members/status`)
               .then(res => res.json())
               .then(membershipData => {
@@ -172,7 +176,17 @@ export default function CommunityPage() {
                 <p className="text-sm sm:text-base text-gray-700 mt-3">{community.description}</p>
               )}
             </div>
-            <div className="sm:ml-4 flex-shrink-0">
+            <div className="sm:ml-4 flex-shrink-0 flex items-center gap-2">
+              {currentUser && currentUser.id === community.creator_id && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm font-medium"
+                  title="Editar comunidad"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="hidden sm:inline">Editar</span>
+                </button>
+              )}
               <JoinCommunityButton
                 subforumId={community.id}
                 isPublic={community.is_public}
@@ -222,6 +236,39 @@ export default function CommunityPage() {
 
             {/* Posts de la comunidad */}
             <PostFeed ref={postFeedRef} filter="all" subforumId={parseInt(community.id)} />
+
+            {/* Modal de edición */}
+            {showEditModal && community && (
+              <EditCommunityModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                community={{
+                  id: community.id,
+                  name: community.name,
+                  description: community.description || '',
+                  image_url: community.image_url,
+                  banner_url: community.banner_url,
+                  name_changed_at: community.name_changed_at,
+                }}
+                onSave={() => {
+                  // Recargar la comunidad
+                  fetch('/api/subforums?t=' + Date.now())
+                    .then(res => res.json())
+                    .then(data => {
+                      const found = data.subforums?.find((s: any) => s.slug === slug)
+                      if (found) {
+                        const communityWithImages = {
+                          ...found,
+                          image_url: found.image_url || null,
+                          banner_url: found.banner_url || null,
+                        }
+                        setCommunity(communityWithImages)
+                      }
+                    })
+                    .catch(() => {})
+                }}
+              />
+            )}
       </div>
   )
 }

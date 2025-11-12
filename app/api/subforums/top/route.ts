@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
         s.is_public,
         s.requires_approval,
         s.created_at,
+        s.name_changed_at,
+        s.creator_id,
         u.username as creator_username,
         -- Posts del último día
         (SELECT COUNT(*) 
