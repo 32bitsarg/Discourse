@@ -50,7 +50,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, following: true })
   } catch (error: any) {
-    console.error('Error following user:', error)
     if (error.code === 'ER_DUP_ENTRY') {
       return NextResponse.json({ error: 'Already following' }, { status: 400 })
     }
@@ -95,7 +94,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, following: false })
   } catch (error: any) {
-    console.error('Error unfollowing user:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -153,7 +151,6 @@ export async function GET(
       following_count: Array.isArray(following) && following.length > 0 ? (following[0] as any).count : 0,
     })
   } catch (error: any) {
-    console.error('Error checking follow status:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

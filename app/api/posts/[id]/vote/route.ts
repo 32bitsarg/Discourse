@@ -103,7 +103,6 @@ export async function POST(
       })
     }
   } catch (error) {
-    console.error('Vote error:', error)
     return NextResponse.json(
       { message: 'Error al registrar el voto' },
       { status: 500 }

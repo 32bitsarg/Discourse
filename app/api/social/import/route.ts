@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
       })) : []
     })
   } catch (error: any) {
-    console.error('Error fetching imported content:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -201,7 +200,6 @@ export async function POST(request: NextRequest) {
       content: results
     })
   } catch (error: any) {
-    console.error('Error importing content:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -241,11 +239,8 @@ async function importFromTwitter(accessToken: string): Promise<Array<any>> {
     // API v1.1 - OAuth 2.0 Bearer token funciona con algunos endpoints v1.1
     // Nota: Para obtener tweets del usuario necesitamos OAuth 1.0a o usar user_timeline
     // Por ahora, retornamos array vacío ya que la importación de contenido no es crítica
-    // y requiere OAuth 1.0a que es más complejo
-    console.log('Twitter content import - Using v1.1 would require OAuth 1.0a for user timeline')
     return []
   } catch (error: any) {
-    console.error('Error importing from Twitter:', error)
     return []
   }
 }
@@ -257,7 +252,6 @@ async function importFromInstagram(accessToken: string): Promise<Array<any>> {
     const response = await fetch(`https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,permalink,timestamp&access_token=${accessToken}&limit=10`)
 
     if (!response.ok) {
-      console.error('Instagram API error:', await response.text())
       return []
     }
 
@@ -278,7 +272,6 @@ async function importFromInstagram(accessToken: string): Promise<Array<any>> {
       }
     }))
   } catch (error: any) {
-    console.error('Error importing from Instagram:', error)
     return []
   }
 }
@@ -289,7 +282,6 @@ async function importFromFacebook(accessToken: string): Promise<Array<any>> {
     const response = await fetch(`https://graph.facebook.com/v18.0/me/posts?fields=id,message,created_time,permalink_url&access_token=${accessToken}&limit=10`)
 
     if (!response.ok) {
-      console.error('Facebook API error:', await response.text())
       return []
     }
 
@@ -308,7 +300,6 @@ async function importFromFacebook(accessToken: string): Promise<Array<any>> {
       }
     }))
   } catch (error: any) {
-    console.error('Error importing from Facebook:', error)
     return []
   }
 }

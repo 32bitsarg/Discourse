@@ -50,7 +50,6 @@ export async function GET(
 
     return NextResponse.redirect(authUrl)
   } catch (error: any) {
-    console.error('Error initiating OAuth:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -67,7 +67,6 @@ export async function POST(request: NextRequest) {
         }
       )
     } catch (error: any) {
-      console.error('Error sharing to platform:', error)
       shareResult = {
         success: false,
         error: error.message || 'Failed to share to platform'
@@ -107,7 +106,6 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error: any) {
-    console.error('Error sharing post:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

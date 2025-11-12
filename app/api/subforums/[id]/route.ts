@@ -113,7 +113,6 @@ export async function PUT(
 
     return NextResponse.json({ message: 'Comunidad actualizada exitosamente' })
   } catch (error) {
-    console.error('Update subforum error:', error)
     return NextResponse.json(
       { message: 'Error al actualizar la comunidad' },
       { status: 500 }

@@ -120,7 +120,7 @@ export default function Sidebar() {
           {t.sidebar.quickNav}
         </h3>
         <div className="space-y-2">
-          <Link href="/">
+          <Link href="/feed">
             <motion.div
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group cursor-pointer"
               whileHover={{ x: 4 }}
@@ -129,7 +129,7 @@ export default function Sidebar() {
               <span className="text-sm font-medium">{t.nav.home}</span>
             </motion.div>
           </Link>
-          <Link href="/?filter=hot">
+          <Link href="/feed?filter=hot">
             <motion.div
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group cursor-pointer"
               whileHover={{ x: 4 }}
@@ -138,7 +138,7 @@ export default function Sidebar() {
               <span className="text-sm font-medium">{t.nav.trends}</span>
             </motion.div>
           </Link>
-          <Link href="/?filter=new">
+          <Link href="/feed?filter=new">
             <motion.div
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group cursor-pointer"
               whileHover={{ x: 4 }}
@@ -198,9 +198,8 @@ export default function Sidebar() {
                         src={community.image_url}
                         alt={community.name}
                         className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-gray-200"
-                        onError={(e) => {
-                          // Si falla la imagen, ocultar y mostrar el fallback
-                          (e.target as HTMLImageElement).style.display = 'none'
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
                           const fallback = (e.target as HTMLImageElement).nextElementSibling as HTMLElement
                           if (fallback) {
                             fallback.style.display = 'flex'
@@ -258,10 +257,16 @@ export default function Sidebar() {
                 const isMod = community.role === 'moderator'
                 
                 return (
-                  <Link key={community.id} href={`/r/${community.slug}`} className="no-underline">
+                  <Link 
+                    key={community.id} 
+                    href={`/r/${community.slug}`} 
+                    className="no-underline block"
+                    style={{ textDecoration: 'none' }}
+                  >
                     <motion.div
-                      className="flex items-center justify-between px-2 py-2 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors group cursor-pointer"
+                      className="flex items-center justify-between px-2 py-2 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                       whileHover={{ x: 2 }}
+                      style={{ textDecoration: 'none' }}
                     >
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {community.image_url ? (

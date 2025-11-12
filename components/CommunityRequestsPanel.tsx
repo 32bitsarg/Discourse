@@ -28,7 +28,6 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
         setRequests(data.requests || [])
       }
     } catch (error) {
-      console.error('Error loading requests:', error)
     } finally {
       setLoading(false)
     }

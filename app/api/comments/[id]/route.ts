@@ -66,7 +66,6 @@ export async function PUT(
 
     return NextResponse.json({ message: 'Comentario actualizado exitosamente' })
   } catch (error) {
-    console.error('Update comment error:', error)
     return NextResponse.json(
       { message: 'Error al actualizar el comentario' },
       { status: 500 }
@@ -134,7 +133,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Comentario eliminado exitosamente' })
   } catch (error) {
-    console.error('Delete comment error:', error)
     return NextResponse.json(
       { message: 'Error al eliminar el comentario' },
       { status: 500 }

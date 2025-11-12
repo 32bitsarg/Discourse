@@ -49,7 +49,6 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
         alert(t.common.error)
       }
     } catch (error) {
-      console.error('Error saving profile:', error)
       alert(t.common.error)
     } finally {
       setLoading(false)

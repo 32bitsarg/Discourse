@@ -13,23 +13,17 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error')
 
     if (error) {
-      console.error('Twitter OAuth Error from callback:', error)
       const errorDescription = searchParams.get('error_description')
-      console.error('Twitter OAuth Error Description:', errorDescription)
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=${error}&description=${encodeURIComponent(errorDescription || '')}`
       )
     }
 
     if (!code || !state) {
-      console.error('Missing OAuth params - Code:', code ? 'yes' : 'no', 'State:', state ? 'yes' : 'no')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=missing_params`
       )
     }
-    
-    console.log('Twitter OAuth Callback - Code received:', code ? 'yes' : 'no')
-    console.log('Twitter OAuth Callback - State received:', state ? 'yes' : 'no')
 
     // Verificar el state y obtener el code_verifier
     const cookieStore = await cookies()
@@ -37,14 +31,12 @@ export async function GET(request: NextRequest) {
     const codeVerifier = cookieStore.get('twitter_oauth_code_verifier')?.value
     
     if (!savedState || savedState !== state) {
-      console.error('Invalid state - possible CSRF attack')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=invalid_state`
       )
     }
 
     if (!codeVerifier) {
-      console.error('Missing code_verifier')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=missing_code_verifier`
       )
@@ -79,11 +71,7 @@ export async function GET(request: NextRequest) {
     baseUrl = baseUrl.replace(/\/$/, '')
     
     const redirectUri = `${baseUrl}/api/auth/twitter/login/callback`
-    
-    console.log('Twitter OAuth Callback - Base URL:', baseUrl)
-    console.log('Twitter OAuth Callback - Redirect URI:', redirectUri)
 
-    // Intercambiar código por token
     const twitterTokenRes = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
       headers: {
@@ -101,9 +89,6 @@ export async function GET(request: NextRequest) {
 
     if (!twitterTokenRes.ok) {
       const errorText = await twitterTokenRes.text()
-      console.error('Twitter token exchange error:', errorText)
-      console.error('Redirect URI used:', redirectUri)
-      console.error('Code received:', code ? 'yes' : 'no')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=token_exchange_failed&details=${encodeURIComponent(errorText)}`
       )
@@ -137,8 +122,6 @@ export async function GET(request: NextRequest) {
       }
       twitterData = twitterV1Data
     } else {
-      // Si v1.1 falla, intentar con v2 como fallback (puede requerir aprobación)
-      console.log('Twitter API v1.1 failed, trying v2 as fallback...')
       const twitterV2Res = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,username', {
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`
@@ -160,8 +143,6 @@ export async function GET(request: NextRequest) {
       } else {
         const errorTextV1 = await twitterV1Res.text()
         const errorTextV2 = await twitterV2Res.text()
-        console.error('Twitter API v1.1 error:', errorTextV1)
-        console.error('Twitter API v2 error:', errorTextV2)
         throw new Error('Failed to fetch Twitter user info from both v1.1 and v2')
       }
     }
@@ -343,8 +324,6 @@ export async function GET(request: NextRequest) {
       `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?twitter_login=success`
     )
   } catch (error: any) {
-    console.error('Error in Twitter login callback:', error)
-    console.error('Error stack:', error.stack)
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=${encodeURIComponent(error.message || 'oauth_error')}`
     )
@@ -396,8 +375,6 @@ async function importProfileMedia(userId: number, accessToken: string, platform:
       }
     }
   } catch (error) {
-    console.error('Error importing profile media:', error)
-    // No fallar si esto falla
   }
 }
 

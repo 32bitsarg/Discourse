@@ -34,7 +34,6 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    // Verificar si hay usuario logueado
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {

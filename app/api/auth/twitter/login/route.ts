@@ -67,17 +67,9 @@ export async function GET(request: NextRequest) {
       `code_challenge=${codeChallenge}&` +
       `code_challenge_method=S256`
 
-    // Log para debugging
-    console.log('Twitter OAuth - Base URL:', baseUrl)
-    console.log('Twitter OAuth - Redirect URI:', redirectUri)
-    console.log('Twitter OAuth - Client ID:', twitterClientId ? 'Set' : 'Missing')
-    console.log('Twitter OAuth - Scopes:', twitterScopes.join(' '))
-    console.log('Twitter OAuth - Code Challenge Method: S256')
-    console.log('Twitter OAuth - Auth URL:', authUrl.replace(/client_id=[^&]+/, 'client_id=***'))
 
     return NextResponse.redirect(authUrl)
   } catch (error: any) {
-    console.error('Error initiating Twitter OAuth for login:', error)
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/feed?error=oauth_error`
     )

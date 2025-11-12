@@ -48,7 +48,6 @@ function ProfileSettingsContent() {
         setUser(data)
       }
     } catch (error) {
-      console.error('Error loading user:', error)
     } finally {
       setLoading(false)
     }

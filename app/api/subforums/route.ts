@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ subforums: [] })
     }
     
-    console.error('Get subforums error:', error)
     return NextResponse.json({ subforums: [] })
   }
 }

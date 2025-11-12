@@ -80,8 +80,7 @@ export default function InterestsManager({ onSave, initialInterests = [] }: Inte
           setSelectedInterests(new Set(data.interests.map((i: any) => i.category)))
         }
       })
-      .catch(err => {
-        console.error('Error loading interests:', err)
+      .catch(() => {
       })
   }, [])
 
@@ -117,7 +116,6 @@ export default function InterestsManager({ onSave, initialInterests = [] }: Inte
         alert(t.common.error)
       }
     } catch (error) {
-      console.error('Error saving interests:', error)
       alert(t.common.error)
     } finally {
       setLoading(false)

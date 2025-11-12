@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Create subforum error:', error)
     return NextResponse.json(
       { message: 'Error al crear la comunidad' },
       { status: 500 }

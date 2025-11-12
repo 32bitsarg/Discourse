@@ -132,9 +132,8 @@ function FeedContent() {
       )}
 
       <FilterTabs onFilterChange={setFilter} />
-      <CreatePostBox onPostCreated={() => {
-        // Actualizar el feed sin recargar la página
-        if (postFeedRef.current) {
+      <CreatePostBox               onPostCreated={() => {
+                if (postFeedRef.current) {
           postFeedRef.current.refresh()
         }
       }} />

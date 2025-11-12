@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Create post error:', error)
     return NextResponse.json(
       { message: 'Error al crear el post' },
       { status: 500 }

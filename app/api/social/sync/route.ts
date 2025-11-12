@@ -101,7 +101,6 @@ export async function POST(request: NextRequest) {
           })
         }
       } catch (error: any) {
-        console.error(`Error syncing ${conn.platform}:`, error)
         results.push({
           platform: conn.platform,
           success: false,
@@ -116,7 +115,6 @@ export async function POST(request: NextRequest) {
       synced: results.filter(r => r.success).length
     })
   } catch (error: any) {
-    console.error('Error in sync:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

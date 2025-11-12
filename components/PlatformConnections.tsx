@@ -33,7 +33,6 @@ export default function PlatformConnections() {
       const data = await res.json()
       setConnections(data.connections || [])
     } catch (error) {
-      console.error('Error loading connections:', error)
     } finally {
       setLoading(false)
     }
@@ -45,7 +44,6 @@ export default function PlatformConnections() {
       // Redirigir al endpoint de OAuth
       window.location.href = `/api/auth/${platformId}`
     } catch (error) {
-      console.error('Error connecting:', error)
       alert('Error connecting platform')
       setConnecting(null)
     }
@@ -66,7 +64,6 @@ export default function PlatformConnections() {
         alert(language === 'es' ? 'Plataforma desconectada' : 'Platform disconnected')
       }
     } catch (error) {
-      console.error('Error disconnecting:', error)
       alert('Error disconnecting platform')
     }
   }

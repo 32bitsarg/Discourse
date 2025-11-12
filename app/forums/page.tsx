@@ -37,7 +37,6 @@ export default function ForumsPage() {
       const data = await res.json()
       setSubforums(data.subforums || [])
     } catch (error) {
-      console.error('Error loading subforums:', error)
       setSubforums([])
     } finally {
       setLoading(false)

@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
       interests: Array.isArray(interests) ? interests : []
     })
   } catch (error: any) {
-    console.error('Error fetching interests:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error updating interests:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

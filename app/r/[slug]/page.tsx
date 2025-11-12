@@ -57,7 +57,6 @@ export default function CommunityPage() {
         }
       })
       .catch(err => {
-        console.error('Error loading community:', err)
       })
       .finally(() => {
         setLoading(false)
@@ -251,7 +250,7 @@ export default function CommunityPage() {
                   name_changed_at: community.name_changed_at,
                 }}
                 onSave={() => {
-                  // Recargar la comunidad
+                  // Recargar la comunidad con cache invalidado
                   fetch('/api/subforums?t=' + Date.now())
                     .then(res => res.json())
                     .then(data => {
@@ -259,10 +258,14 @@ export default function CommunityPage() {
                       if (found) {
                         const communityWithImages = {
                           ...found,
-                          image_url: found.image_url || null,
-                          banner_url: found.banner_url || null,
+                          image_url: found.image_url && found.image_url.trim() !== '' ? found.image_url : null,
+                          banner_url: found.banner_url && found.banner_url.trim() !== '' ? found.banner_url : null,
                         }
                         setCommunity(communityWithImages)
+                        // Forzar recarga de la página si el slug cambió
+                        if (found.slug !== slug) {
+                          router.push(`/r/${found.slug}`)
+                        }
                       }
                     })
                     .catch(() => {})

@@ -37,7 +37,6 @@ export default function JoinCommunityButton({
         status: data.status || null,
       })
     } catch (error) {
-      console.error('Error loading membership status:', error)
     } finally {
       setLoading(false)
     }

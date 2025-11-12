@@ -74,7 +74,6 @@ export default function RichTextEditor({
         }
         reader.readAsDataURL(file)
       } catch (error) {
-        console.error('Error uploading image:', error)
         setIsUploading(false)
       }
     }
@@ -101,7 +100,6 @@ export default function RichTextEditor({
         }
         reader.readAsDataURL(file)
       } catch (error) {
-        console.error('Error uploading video:', error)
         setIsUploading(false)
       }
     }

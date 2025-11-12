@@ -65,7 +65,6 @@ export default function UserProfilePage() {
         }
       })
       .catch(err => {
-        console.error('Error loading user:', err)
       })
       .finally(() => {
         setLoading(false)

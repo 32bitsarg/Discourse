@@ -31,7 +31,6 @@ export default function SharePostButton({ postId, postTitle, postUrl, onShareCom
       const data = await res.json()
       setConnections(data.connections?.filter((c: any) => c.is_active) || [])
     } catch (error) {
-      console.error('Error loading connections:', error)
     }
   }
 
@@ -69,7 +68,6 @@ export default function SharePostButton({ postId, postTitle, postUrl, onShareCom
         alert(data.error || (language === 'es' ? 'Error al compartir' : 'Error sharing'))
       }
     } catch (error) {
-      console.error('Error sharing:', error)
       alert(language === 'es' ? 'Error al compartir' : 'Error sharing')
     } finally {
       setSharing(null)

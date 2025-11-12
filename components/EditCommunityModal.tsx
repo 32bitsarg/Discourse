@@ -44,15 +44,16 @@ export default function EditCommunityModal({ isOpen, onClose, community, onSave 
   const BANNER_HEIGHT = 400
 
   useEffect(() => {
-    if (community) {
+    if (community && isOpen) {
       setName(community.name)
       setDescription(community.description || '')
-      setImageUrl(community.image_url || '')
-      setBannerUrl(community.banner_url || '')
-      setImagePreview(community.image_url || null)
-      setBannerPreview(community.banner_url || null)
+      const imgUrl = community.image_url && community.image_url.trim() !== '' ? community.image_url : ''
+      const banUrl = community.banner_url && community.banner_url.trim() !== '' ? community.banner_url : ''
+      setImageUrl(imgUrl)
+      setBannerUrl(banUrl)
+      setImagePreview(imgUrl || null)
+      setBannerPreview(banUrl || null)
       
-      // Verificar si puede cambiar el nombre (una vez cada 7 días)
       if (community.name_changed_at) {
         const lastChange = new Date(community.name_changed_at)
         const now = new Date()
@@ -168,6 +169,13 @@ export default function EditCommunityModal({ isOpen, onClose, community, onSave 
         throw new Error(error.message || 'Error al actualizar la comunidad')
       }
 
+      if (imageUrl) {
+        setImagePreview(imageUrl)
+      }
+      if (bannerUrl) {
+        setBannerPreview(bannerUrl)
+      }
+      
       onSave()
       onClose()
     } catch (error) {

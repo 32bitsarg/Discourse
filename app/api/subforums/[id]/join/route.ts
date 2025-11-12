@@ -125,7 +125,6 @@ export async function POST(
       status,
     })
   } catch (error) {
-    console.error('Join subforum error:', error)
     return NextResponse.json(
       { message: 'Error al unirse a la comunidad' },
       { status: 500 }
@@ -201,7 +200,6 @@ export async function DELETE(
       message: 'Has salido de la comunidad',
     })
   } catch (error) {
-    console.error('Leave subforum error:', error)
     return NextResponse.json(
       { message: 'Error al salir de la comunidad' },
       { status: 500 }

@@ -58,7 +58,6 @@ export async function GET(
 
     return NextResponse.json({ requests })
   } catch (error) {
-    console.error('Get requests error:', error)
     return NextResponse.json(
       { message: 'Error al obtener las solicitudes' },
       { status: 500 }
@@ -164,7 +163,6 @@ export async function POST(
       message: action === 'approve' ? 'Solicitud aprobada' : 'Solicitud rechazada',
     })
   } catch (error) {
-    console.error('Manage request error:', error)
     return NextResponse.json(
       { message: 'Error al gestionar la solicitud' },
       { status: 500 }

@@ -21,7 +21,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       }
     }
   } catch (error) {
-    console.error('Error generating metadata:', error)
   }
 
   return {

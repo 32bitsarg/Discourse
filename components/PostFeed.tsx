@@ -48,42 +48,26 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
         : `/api/posts?filter=${filter}&page=${pageNum}&limit=10`
     }
     
-    console.log('[PostFeed] loadPosts:', { url, pageNum, append })
-    
     try {
       const res = await fetch(url)
       const data = await res.json()
       
-      console.log('[PostFeed] Respuesta recibida:', {
-        postsCount: data.posts?.length || 0,
-        hasMore: data.pagination?.hasMore,
-        page: data.pagination?.page
-      })
-      
       if (data.posts) {
         if (append) {
-          // Agregar nuevos posts a los existentes, filtrando duplicados
           setPosts(prev => {
             const existingIds = new Set(prev.map(p => p.id))
             const newPosts = data.posts.filter((p: any) => !existingIds.has(p.id))
-            const combined = [...prev, ...newPosts]
-            console.log('[PostFeed] Posts totales después de append:', combined.length, `(${newPosts.length} nuevos)`)
-            return combined
+            return [...prev, ...newPosts]
           })
         } else {
-          // Reemplazar posts (primera carga o refresh)
           setPosts(data.posts || [])
-          console.log('[PostFeed] Posts reemplazados:', data.posts?.length || 0)
         }
-        // Soporte para diferentes formatos de respuesta
         const newHasMore = data.pagination?.hasMore ?? data.hasMore ?? false
         setHasMore(newHasMore)
         setPage(pageNum)
         lastUpdateRef.current = Date.now()
-        console.log('[PostFeed] hasMore actualizado a:', newHasMore)
       }
     } catch (error) {
-      console.error('[PostFeed] Error loading posts:', error)
     } finally {
       if (showLoading && !append) {
         setLoading(false)
@@ -96,14 +80,11 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) {
-      console.log('[PostFeed] loadMore bloqueado:', { loadingMore, hasMore })
       return
     }
     
-    console.log('[PostFeed] Cargando más posts...')
     setPage(currentPage => {
       const nextPage = currentPage + 1
-      console.log('[PostFeed] Cargando página:', nextPage)
       loadPosts(false, nextPage, true)
       return nextPage
     })
@@ -119,87 +100,64 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
     removePost: removePost
   }), [loadPosts, removePost])
 
-  // Intersection Observer para detectar cuando el usuario llega al final
   useEffect(() => {
     if (!hasMore) {
-      console.log('[PostFeed] No hay más posts, no configurando observer')
       return
     }
 
     let observer: IntersectionObserver | null = null
 
-    // Esperar un tick para asegurar que el DOM esté actualizado
     const timeoutId = setTimeout(() => {
       const currentTarget = observerTarget.current
       if (!currentTarget) {
-        console.log('[PostFeed] observerTarget no disponible aún')
         return
       }
 
-      console.log('[PostFeed] Configurando IntersectionObserver')
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0]
-          console.log('[PostFeed] IntersectionObserver callback:', {
-            isIntersecting: entry.isIntersecting,
-            intersectionRatio: entry.intersectionRatio,
-            hasMore,
-            loadingMore
-          })
-          
           if (entry.isIntersecting && hasMore && !loadingMore) {
-            console.log('[PostFeed] Activando loadMore desde observer')
             loadMore()
           }
         },
         { 
-          threshold: 0.01, // Disparar con solo 1% visible
-          rootMargin: '300px' // Cargar 300px antes de llegar al final
+          threshold: 0.01,
+          rootMargin: '300px'
         }
       )
 
       observer.observe(currentTarget)
-      console.log('[PostFeed] Observer configurado y observando elemento')
     }, 100)
 
     return () => {
       clearTimeout(timeoutId)
       if (observer) {
-        console.log('[PostFeed] Limpiando observer')
         observer.disconnect()
       }
     }
   }, [hasMore, loadingMore, loadMore, posts.length])
 
   useEffect(() => {
-    // Cargar posts inicialmente (primera página)
     setPage(1)
     setHasMore(true)
     loadPosts(true, 1, false)
 
-    // Configurar actualización automática solo si la página está visible
-    // Solo actualizar la primera página para no duplicar posts
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Cuando la página se vuelve visible, actualizar solo la primera página
         setPage(1)
         setHasMore(true)
         loadPosts(false, 1, false)
-        // Reiniciar intervalo
         if (intervalRef.current) {
           clearInterval(intervalRef.current)
         }
-        // Actualizar cada 30 segundos si la página está visible
         intervalRef.current = setInterval(() => {
-          // Solo actualizar si han pasado al menos 20 segundos desde la última actualización
           if (Date.now() - lastUpdateRef.current > 20000) {
             setPage(1)
             setHasMore(true)
             loadPosts(false, 1, false)
           }
-        }, 30000) // Cada 30 segundos
+        }, 30000)
       } else {
-        // Si la página no está visible, pausar actualizaciones
         if (intervalRef.current) {
           clearInterval(intervalRef.current)
           intervalRef.current = null
@@ -207,7 +165,6 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
       }
     }
 
-    // Iniciar actualizaciones automáticas solo si la página está visible
     if (document.visibilityState === 'visible') {
       intervalRef.current = setInterval(() => {
         if (Date.now() - lastUpdateRef.current > 20000) {
@@ -215,13 +172,11 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           setHasMore(true)
           loadPosts(false, 1, false)
         }
-      }, 30000) // Cada 30 segundos
+      }, 30000)
     }
 
-    // Escuchar cambios de visibilidad
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Limpiar al desmontar
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)

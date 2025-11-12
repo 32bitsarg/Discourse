@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Register error:', error)
     return NextResponse.json(
       { message: 'Error al registrarse' },
       { status: 500 }

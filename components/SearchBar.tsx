@@ -64,7 +64,6 @@ export default function SearchBar() {
       setResults(data.results || [])
       setIsOpen(true)
     } catch (error) {
-      console.error('Search error:', error)
       setResults([])
     } finally {
       setIsLoading(false)

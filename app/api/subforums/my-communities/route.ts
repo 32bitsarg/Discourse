@@ -56,7 +56,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error: any) {
-    console.error('Get my communities error:', error)
     return NextResponse.json({ subforums: [] })
   }
 }

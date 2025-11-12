@@ -39,7 +39,6 @@ export async function GET(
       ORDER BY c.created_at DESC
     `, [postId]) as any[]
 
-    console.log(`[API] Comentarios encontrados para post ${postId}:`, comments.length)
 
     // Formatear fechas
     const formattedComments = (comments || []).map((comment: any) => {
@@ -75,11 +74,9 @@ export async function GET(
       }
     })
 
-    console.log(`[API] Comentarios formateados:`, formattedComments.length)
 
     return NextResponse.json({ comments: formattedComments })
   } catch (error) {
-    console.error('Get comments error:', error)
     return NextResponse.json(
       { message: 'Error al obtener los comentarios' },
       { status: 500 }
@@ -152,7 +149,6 @@ export async function POST(
       },
     })
   } catch (error) {
-    console.error('Create comment error:', error)
     return NextResponse.json(
       { message: 'Error al crear el comentario' },
       { status: 500 }

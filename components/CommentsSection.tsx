@@ -36,11 +36,9 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
   useEffect(() => {
     if (!postId || postId <= 0) {
-      console.warn('CommentsSection: postId inválido:', postId)
       return
     }
 
-    // Verificar usuario
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
@@ -56,33 +54,24 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
   const loadComments = async () => {
     if (!postId || postId <= 0) {
-      console.warn('loadComments: postId inválido:', postId)
       setLoading(false)
       return
     }
 
     setLoading(true)
     try {
-      console.log(`[CommentsSection] Cargando comentarios para post ${postId}`)
       const res = await fetch(`/api/posts/${postId}/comments`)
       if (!res.ok) {
-        console.error('Error en la respuesta:', res.status, res.statusText)
-        const errorData = await res.json().catch(() => ({}))
-        console.error('Detalles del error:', errorData)
         setComments([])
         return
       }
       const data = await res.json()
-      console.log(`[CommentsSection] Comentarios recibidos para post ${postId}:`, data)
       if (data.comments && Array.isArray(data.comments)) {
-        console.log(`[CommentsSection] Estableciendo ${data.comments.length} comentarios`)
         setComments(data.comments)
       } else {
-        console.warn('Formato de respuesta inesperado:', data)
         setComments([])
       }
     } catch (error) {
-      console.error('Error loading comments:', error)
       setComments([])
     } finally {
       setLoading(false)
@@ -134,7 +123,6 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
-    // Actualizar editContent cuando el comentario cambia
     useEffect(() => {
       setEditContent(comment.content)
     }, [comment.content])

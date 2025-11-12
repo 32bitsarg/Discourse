@@ -82,11 +82,9 @@ export default function PostPage() {
       .then(async res => {
         const data = await res.json()
         if (!res.ok) {
-          console.error('Error:', data.message || 'Error al cargar el post')
           return
         }
         if (data.message) {
-          console.error(data.message)
           return
         }
         if (data.id) {
@@ -96,11 +94,9 @@ export default function PostPage() {
           setEditTitle(data.title)
           setEditContent(data.content)
         } else {
-          console.error('Post no encontrado en la respuesta')
         }
       })
       .catch(err => {
-        console.error('Error loading post:', err)
       })
       .finally(() => {
         setLoading(false)
@@ -203,7 +199,6 @@ export default function PostPage() {
         setVote(postData.userVote || data.voteType)
       }
     } catch (error) {
-      console.error('Error voting:', error)
     }
   }
 

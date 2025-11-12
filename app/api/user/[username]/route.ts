@@ -114,7 +114,6 @@ export async function GET(
       posts: formattedPosts,
     })
   } catch (error) {
-    console.error('Get user error:', error)
     return NextResponse.json(
       { message: 'Error al obtener el usuario' },
       { status: 500 }

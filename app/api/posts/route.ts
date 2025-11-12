@@ -226,7 +226,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ posts: [] })
     }
     
-    console.error('Get posts error:', error)
     return NextResponse.json({ posts: [] })
   }
 }

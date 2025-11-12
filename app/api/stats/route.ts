@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    console.error('Get stats error:', error)
     return NextResponse.json({
       members: 0,
       postsToday: 0,

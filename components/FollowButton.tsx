@@ -24,8 +24,7 @@ export default function FollowButton({ username, onFollowChange }: FollowButtonP
           setFollowing(data.following)
         }
       })
-      .catch(err => {
-        console.error('Error checking follow status:', err)
+      .catch(() => {
       })
       .finally(() => {
         setLoading(false)
@@ -49,7 +48,6 @@ export default function FollowButton({ username, onFollowChange }: FollowButtonP
         }
       }
     } catch (error) {
-      console.error('Error updating follow:', error)
     } finally {
       setUpdating(false)
     }

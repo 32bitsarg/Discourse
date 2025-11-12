@@ -55,7 +55,6 @@ async function importProfileMedia(userId: number, accessToken: string, platform:
       }
     }
   } catch (error) {
-    console.error('Error importing profile media:', error)
     throw error
   }
 }
@@ -86,7 +85,6 @@ export async function GET(request: NextRequest) {
       connections: Array.isArray(connections) ? connections : []
     })
   } catch (error: any) {
-    console.error('Error fetching connections:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -183,13 +181,11 @@ export async function POST(request: NextRequest) {
     try {
       await importProfileMedia(user.id, access_token, platform.toLowerCase())
     } catch (error) {
-      console.error('Error importing profile media:', error)
       // No fallar la conexión si esto falla
     }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error connecting platform:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -223,7 +219,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error disconnecting platform:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

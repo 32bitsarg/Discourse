@@ -152,7 +152,6 @@ export async function GET(
     try {
       await importProfileMedia(userId, tokenData.access_token, platform.toLowerCase())
     } catch (error) {
-      console.error('Error importing profile media:', error)
       // No fallar si esto falla
     }
 
@@ -161,7 +160,6 @@ export async function GET(
       `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/user/profile?connected=${platform}`
     )
   } catch (error: any) {
-    console.error('Error in OAuth callback:', error)
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/user/profile?error=${encodeURIComponent(error.message)}`
     )
@@ -217,7 +215,6 @@ async function importProfileMedia(userId: number, accessToken: string, platform:
       }
     }
   } catch (error) {
-    console.error('Error importing profile media:', error)
     throw error
   }
 }

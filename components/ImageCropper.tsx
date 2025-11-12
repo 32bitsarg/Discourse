@@ -27,7 +27,6 @@ export default function ImageCropper({
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const imageRef = useRef<HTMLImageElement>(null)
@@ -36,30 +35,25 @@ export default function ImageCropper({
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget
-    setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
     setImageLoaded(true)
     
-    // Calcular zoom inicial para que la imagen llene el área de recorte
     if (containerRef.current && img) {
       const containerWidth = containerRef.current.clientWidth
       const containerHeight = containerRef.current.clientHeight
       const imgAspect = img.naturalWidth / img.naturalHeight
-      const cropAspect = aspectRatio
+      const cropAspect = type === 'avatar' ? 1 : aspectRatio
       
       let initialZoom = 1
       if (imgAspect > cropAspect) {
-        // Imagen más ancha que el recorte
         initialZoom = (containerHeight * 1.2) / (img.naturalHeight * (containerWidth / containerHeight))
       } else {
-        // Imagen más alta que el recorte
         initialZoom = (containerWidth * 1.2) / (img.naturalWidth * (containerHeight / containerWidth))
       }
       
       setZoom(Math.max(1, initialZoom))
     }
-  }, [aspectRatio])
+  }, [aspectRatio, type])
 
-  // Manejar arrastre
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!imageRef.current) return
     setIsDragging(true)
@@ -110,26 +104,53 @@ export default function ImageCropper({
       const containerRect = container.getBoundingClientRect()
       const imgRect = img.getBoundingClientRect()
 
-      // Calcular el área visible de la imagen
-      const imgDisplayWidth = imgRect.width
-      const imgDisplayHeight = imgRect.height
+      // Calcular escalas
+      const scaleX = img.naturalWidth / imgRect.width
+      const scaleY = img.naturalHeight / imgRect.height
 
-      // Calcular el centro del área de recorte en relación a la imagen
-      const cropCenterX = containerRect.left + containerRect.width / 2
-      const cropCenterY = containerRect.top + containerRect.height / 2
+      // Calcular el centro del área de recorte en coordenadas de la imagen original
+      const cropCenterX = (containerRect.left + containerRect.width / 2 - imgRect.left) * scaleX
+      const cropCenterY = (containerRect.top + containerRect.height / 2 - imgRect.top) * scaleY
       
-      // Calcular la posición relativa del centro del crop respecto a la imagen
-      const relativeX = (cropCenterX - imgRect.left) / imgDisplayWidth
-      const relativeY = (cropCenterY - imgRect.top) / imgDisplayHeight
-
-      // Calcular dimensiones del crop en píxeles originales
-      const scaleX = img.naturalWidth / imgDisplayWidth
-      const scaleY = img.naturalHeight / imgDisplayHeight
+      // Calcular dimensiones del crop en la imagen original (ajustadas por zoom)
+      const cropAreaWidth = (containerRect.width / zoom) * scaleX
+      const cropAreaHeight = (containerRect.height / zoom) * scaleY
       
-      const cropX = relativeX * img.naturalWidth - (targetWidth / scaleX) / 2
-      const cropY = relativeY * img.naturalHeight - (targetHeight / scaleY) / 2
-      const cropWidth = targetWidth / scaleX
-      const cropHeight = targetHeight / scaleY
+      // Asegurar que el crop respete el aspect ratio del target
+      const targetAspect = targetWidth / targetHeight
+      let finalCropWidth = cropAreaWidth
+      let finalCropHeight = cropAreaHeight
+      
+      // Ajustar para mantener aspect ratio y usar cover (llenar sin franjas)
+      const cropAspect = finalCropWidth / finalCropHeight
+      if (cropAspect > targetAspect) {
+        // Crop más ancho que el target - aumentar altura
+        finalCropHeight = finalCropWidth / targetAspect
+      } else {
+        // Crop más alto que el target - aumentar ancho
+        finalCropWidth = finalCropHeight * targetAspect
+      }
+      
+      let finalCropX = cropCenterX - finalCropWidth / 2
+      let finalCropY = cropCenterY - finalCropHeight / 2
+      
+      // Asegurar que no salga de los límites de la imagen
+      finalCropX = Math.max(0, Math.min(finalCropX, img.naturalWidth - finalCropWidth))
+      finalCropY = Math.max(0, Math.min(finalCropY, img.naturalHeight - finalCropHeight))
+      
+      // Si el crop es más grande que la imagen, ajustar
+      if (finalCropWidth > img.naturalWidth) {
+        finalCropWidth = img.naturalWidth
+        finalCropHeight = finalCropWidth / targetAspect
+        finalCropX = 0
+        finalCropY = Math.max(0, Math.min(finalCropY, img.naturalHeight - finalCropHeight))
+      }
+      if (finalCropHeight > img.naturalHeight) {
+        finalCropHeight = img.naturalHeight
+        finalCropWidth = finalCropHeight * targetAspect
+        finalCropY = 0
+        finalCropX = Math.max(0, Math.min(finalCropX, img.naturalWidth - finalCropWidth))
+      }
 
       // Crear canvas para recortar
       const canvas = document.createElement('canvas')
@@ -141,7 +162,14 @@ export default function ImageCropper({
         throw new Error('No se pudo crear el contexto del canvas')
       }
 
-      // Aplicar rotación si es necesario
+      // Para avatar, hacer el recorte circular ANTES de dibujar
+      if (type === 'avatar') {
+        ctx.beginPath()
+        ctx.arc(targetWidth / 2, targetHeight / 2, Math.min(targetWidth, targetHeight) / 2, 0, 2 * Math.PI)
+        ctx.clip()
+      }
+
+      // Aplicar rotación si es necesario (después del clip para avatar)
       if (rotation !== 0) {
         ctx.save()
         ctx.translate(canvas.width / 2, canvas.height / 2)
@@ -149,13 +177,13 @@ export default function ImageCropper({
         ctx.translate(-canvas.width / 2, -canvas.height / 2)
       }
 
-      // Dibujar la imagen recortada
+      // Dibujar la imagen recortada con cover para evitar franjas negras
       ctx.drawImage(
         img,
-        cropX,
-        cropY,
-        cropWidth,
-        cropHeight,
+        finalCropX,
+        finalCropY,
+        finalCropWidth,
+        finalCropHeight,
         0,
         0,
         targetWidth,
@@ -166,19 +194,16 @@ export default function ImageCropper({
         ctx.restore()
       }
 
-      // Optimizar imagen (comprimir)
-      const quality = type === 'avatar' ? 0.9 : 0.85 // Avatar necesita más calidad
+      const quality = type === 'avatar' ? 0.9 : 0.85
       const optimizedBase64 = canvas.toDataURL('image/jpeg', quality)
 
-      // Si es muy grande, reducir calidad
-      if (optimizedBase64.length > 500 * 1024) { // 500KB
+      if (optimizedBase64.length > 500 * 1024) {
         const lowerQualityBase64 = canvas.toDataURL('image/jpeg', type === 'avatar' ? 0.8 : 0.75)
         onCropComplete(lowerQualityBase64)
       } else {
         onCropComplete(optimizedBase64)
       }
     } catch (error) {
-      console.error('Error al recortar imagen:', error)
       alert('Error al procesar la imagen. Por favor, intenta de nuevo.')
     } finally {
       setIsProcessing(false)
@@ -221,14 +246,17 @@ export default function ImageCropper({
               style={{
                 width: '100%',
                 maxWidth: '600px',
-                aspectRatio: aspectRatio,
+                aspectRatio: type === 'avatar' ? 1 : aspectRatio,
+                borderRadius: type === 'avatar' ? '50%' : '0.5rem',
                 minHeight: type === 'avatar' ? '300px' : '200px',
               }}
               onMouseDown={handleMouseDown}
             >
               {imageLoaded && (
                 <div
-                  className="absolute inset-0 border-2 border-primary-500 border-dashed pointer-events-none z-10"
+                  className={`absolute inset-0 border-2 border-primary-500 border-dashed pointer-events-none z-10 ${
+                    type === 'avatar' ? 'rounded-full' : ''
+                  }`}
                   style={{
                     boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)',
                   }}
@@ -238,7 +266,9 @@ export default function ImageCropper({
                 ref={imageRef}
                 src={imageSrc}
                 alt="Preview"
-                className="absolute inset-0 w-full h-full object-contain select-none"
+                className={`absolute inset-0 w-full h-full select-none ${
+                  type === 'avatar' ? 'object-cover rounded-full' : 'object-cover'
+                }`}
                 style={{
                   transform: `translate(${crop.x}px, ${crop.y}px) scale(${zoom}) rotate(${rotation}deg)`,
                   transition: isDragging ? 'none' : 'transform 0.1s',

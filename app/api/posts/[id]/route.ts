@@ -106,7 +106,6 @@ export async function GET(
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Get post error:', error)
     return NextResponse.json(
       { message: 'Error al obtener el post' },
       { status: 500 }
@@ -174,7 +173,6 @@ export async function PUT(
 
     return NextResponse.json({ message: 'Post actualizado exitosamente' })
   } catch (error) {
-    console.error('Update post error:', error)
     return NextResponse.json(
       { message: 'Error al actualizar el post' },
       { status: 500 }
@@ -244,7 +242,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Post eliminado exitosamente' })
   } catch (error) {
-    console.error('Delete post error:', error)
     return NextResponse.json(
       { message: 'Error al eliminar el post' },
       { status: 500 }

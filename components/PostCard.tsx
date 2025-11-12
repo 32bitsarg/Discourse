@@ -68,7 +68,6 @@ export default function PostCard({
   const [editContent, setEditContent] = useState(content)
   const [isEditing, setIsEditing] = useState(false)
 
-  // Actualizar el voto cuando cambie userVote
   useEffect(() => {
     setVote(userVote)
   }, [userVote])
@@ -232,7 +231,6 @@ export default function PostCard({
         })
         .catch(() => {})
     } catch (error) {
-      console.error('Error voting:', error)
     }
   }
 

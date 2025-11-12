@@ -37,7 +37,6 @@ export async function GET(
       role: members[0].role,
     })
   } catch (error) {
-    console.error('Get membership status error:', error)
     return NextResponse.json({ isMember: false, status: null })
   }
 }

@@ -80,7 +80,6 @@ export async function GET(request: NextRequest) {
       total: totalCount
     })
   } catch (error: any) {
-    console.error('Error fetching following feed:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
