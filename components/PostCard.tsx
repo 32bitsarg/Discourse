@@ -63,7 +63,6 @@ export default function PostCard({
   const [editTitle, setEditTitle] = useState(title)
   const [editContent, setEditContent] = useState(content)
   const [isEditing, setIsEditing] = useState(false)
-  const router = useRouter()
 
   // Actualizar el voto cuando cambie userVote
   useEffect(() => {
