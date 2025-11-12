@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
 import { getCache, setCache } from '@/lib/redis'
 import { getCurrentUser } from '@/lib/auth'
+import { invalidateCache } from '@/lib/redis'
 
 export async function GET(
   request: NextRequest,
@@ -207,7 +208,7 @@ export async function DELETE(
 
     // Verificar que el post existe y pertenece al usuario
     const [posts] = await pool.execute(
-      'SELECT id, author_id FROM posts WHERE id = ?',
+      'SELECT id, author_id, subforum_id FROM posts WHERE id = ?',
       [postId]
     ) as any[]
 
@@ -225,8 +226,21 @@ export async function DELETE(
       )
     }
 
+    const subforumId = posts[0].subforum_id
+
     // Eliminar post (CASCADE eliminará comentarios automáticamente)
     await pool.execute('DELETE FROM posts WHERE id = ?', [postId])
+
+    // Decrementar contador de posts en el subforum
+    await pool.execute(
+      'UPDATE subforums SET post_count = GREATEST(post_count - 1, 0) WHERE id = ?',
+      [subforumId]
+    )
+
+    // Invalidar cache de subforums y stats
+    await invalidateCache('subforums:*')
+    await invalidateCache('stats:*')
+    await invalidateCache(`user:${user.id}:communities`)
 
     return NextResponse.json({ message: 'Post eliminado exitosamente' })
   } catch (error) {

@@ -138,13 +138,13 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
           
           {/* Modal */}
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-24"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[calc(90vh-6rem)] flex flex-col"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}

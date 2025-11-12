@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener comunidades donde el usuario es miembro aprobado
+    // También incluir comunidades donde el usuario es el creador (aunque no esté en subforum_members)
     const [subforums] = await pool.execute(`
       SELECT DISTINCT
         s.id,
@@ -27,14 +28,26 @@ export async function GET(request: NextRequest) {
         s.description,
         s.member_count,
         s.post_count,
+        s.image_url,
+        s.banner_url,
         s.is_public,
         s.requires_approval,
-        sm.role
+        s.creator_id,
+        COALESCE(sm.role, 
+          CASE WHEN s.creator_id = ? THEN 'admin' ELSE 'member' END
+        ) as role
       FROM subforums s
-      INNER JOIN subforum_members sm ON s.id = sm.subforum_id
-      WHERE sm.user_id = ? AND sm.status = 'approved'
-      ORDER BY s.name ASC
-    `, [user.id]) as any[]
+      LEFT JOIN subforum_members sm ON s.id = sm.subforum_id AND sm.user_id = ? AND sm.status = 'approved'
+      WHERE (sm.user_id = ? AND sm.status = 'approved') OR s.creator_id = ?
+      ORDER BY 
+        CASE 
+          WHEN s.creator_id = ? THEN 0
+          WHEN COALESCE(sm.role, 'member') = 'admin' THEN 1
+          WHEN COALESCE(sm.role, 'member') = 'moderator' THEN 2
+          ELSE 3
+        END,
+        s.name ASC
+    `, [user.id, user.id, user.id, user.id, user.id]) as any[]
 
     const result = { subforums: subforums || [] }
 
