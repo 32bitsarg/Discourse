@@ -318,10 +318,12 @@ export default function UserProfilePage() {
         {/* Modales para móvil */}
         {showEditModal && (
           <EditProfileModal
-            isOpen={showEditModal}
             onClose={() => setShowEditModal(false)}
             user={user}
-            onSave={loadProfile}
+            onSave={() => {
+              loadProfile()
+              setShowEditModal(false)
+            }}
           />
         )}
 
