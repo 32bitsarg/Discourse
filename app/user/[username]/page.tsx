@@ -67,7 +67,9 @@ export default function UserProfilePage() {
         }
       })
       .catch(() => {})
+  }, [])
 
+  useEffect(() => {
     // Cargar perfil del usuario
     if (username) {
       loadProfile()
