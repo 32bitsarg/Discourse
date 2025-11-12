@@ -85,7 +85,8 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
                 </button>
               </div>
 
-              {/* Botón de Twitter/X */}
+              {/* Botón de Twitter/X - Deshabilitado temporalmente */}
+              {/* 
               <button
                 type="button"
                 onClick={() => {
@@ -107,6 +108,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
                   </span>
                 </div>
               </div>
+              */}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (

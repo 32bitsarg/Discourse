@@ -70,7 +70,8 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister, onLogi
                 </button>
               </div>
 
-              {/* Botón de Twitter/X */}
+              {/* Botón de Twitter/X - Deshabilitado temporalmente */}
+              {/* 
               <button
                 type="button"
                 onClick={() => {
@@ -92,6 +93,7 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister, onLogi
                   </span>
                 </div>
               </div>
+              */}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
