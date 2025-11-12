@@ -98,7 +98,7 @@ export default function BottomNavigation() {
                 <motion.button
                   key={item.name}
                   onClick={() => setIsLoginOpen(true)}
-                  className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0"
+                  className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0 h-full"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -116,6 +116,14 @@ export default function BottomNavigation() {
                   >
                     {item.name}
                   </span>
+                  {active && (
+                    <motion.div
+                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full"
+                      layoutId="activeIndicator"
+                      initial={false}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    />
+                  )}
                 </motion.button>
               )
             }
@@ -127,10 +135,10 @@ export default function BottomNavigation() {
               <Link
                 key={item.name}
                 href={item.href === '/user' && user ? `/user/${user.username}` : item.href}
-                className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0 pb-0.5"
+                className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0 h-full"
               >
                 <motion.div
-                  className="flex flex-col items-center justify-center relative"
+                  className="flex flex-col items-center justify-center relative h-full"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
