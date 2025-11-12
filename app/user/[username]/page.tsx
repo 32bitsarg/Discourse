@@ -8,6 +8,8 @@ import { ArrowLeft, User, Mail, Calendar, MessageSquare, MapPin, Globe, Github, 
 import { useI18n } from '@/lib/i18n/context'
 import FollowButton from '@/components/FollowButton'
 import EditProfileModal from '@/components/EditProfileModal'
+import AdminBadge from '@/components/AdminBadge'
+import PostContentRenderer from '@/components/PostContentRenderer'
 
 const socialIcons: Record<string, any> = {
   twitter: Twitter,
@@ -148,8 +150,9 @@ export default function UserProfilePage() {
             <div className="flex-1 mt-4 md:mt-0">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                    u/{user.username}
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <span>u/{user.username}</span>
+                    <AdminBadge username={user.username} />
                   </h1>
                   {user.bio && (
                     <p className="text-gray-600 mb-3">{user.bio}</p>
@@ -317,9 +320,9 @@ export default function UserProfilePage() {
                       {post.title}
                     </h3>
                   </Link>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {post.content}
-                  </p>
+                  <div className="text-gray-600 text-sm mb-3 line-clamp-2">
+                    <PostContentRenderer content={post.content} />
+                  </div>
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
                       <MessageSquare className="w-4 h-4" />
