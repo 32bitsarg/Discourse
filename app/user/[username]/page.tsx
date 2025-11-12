@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowLeft, User, Mail, Calendar, MessageSquare, MapPin, Globe, Github, Twitter, Linkedin, ExternalLink, Edit } from 'lucide-react'
+import { ArrowLeft, User, Mail, Calendar, MessageSquare, MapPin, Globe, Github, Twitter, Linkedin, ExternalLink, Edit, Trash2, X } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
 import FollowButton from '@/components/FollowButton'
 import EditProfileModal from '@/components/EditProfileModal'
 import AdminBadge from '@/components/AdminBadge'
 import PostContentRenderer from '@/components/PostContentRenderer'
+import RichTextEditor from '@/components/RichTextEditor'
 
 const socialIcons: Record<string, any> = {
   twitter: Twitter,
@@ -29,6 +30,12 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{ username: string; id: number } | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [editingPostId, setEditingPostId] = useState<number | null>(null)
+  const [deletingPostId, setDeletingPostId] = useState<number | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editContent, setEditContent] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     // Verificar usuario actual
@@ -323,11 +330,41 @@ export default function UserProfilePage() {
                   <div className="text-gray-600 text-sm mb-3 line-clamp-2">
                     <PostContentRenderer content={post.content} />
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="w-4 h-4" />
-                      <span>{post.comment_count} {t.post.comments}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>{post.comment_count} {t.post.comments}</span>
+                      </div>
                     </div>
+                    {(post.canEdit || post.canDelete) && (
+                      <div className="flex items-center gap-2">
+                        {post.canEdit && (
+                          <button
+                            onClick={() => {
+                              setEditTitle(post.title)
+                              setEditContent(post.content)
+                              setEditingPostId(post.id)
+                            }}
+                            className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                            title={t.post.edit}
+                          >
+                            <Edit className="w-3 h-3" />
+                            <span>{t.post.edit}</span>
+                          </button>
+                        )}
+                        {post.canDelete && (
+                          <button
+                            onClick={() => setDeletingPostId(post.id)}
+                            className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                            title={t.post.delete}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>{t.post.delete}</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.article>
@@ -335,6 +372,156 @@ export default function UserProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Modal de edición de post */}
+      {editingPostId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+          >
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-900">{t.post.edit}</h2>
+              <button
+                onClick={() => {
+                  setEditingPostId(null)
+                  setEditTitle('')
+                  setEditContent('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.post.title}
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    maxLength={255}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.post.content}
+                  </label>
+                  <div className="border border-gray-300 rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+                    <RichTextEditor
+                      value={editContent}
+                      onChange={setEditContent}
+                      placeholder={t.post.writePost}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t">
+              <button
+                onClick={() => {
+                  setEditingPostId(null)
+                  setEditTitle('')
+                  setEditContent('')
+                }}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                disabled={isEditing}
+              >
+                {t.post.cancel}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!editTitle.trim() || !editContent.trim()) {
+                    alert(t.post.title + ' y ' + t.post.content + ' son requeridos')
+                    return
+                  }
+
+                  setIsEditing(true)
+                  try {
+                    const res = await fetch(`/api/posts/${editingPostId}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim() }),
+                    })
+
+                    if (!res.ok) {
+                      const error = await res.json()
+                      throw new Error(error.message || 'Error al editar el post')
+                    }
+
+                    setEditingPostId(null)
+                    setEditTitle('')
+                    setEditContent('')
+                    loadProfile() // Recargar el perfil
+                  } catch (error) {
+                    alert(error instanceof Error ? error.message : 'Error al editar el post')
+                  } finally {
+                    setIsEditing(false)
+                  }
+                }}
+                disabled={isEditing || !editTitle.trim() || !editContent.trim()}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isEditing ? t.post.editing : t.post.save}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación de post */}
+      {deletingPostId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-4">{t.post.confirmDelete}</h2>
+            <p className="text-gray-600 mb-6">{t.post.confirmDeletePost}</p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setDeletingPostId(null)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                disabled={isDeleting}
+              >
+                {t.post.cancel}
+              </button>
+              <button
+                onClick={async () => {
+                  setIsDeleting(true)
+                  try {
+                    const res = await fetch(`/api/posts/${deletingPostId}`, {
+                      method: 'DELETE',
+                    })
+
+                    if (!res.ok) {
+                      const error = await res.json()
+                      throw new Error(error.message || 'Error al eliminar el post')
+                    }
+
+                    setDeletingPostId(null)
+                    loadProfile() // Recargar el perfil
+                  } catch (error) {
+                    alert(error instanceof Error ? error.message : 'Error al eliminar el post')
+                  } finally {
+                    setIsDeleting(false)
+                  }
+                }}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? t.post.deleting : t.post.delete}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Modal de edición */}
       {showEditModal && isOwnProfile && (

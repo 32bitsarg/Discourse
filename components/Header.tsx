@@ -14,15 +14,14 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
-  const [user, setUser] = useState<{ username: string; id: number } | null>(null)
+  const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [avatarError, setAvatarError] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const navLinks = [
     { name: t.nav.home, href: '/feed' },
-    { name: t.nav.forums, href: '/forums' },
-    { name: t.nav.trends, href: '/hot' },
-    { name: t.nav.new, href: '/new' },
+    { name: t.community.communities, href: '/forums' },
   ]
 
   useEffect(() => {
@@ -40,6 +39,7 @@ export default function Header() {
       .then(data => {
         if (data.user) {
           setUser(data.user)
+          setAvatarError(false) // Resetear error de avatar cuando cambia el usuario
         }
       })
       .catch(() => {})
@@ -151,7 +151,16 @@ export default function Header() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <User className="w-4 h-4 text-gray-600" />
+                    {user.avatar_url && !avatarError ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.username}
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-gray-300"
+                        onError={() => setAvatarError(true)}
+                      />
+                    ) : (
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    )}
                     <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">{user.username}</span>
                     <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-600 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
                   </motion.button>
@@ -170,8 +179,20 @@ export default function Header() {
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                          <User className="w-4 h-4" />
-                          {t.auth.profile}
+                          {user.avatar_url && !avatarError ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.username}
+                              className="w-5 h-5 rounded-full object-cover border border-gray-300"
+                              onError={() => setAvatarError(true)}
+                            />
+                          ) : (
+                            <User className="w-4 h-4" />
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.username}</span>
+                            <span className="text-xs text-gray-500">{t.auth.profile}</span>
+                          </div>
                         </Link>
                         <button
                           onClick={() => {

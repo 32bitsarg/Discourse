@@ -153,6 +153,8 @@ export async function GET(request: NextRequest) {
             userVote: userVotes[post.id] || null, // Voto del usuario actual
             author_username: post.author_username,
             author_id: post.author_id,
+            canEdit: userId === post.author_id, // El usuario puede editar si es el autor
+            canDelete: userId === post.author_id, // El usuario puede eliminar si es el autor
             timeAgo: getTimeAgo(post.created_at),
             isNew: isNewPost(post.created_at),
             isFromMemberCommunity: isMember || false,

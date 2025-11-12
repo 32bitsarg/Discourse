@@ -264,6 +264,8 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           isNew={post.isNew}
           isFromMemberCommunity={post.isFromMemberCommunity || false}
           userVote={post.userVote || null}
+          canEdit={post.canEdit || false}
+          canDelete={post.canDelete || false}
         />
       ))}
       

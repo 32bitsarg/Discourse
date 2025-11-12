@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, ArrowLeft, Edit, Trash2, X } from 'lucide-react'
 import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
+import RichTextEditor from '@/components/RichTextEditor'
 import { useI18n } from '@/lib/i18n/context'
 import { useViewTracking, useBehaviorTracking } from '@/hooks/useBehaviorTracking'
 import SharePostButton from '@/components/SharePostButton'
@@ -234,7 +235,7 @@ export default function PostPage() {
       <div className="space-y-4">
         {/* Botón volver */}
         <motion.button
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/feed')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           whileHover={{ x: -4 }}
         >
@@ -432,12 +433,51 @@ export default function PostPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       {t.post.content}
                     </label>
-                    <textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                      rows={15}
-                    />
+                    <div className="border border-gray-300 rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+                      <RichTextEditor
+                        value={editContent}
+                        onChange={setEditContent}
+                        placeholder={t.post.writePost}
+                      />
+                    </div>
+                    {/* Vista previa de imágenes */}
+                    {(() => {
+                      const imageMatches = editContent.match(/!\[([^\]]*)\]\(([^)]+)\)/g) || []
+                      const images: Array<{ alt: string; src: string }> = []
+                      
+                      imageMatches.forEach(match => {
+                        const imgMatch = match.match(/!\[([^\]]*)\]\(([^)]+)\)/)
+                        if (imgMatch) {
+                          const [, alt, src] = imgMatch
+                          const cleanSrc = src.replace(/\s+/g, '').trim()
+                          if (cleanSrc.startsWith('data:image/') || (cleanSrc && !cleanSrc.startsWith('<') && !cleanSrc.startsWith('data:'))) {
+                            images.push({ alt: alt || 'Imagen', src: cleanSrc })
+                          }
+                        }
+                      })
+                      
+                      if (images.length === 0) return null
+                      
+                      return (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                          <p className="text-sm font-semibold text-gray-700 mb-2">Vista previa de imágenes:</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {images.map((img, idx) => (
+                              <div key={idx} className="relative group">
+                                <img
+                                  src={img.src}
+                                  alt={img.alt}
+                                  className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>

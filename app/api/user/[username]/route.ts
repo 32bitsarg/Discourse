@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
@@ -7,6 +8,10 @@ export async function GET(
 ) {
   try {
     const { username } = await params
+
+    // Obtener usuario actual para verificar permisos de edición/eliminación
+    const currentUser = await getCurrentUser()
+    const currentUserId = currentUser?.id || null
 
     // OPTIMIZACIÓN: Una sola consulta con JOINs para reducir llamadas a la BD
     // Obtener información del usuario con contadores de follows en una sola query
@@ -58,6 +63,7 @@ export async function GET(
           p.downvotes,
           p.comment_count,
           p.created_at,
+          p.author_id,
           s.name as subforum_name,
           s.slug as subforum_slug
         FROM posts p
@@ -92,6 +98,8 @@ export async function GET(
       return {
         ...post,
         timeAgo,
+        canEdit: currentUserId === post.author_id, // El usuario puede editar si es el autor
+        canDelete: currentUserId === post.author_id, // El usuario puede eliminar si es el autor
       }
     })
 

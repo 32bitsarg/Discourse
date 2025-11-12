@@ -1,14 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, Edit, Trash2 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PostContentRenderer from './PostContentRenderer'
+import RichTextEditor from './RichTextEditor'
 import { useI18n } from '@/lib/i18n/context'
 import { useBehaviorTracking, useViewTracking } from '@/hooks/useBehaviorTracking'
 import SharePostButton from './SharePostButton'
 import AdminBadge from './AdminBadge'
+import { X } from 'lucide-react'
 
 interface PostCardProps {
   id: string
@@ -24,6 +27,8 @@ interface PostCardProps {
   isNew?: boolean
   isFromMemberCommunity?: boolean
   userVote?: 'up' | 'down' | null
+  canEdit?: boolean
+  canDelete?: boolean
 }
 
 export default function PostCard({
@@ -40,15 +45,25 @@ export default function PostCard({
   isNew = false,
   isFromMemberCommunity = false,
   userVote = null,
+  canEdit = false,
+  canDelete = false,
 }: PostCardProps) {
   const { t } = useI18n()
   const { trackBehavior } = useBehaviorTracking()
+  const router = useRouter()
   const postIdNum = parseInt(id)
   const startTimeRef = useRef<number | null>(null)
   
   const [vote, setVote] = useState<'up' | 'down' | null>(userVote)
   const [voteCount, setVoteCount] = useState(upvotes)
   const [timeAgo, setTimeAgo] = useState(t.common.seconds)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [editTitle, setEditTitle] = useState(title)
+  const [editContent, setEditContent] = useState(content)
+  const [isEditing, setIsEditing] = useState(false)
+  const router = useRouter()
 
   // Actualizar el voto cuando cambie userVote
   useEffect(() => {
@@ -117,6 +132,55 @@ export default function PostCard({
 
     return () => clearInterval(interval)
   }, [createdAt])
+
+  const handleEdit = async () => {
+    if (!editTitle.trim() || !editContent.trim()) {
+      alert(t.post.title + ' y ' + t.post.content + ' son requeridos')
+      return
+    }
+
+    setIsEditing(true)
+    try {
+      const res = await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim() }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || 'Error al editar el post')
+      }
+
+      setShowEditModal(false)
+      // Recargar la página para mostrar los cambios
+      window.location.reload()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al editar el post')
+    } finally {
+      setIsEditing(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/posts/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || 'Error al eliminar el post')
+      }
+
+      // Redirigir al feed
+      router.push('/feed')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al eliminar el post')
+      setIsDeleting(false)
+    }
+  }
 
   const handleVote = async (type: 'up' | 'down') => {
     // Trackear voto (acción prioritaria - se procesará inmediatamente si hay batch lleno)
@@ -245,6 +309,39 @@ export default function PostCard({
                 )}
               </>
             )}
+            {(canEdit || canDelete) && (
+              <>
+                <span className="text-gray-600 hidden sm:inline">•</span>
+                <div className="flex items-center gap-2">
+                  {canEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setShowEditModal(true)
+                      }}
+                      className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
+                      title={t.post.edit}
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span className="hidden sm:inline">{t.post.edit}</span>
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setShowDeleteModal(true)
+                      }}
+                      className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                      title={t.post.delete}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">{t.post.delete}</span>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Title */}
@@ -321,6 +418,101 @@ export default function PostCard({
           </div>
         </div>
       </div>
+
+      {/* Modal de edición */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+          >
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-900">{t.post.edit}</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.post.title}
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    maxLength={255}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    {t.post.content}
+                  </label>
+                  <div className="border border-gray-300 rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+                    <RichTextEditor
+                      value={editContent}
+                      onChange={setEditContent}
+                      placeholder={t.post.writePost}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                disabled={isEditing}
+              >
+                {t.post.cancel}
+              </button>
+              <button
+                onClick={handleEdit}
+                disabled={isEditing || !editTitle.trim() || !editContent.trim()}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isEditing ? t.post.editing : t.post.save}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+          >
+            <h2 className="text-xl font-bold text-gray-900 mb-4">{t.post.confirmDelete}</h2>
+            <p className="text-gray-600 mb-6">{t.post.confirmDeletePost}</p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                disabled={isDeleting}
+              >
+                {t.post.cancel}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? t.post.deleting : t.post.delete}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.article>
   )
 }
