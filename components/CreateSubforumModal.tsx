@@ -144,12 +144,12 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
+              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
             >
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
                 <h2 className="text-2xl font-bold text-gray-900">{t.community.createCommunity}</h2>
                 <button
                   onClick={onClose}
@@ -159,7 +159,7 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     {t.community.name}
@@ -250,46 +250,47 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                   )}
                 </div>
 
-                {/* Imagen de la comunidad */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Imagen de la comunidad (opcional)
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {imagePreview ? (
-                      <div className="relative">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-16 h-16 rounded-full object-cover border border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImagePreview(null)
-                            setImageUrl('')
-                            if (imageInputRef.current) {
-                              imageInputRef.current.value = ''
-                            }
-                          }}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Image className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="flex-1">
+                {/* Imagen y Banner en grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Imagen de la comunidad */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Imagen (opcional)
+                    </label>
+                    <div className="space-y-2">
+                      {imagePreview ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagePreview(null)
+                              setImageUrl('')
+                              if (imageInputRef.current) {
+                                imageInputRef.current.value = ''
+                              }
+                            }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow-sm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                          <Image className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={handleImageUpload}
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                       >
                         <Upload className="w-4 h-4" />
-                        {imagePreview ? 'Cambiar imagen' : 'Subir imagen'}
+                        {imagePreview ? 'Cambiar' : 'Subir'}
                       </button>
                       <input
                         ref={imageInputRef}
@@ -298,61 +299,51 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                         onChange={handleImageChange}
                         className="hidden"
                       />
+                      <p className="text-xs text-blue-600 font-medium">
+                        📐 {AVATAR_WIDTH}×{AVATAR_HEIGHT}px
+                      </p>
                     </div>
                   </div>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs text-gray-500">
-                      Se mostrará como avatar de la comunidad
-                    </p>
-                    <p className="text-xs text-blue-600 font-medium">
-                      📐 Dimensiones recomendadas: {AVATAR_WIDTH} × {AVATAR_HEIGHT} píxeles (1:1)
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      La imagen será recortada y optimizada automáticamente
-                    </p>
-                  </div>
-                </div>
 
-                {/* Banner de la comunidad */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Banner de la comunidad (opcional)
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {bannerPreview ? (
-                      <div className="relative">
-                        <img
-                          src={bannerPreview}
-                          alt="Preview"
-                          className="w-32 h-16 rounded-lg object-cover border border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBannerPreview(null)
-                            setBannerUrl('')
-                            if (bannerInputRef.current) {
-                              bannerInputRef.current.value = ''
-                            }
-                          }}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-32 h-16 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Image className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="flex-1">
+                  {/* Banner de la comunidad */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Banner (opcional)
+                    </label>
+                    <div className="space-y-2">
+                      {bannerPreview ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={bannerPreview}
+                            alt="Preview"
+                            className="w-full h-20 rounded-lg object-cover border-2 border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBannerPreview(null)
+                              setBannerUrl('')
+                              if (bannerInputRef.current) {
+                                bannerInputRef.current.value = ''
+                              }
+                            }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow-sm"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-full h-20 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                          <Image className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={handleBannerUpload}
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                       >
                         <Upload className="w-4 h-4" />
-                        {bannerPreview ? 'Cambiar banner' : 'Subir banner'}
+                        {bannerPreview ? 'Cambiar' : 'Subir'}
                       </button>
                       <input
                         ref={bannerInputRef}
@@ -361,22 +352,19 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                         onChange={handleBannerChange}
                         className="hidden"
                       />
+                      <p className="text-xs text-blue-600 font-medium">
+                        📐 {BANNER_WIDTH}×{BANNER_HEIGHT}px
+                      </p>
                     </div>
                   </div>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs text-gray-500">
-                      Se mostrará en la parte superior de la comunidad
-                    </p>
-                    <p className="text-xs text-blue-600 font-medium">
-                      📐 Dimensiones recomendadas: {BANNER_WIDTH} × {BANNER_HEIGHT} píxeles (4.8:1)
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      El banner será recortado y optimizado automáticamente
-                    </p>
-                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+                  <p className="font-semibold mb-1">💡 Nota:</p>
+                  <p>Las imágenes serán recortadas y optimizadas automáticamente al tamaño recomendado.</p>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t flex-shrink-0">
                   <button
                     type="button"
                     onClick={onClose}
