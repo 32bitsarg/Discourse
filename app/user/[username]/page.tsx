@@ -102,10 +102,10 @@ export default function UserProfilePage() {
   // Layout móvil estilo X
   if (isMobile) {
     return (
-      <div className="space-y-0">
+      <div className="space-y-0 -mx-3 sm:-mx-4 relative">
         {/* Banner */}
         <div 
-          className="h-32 w-full relative"
+          className="h-32 w-full relative z-0"
           style={{ 
             backgroundColor: themeColor,
             backgroundImage: user.banner_url ? `url(${user.banner_url})` : 'none',
@@ -119,12 +119,12 @@ export default function UserProfilePage() {
         </div>
 
         {/* Contenido del perfil móvil */}
-        <div className="bg-white px-4 pb-4">
+        <div className="bg-white px-4 pb-4 relative z-10">
           {/* Avatar y botones de acción */}
-          <div className="flex items-start justify-between -mt-12 mb-3">
+          <div className="flex items-start justify-between -mt-12 mb-3 relative z-20">
             {/* Avatar */}
             <div 
-              className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-bold text-2xl"
+              className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-bold text-2xl relative z-30"
               style={{ backgroundColor: themeColor }}
             >
               {user.avatar_url ? (
