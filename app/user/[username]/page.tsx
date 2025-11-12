@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -39,6 +39,24 @@ export default function UserProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const loadProfile = useCallback(() => {
+    if (!username) return
+    setLoading(true)
+    fetch(`/api/user/${username}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser(data.user)
+          setPosts(data.posts || [])
+        }
+      })
+      .catch(err => {
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [username])
+
   useEffect(() => {
     // Verificar usuario actual
     fetch('/api/auth/me')
@@ -54,24 +72,7 @@ export default function UserProfilePage() {
     if (username) {
       loadProfile()
     }
-  }, [username])
-
-  const loadProfile = () => {
-    setLoading(true)
-    fetch(`/api/user/${username}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-          setPosts(data.posts || [])
-        }
-      })
-      .catch(err => {
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
+  }, [username, loadProfile])
 
   if (loading) {
     return (
@@ -96,8 +97,8 @@ export default function UserProfilePage() {
     )
   }
 
-  const isOwnProfile = currentUser?.username === username
-  const themeColor = user.theme_color || '#6366f1'
+  const isOwnProfile = useMemo(() => currentUser?.username === username, [currentUser?.username, username])
+  const themeColor = useMemo(() => user.theme_color || '#6366f1', [user.theme_color])
 
   // Layout móvil estilo X
   if (isMobile) {
@@ -105,15 +106,34 @@ export default function UserProfilePage() {
       <div className="space-y-0 -mx-3 sm:-mx-4 relative">
         {/* Banner */}
         <div 
-          className="h-32 w-full relative z-0"
+          className="h-32 w-full relative z-0 overflow-hidden"
           style={{ 
             backgroundColor: themeColor,
-            backgroundImage: user.banner_url ? `url(${user.banner_url})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
           }}
         >
-          {!user.banner_url && (
+          {user.banner_url ? (
+            <>
+              <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+              <img
+                src={user.banner_url}
+                alt={`${user.username} banner`}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+                onLoad={(e) => {
+                  const target = e.target as HTMLImageElement
+                  const placeholder = target.previousElementSibling as HTMLElement
+                  if (placeholder) placeholder.style.display = 'none'
+                }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                  const fallback = target.parentElement?.querySelector('.banner-fallback') as HTMLElement
+                  if (fallback) fallback.style.display = 'block'
+                }}
+              />
+              <div className="banner-fallback absolute inset-0 bg-gradient-to-br from-primary-500 to-purple-500 opacity-80" style={{ display: 'none' }} />
+            </>
+          ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-purple-500 opacity-80"></div>
           )}
         </div>
@@ -124,15 +144,28 @@ export default function UserProfilePage() {
           <div className="flex items-start justify-between -mt-12 mb-3 relative z-20">
             {/* Avatar */}
             <div 
-              className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-bold text-2xl relative z-30"
+              className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-bold text-2xl relative z-30 overflow-hidden"
               style={{ backgroundColor: themeColor }}
             >
               {user.avatar_url ? (
-                <img 
-                  src={user.avatar_url} 
-                  alt={user.username}
-                  className="w-full h-full rounded-full object-cover"
-                />
+                <>
+                  <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+                  <img 
+                    src={user.avatar_url} 
+                    alt={user.username}
+                    className="w-full h-full rounded-full object-cover relative z-10"
+                    loading="lazy"
+                    onLoad={(e) => {
+                      const target = e.target as HTMLImageElement
+                      const placeholder = target.previousElementSibling as HTMLElement
+                      if (placeholder) placeholder.style.display = 'none'
+                    }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                    }}
+                  />
+                </>
               ) : (
                 user.username.charAt(0).toUpperCase()
               )}

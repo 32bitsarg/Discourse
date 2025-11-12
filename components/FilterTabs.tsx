@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Home, TrendingUp, Zap, Clock, Users, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
@@ -15,6 +15,7 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   const isMobile = useIsMobile()
   const [user, setUser] = useState<{ id: number } | null>(null)
   const [activeFilter, setActiveFilter] = useState('hot')
+  const [prevFilter, setPrevFilter] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -63,35 +64,71 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
     }
   }, [activeFilter, onFilterChange])
 
+  const handleFilterChange = (filterId: string) => {
+    setPrevFilter(activeFilter)
+    setActiveFilter(filterId)
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 sm:p-2 flex gap-1 sm:gap-2 overflow-x-auto justify-center">
-      {filters.map((filter) => {
-        const Icon = filter.icon
-        const isActive = activeFilter === filter.id
-        return (
-          <motion.button
-            key={filter.id}
-            onClick={() => setActiveFilter(filter.id)}
-            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all whitespace-nowrap flex-shrink-0 ${
-              isActive
-                ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">{filter.name}</span>
-            <span className="sm:hidden">
-              {filter.id === 'hot' ? t.post.hot : 
-               filter.id === 'new' ? t.post.new : 
-               filter.id === 'for-you' ? t.post.forYou :
-               filter.id === 'following' ? t.post.following :
-               filter.name}
-            </span>
-          </motion.button>
-        )
-      })}
+      <AnimatePresence mode="wait">
+        {filters.map((filter) => {
+          const Icon = filter.icon
+          const isActive = activeFilter === filter.id
+          return (
+            <motion.button
+              key={filter.id}
+              onClick={() => handleFilterChange(filter.id)}
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all whitespace-nowrap flex-shrink-0 relative ${
+                isActive
+                  ? 'bg-primary-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={false}
+              animate={{
+                scale: isActive ? 1.05 : 1,
+                backgroundColor: isActive ? '#4f46e5' : undefined,
+                color: isActive ? '#ffffff' : undefined,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 500,
+                damping: 30,
+                duration: 0.3,
+              }}
+            >
+              <motion.div
+                className="flex items-center gap-1 sm:gap-2"
+                animate={{
+                  x: isActive && prevFilter && prevFilter !== filter.id ? [0, -5, 0] : 0,
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{filter.name}</span>
+                <span className="sm:hidden">
+                  {filter.id === 'hot' ? t.post.hot : 
+                   filter.id === 'new' ? t.post.new : 
+                   filter.id === 'for-you' ? t.post.forYou :
+                   filter.id === 'following' ? t.post.following :
+                   filter.name}
+                </span>
+              </motion.div>
+              {isActive && (
+                <motion.div
+                  className="absolute inset-0 bg-primary-600 rounded-lg"
+                  layoutId="activeTab"
+                  initial={false}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  style={{ zIndex: -1 }}
+                />
+              )}
+            </motion.button>
+          )
+        })}
+      </AnimatePresence>
     </div>
   )
 }

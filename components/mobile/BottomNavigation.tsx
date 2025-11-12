@@ -116,14 +116,16 @@ export default function BottomNavigation() {
                   >
                     {item.name}
                   </span>
-                  {active && (
-                    <motion.div
-                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full"
-                      layoutId="activeIndicator"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 flex justify-center">
+                    {active && (
+                      <motion.div
+                        className="w-8 h-full bg-primary-600 rounded-full"
+                        layoutId="activeIndicator"
+                        initial={false}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </div>
                 </motion.button>
               )
             }
@@ -196,14 +198,16 @@ export default function BottomNavigation() {
                     {item.name}
                   </span>
                 </motion.div>
-                {active && (
-                  <motion.div
-                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full"
-                    layoutId="activeIndicator"
-                    initial={false}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 flex justify-center">
+                  {active && (
+                    <motion.div
+                      className="w-8 h-full bg-primary-600 rounded-full"
+                      layoutId="activeIndicator"
+                      initial={false}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                </div>
               </Link>
             )
           })}

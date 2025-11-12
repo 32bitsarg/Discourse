@@ -1,12 +1,29 @@
 'use client'
 
-import { useState, useRef, useEffect, Suspense } from 'react'
+import { useState, useRef, useEffect, Suspense, useCallback, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import FilterTabs from '@/components/FilterTabs'
 import { useI18n } from '@/lib/i18n/context'
 import { X, CheckCircle, AlertCircle } from 'lucide-react'
+
+// Hook para debounce
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 function FeedContent() {
   const { t, language } = useI18n()
@@ -16,6 +33,9 @@ function FeedContent() {
   const postFeedRef = useRef<PostFeedRef>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  // Debounce del cambio de filtro para dispositivos de gama baja
+  const debouncedFilter = useDebounce(filter, 150)
 
   useEffect(() => {
     const error = searchParams.get('error')
@@ -132,12 +152,12 @@ function FeedContent() {
       )}
 
       <FilterTabs onFilterChange={setFilter} />
-      <CreatePostBox               onPostCreated={() => {
-                if (postFeedRef.current) {
+      <CreatePostBox onPostCreated={useCallback(() => {
+        if (postFeedRef.current) {
           postFeedRef.current.refresh()
         }
-      }} />
-      <PostFeed ref={postFeedRef} filter={filter} />
+      }, [])} />
+      <PostFeed ref={postFeedRef} filter={debouncedFilter} />
     </div>
   )
 }
