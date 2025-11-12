@@ -4,16 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { Menu, X, User, LogOut, ChevronDown } from 'lucide-react'
-import LoginModal from '../LoginModal'
-import RegisterModal from '../RegisterModal'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function MobileHeader() {
   const { t } = useI18n()
   const [user, setUser] = useState<{ username: string; id: number } | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -50,44 +46,12 @@ export default function MobileHeader() {
     setIsUserMenuOpen(false)
   }
 
-  const handleLogin = async (email: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!res.ok) {
-      const error = await res.json()
-      throw new Error(error.message || 'Error al iniciar sesión')
-    }
-
-    const data = await res.json()
-    setUser(data.user)
-  }
-
-  const handleRegister = async (username: string, email: string, password: string) => {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
-    })
-
-    if (!res.ok) {
-      const error = await res.json()
-      throw new Error(error.message || 'Error al registrarse')
-    }
-
-    const data = await res.json()
-    setUser(data.user)
-  }
-
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 safe-area-top lg:hidden">
         <div className="max-w-md mx-auto">
-          <div className="flex items-center justify-between h-14 px-4">
-            {/* Logo */}
+          <div className="flex items-center justify-center h-14 px-4">
+            {/* Logo - Centrado */}
             <Link href="/">
               <motion.div
                 className="flex items-center"
@@ -100,9 +64,9 @@ export default function MobileHeader() {
               </motion.div>
             </Link>
 
-            {/* User Menu */}
-            {user ? (
-              <div className="relative" ref={userMenuRef}>
+            {/* User Menu - Solo si hay usuario, posicionado a la derecha */}
+            {user && (
+              <div className="absolute right-4" ref={userMenuRef}>
                 <motion.button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -147,39 +111,10 @@ export default function MobileHeader() {
                   )}
                 </AnimatePresence>
               </div>
-            ) : (
-              <motion.button
-                onClick={() => setIsLoginOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-primary-600 text-white text-sm font-medium"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {t.auth.login}
-              </motion.button>
             )}
           </div>
         </div>
       </header>
-
-      <LoginModal
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        onSwitchToRegister={() => {
-          setIsLoginOpen(false)
-          setIsRegisterOpen(true)
-        }}
-        onLogin={handleLogin}
-      />
-
-      <RegisterModal
-        isOpen={isRegisterOpen}
-        onClose={() => setIsRegisterOpen(false)}
-        onSwitchToLogin={() => {
-          setIsRegisterOpen(false)
-          setIsLoginOpen(true)
-        }}
-        onRegister={handleRegister}
-      />
     </>
   )
 }

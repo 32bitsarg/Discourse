@@ -2,28 +2,35 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Users, Plus, User, Bell } from 'lucide-react'
+import { Home, Users, Plus, User, LogIn } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
+import LoginModal from '../LoginModal'
+import RegisterModal from '../RegisterModal'
 
 interface NavItem {
   name: string
   href: string
   icon: typeof Home
   badge?: number
+  isLogin?: boolean
 }
 
 export default function BottomNavigation() {
   const { t } = useI18n()
   const pathname = usePathname()
   const [user, setUser] = useState<{ id: number; username: string } | null>(null)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false)
 
   const navItems: NavItem[] = [
     { name: t.nav.home, href: '/feed', icon: Home },
     { name: t.nav.forums, href: '/forums', icon: Users },
     { name: t.mobile.create, href: '#', icon: Plus, badge: undefined }, // Se maneja con FAB
-    { name: t.auth.profile, href: '/user', icon: User },
+    user 
+      ? { name: t.auth.profile, href: '/user', icon: User }
+      : { name: t.auth.login, href: '#', icon: LogIn, isLogin: true },
   ]
 
   // Verificar usuario para mostrar perfil correcto
@@ -37,6 +44,40 @@ export default function BottomNavigation() {
       })
       .catch(() => {})
   }, [])
+
+  const handleLogin = async (email: string, password: string) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.message || 'Error al iniciar sesión')
+    }
+
+    const data = await res.json()
+    setUser(data.user)
+    setIsLoginOpen(false)
+  }
+
+  const handleRegister = async (username: string, email: string, password: string) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    })
+
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.message || 'Error al registrarse')
+    }
+
+    const data = await res.json()
+    setUser(data.user)
+    setIsRegisterOpen(false)
+  }
 
   const isActive = (href: string) => {
     if (href === '/feed') {
@@ -74,6 +115,33 @@ export default function BottomNavigation() {
                     <Plus className="w-6 h-6 text-white" />
                   </div>
                   <span className="text-xs font-medium text-gray-600 mt-1">{t.mobile.create}</span>
+                </motion.button>
+              )
+            }
+
+            if (item.isLogin) {
+              return (
+                <motion.button
+                  key={item.name}
+                  onClick={() => setIsLoginOpen(true)}
+                  className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <div className="relative">
+                    <Icon
+                      className={`w-6 h-6 transition-colors ${
+                        active ? 'text-primary-600' : 'text-gray-500'
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`text-xs font-medium transition-colors ${
+                      active ? 'text-primary-600' : 'text-gray-500'
+                    }`}
+                  >
+                    {item.name}
+                  </span>
                 </motion.button>
               )
             }
@@ -122,6 +190,26 @@ export default function BottomNavigation() {
           })}
         </div>
       </div>
+
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSwitchToRegister={() => {
+          setIsLoginOpen(false)
+          setIsRegisterOpen(true)
+        }}
+        onLogin={handleLogin}
+      />
+
+      <RegisterModal
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
+        onSwitchToLogin={() => {
+          setIsRegisterOpen(false)
+          setIsLoginOpen(true)
+        }}
+        onRegister={handleRegister}
+      />
     </nav>
   )
 }
