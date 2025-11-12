@@ -302,7 +302,7 @@ export default function UserProfilePage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             {posts.map((post) => (
               <motion.article
                 key={post.id}
@@ -310,8 +310,8 @@ export default function UserProfilePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+                <div className="p-2 sm:p-4">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1.5 sm:mb-2 text-[10px] sm:text-xs text-gray-500">
                     <Link
                       href={`/r/${post.subforum_slug}`}
                       className="text-primary-600 hover:text-primary-700 font-semibold"
@@ -322,17 +322,17 @@ export default function UserProfilePage() {
                     <span>{post.timeAgo}</span>
                   </div>
                   <Link href={`/post/${post.id}`}>
-                    <h3 className="text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors mb-2 cursor-pointer">
+                    <h3 className="text-sm sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors mb-1.5 sm:mb-2 cursor-pointer line-clamp-2">
                       {post.title}
                     </h3>
                   </Link>
-                  <div className="text-gray-600 text-sm mb-3 line-clamp-2">
+                  <div className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
                     <PostContentRenderer content={post.content} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 sm:gap-4 text-[10px] sm:text-sm text-gray-600">
                       <div className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4" />
+                        <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span>{post.comment_count} {t.post.comments}</span>
                       </div>
                     </div>

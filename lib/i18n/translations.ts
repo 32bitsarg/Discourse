@@ -45,6 +45,7 @@ export interface Translations {
     commenting: string
     writeComment: string
     loginToComment: string
+    loginToCreatePost: string
     share: string
     save: string
     back: string
@@ -221,6 +222,7 @@ export const translations: Record<Language, Translations> = {
       commenting: 'Commenting...',
       writeComment: 'Write a comment...',
       loginToComment: 'Log in to comment',
+      loginToCreatePost: 'Log in to create a post',
       share: 'Share',
       save: 'Save',
       back: 'Back',
@@ -383,6 +385,7 @@ export const translations: Record<Language, Translations> = {
       commenting: 'Comentando...',
       writeComment: 'Escribe un comentario...',
       loginToComment: 'Inicia sesión para comentar',
+      loginToCreatePost: 'Inicia sesión para crear una publicación',
       share: 'Compartir',
       save: 'Guardar',
       back: 'Volver',

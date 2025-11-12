@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Users, Plus, User, LogIn } from 'lucide-react'
+import { Home, Users, User, LogIn } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
@@ -27,7 +27,6 @@ export default function BottomNavigation() {
   const navItems: NavItem[] = [
     { name: t.nav.home, href: '/feed', icon: Home },
     { name: t.nav.forums, href: '/forums', icon: Users },
-    { name: t.mobile.create, href: '#', icon: Plus, badge: undefined }, // Se maneja con FAB
     user 
       ? { name: t.auth.profile, href: '/user', icon: User }
       : { name: t.auth.login, href: '#', icon: LogIn, isLogin: true },
@@ -86,13 +85,6 @@ export default function BottomNavigation() {
     return pathname?.startsWith(href)
   }
 
-  const handleCreateClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    // Abrir modal de crear post mediante evento personalizado
-    const event = new CustomEvent('openCreatePost', { bubbles: true })
-    window.dispatchEvent(event)
-  }
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 safe-area-bottom lg:hidden">
       <div className="max-w-md mx-auto">
@@ -100,24 +92,6 @@ export default function BottomNavigation() {
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
-            const isCreateButton = item.href === '#'
-
-            if (isCreateButton) {
-              return (
-                <motion.button
-                  key={item.name}
-                  onClick={handleCreateClick}
-                  className="flex flex-col items-center justify-center gap-1 flex-1 relative -mt-6"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-purple-600 flex items-center justify-center shadow-lg">
-                    <Plus className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xs font-medium text-gray-600 mt-1">{t.mobile.create}</span>
-                </motion.button>
-              )
-            }
 
             if (item.isLogin) {
               return (

@@ -247,9 +247,9 @@ export default function PostCard({
     >
       <div className="flex">
         {/* Content Section */}
-        <div className="flex-1 p-3 sm:p-4 min-w-0">
+        <div className="flex-1 p-2 sm:p-4 min-w-0">
           {/* Header */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-2 mb-1.5 sm:mb-2 flex-wrap">
             <Link
               href={`/r/${forum}`}
               className="text-xs font-semibold text-primary-600 hover:text-primary-700 truncate"
@@ -302,21 +302,21 @@ export default function PostCard({
                 })
               }
             }}
-            className="block mb-2"
+            className="block mb-1.5 sm:mb-2"
           >
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer line-clamp-2">
+            <h2 className="text-sm sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer line-clamp-2 sm:line-clamp-2">
               {title}
             </h2>
           </Link>
 
               {/* Content Preview */}
-              <div className="text-gray-600 text-sm mb-3 line-clamp-3">
+              <div className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-3">
                 <PostContentRenderer content={content} />
               </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <div className="flex items-center justify-between mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-1.5 sm:gap-4 flex-wrap">
               <Link
                 href={`/post/${id}`}
                 onClick={() => {
@@ -328,9 +328,9 @@ export default function PostCard({
                     })
                   }
                 }}
-                className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm"
+                className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-[10px] sm:text-sm"
               >
-                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">{comments} {t.post.comments}</span>
                 <span className="sm:hidden">{comments}</span>
               </Link>
@@ -357,9 +357,9 @@ export default function PostCard({
                     })
                   }
                 }}
-                className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm"
+                className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-[10px] sm:text-sm"
               >
-                <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">{t.post.save}</span>
               </button>
             </div>
@@ -399,10 +399,10 @@ export default function PostCard({
         </div>
 
         {/* Vote Section - Right Side */}
-        <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50 rounded-r-lg">
+        <div className="flex flex-col items-center justify-center p-1 sm:p-2 bg-gray-50 rounded-r-lg min-w-[44px] sm:min-w-[56px]">
           <motion.button
             onClick={() => handleVote('up')}
-            className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+            className={`p-1 sm:p-2 rounded-lg transition-all ${
               vote === 'up' 
                 ? 'bg-green-100 text-green-600 hover:bg-green-200' 
                 : 'text-gray-500 hover:bg-gray-100'
@@ -411,16 +411,16 @@ export default function PostCard({
             whileTap={{ scale: 0.9 }}
             title="Me gusta"
           >
-            <ThumbsUp className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'up' ? 'fill-current' : ''}`} />
+            <ThumbsUp className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${vote === 'up' ? 'fill-current' : ''}`} />
           </motion.button>
-          <span className={`text-xs sm:text-sm font-bold py-1 sm:py-1.5 ${
+          <span className={`text-[10px] sm:text-sm font-bold py-0.5 sm:py-1.5 leading-tight ${
             vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-700'
           }`}>
             {voteCount}
           </span>
           <motion.button
             onClick={() => handleVote('down')}
-            className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+            className={`p-1 sm:p-2 rounded-lg transition-all ${
               vote === 'down' 
                 ? 'bg-red-100 text-red-600 hover:bg-red-200' 
                 : 'text-gray-500 hover:bg-gray-100'
@@ -429,7 +429,7 @@ export default function PostCard({
             whileTap={{ scale: 0.9 }}
             title="No me gusta"
           >
-            <ThumbsDown className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
+            <ThumbsDown className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
           </motion.button>
         </div>
       </div>

@@ -208,7 +208,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
       {posts.map((post, index) => (
         <PostCard
           key={`post-${post.id}-${index}`}

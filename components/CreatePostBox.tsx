@@ -296,7 +296,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
   if (!user) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 text-center text-gray-500">
-        <p>{t.post.loginToComment}</p>
+        <p>{t.post.loginToCreatePost}</p>
       </div>
     )
   }

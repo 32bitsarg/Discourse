@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Home, TrendingUp, Zap, Clock, Users, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface FilterTabsProps {
   onFilterChange?: (filter: string) => void
@@ -11,9 +12,10 @@ interface FilterTabsProps {
 
 export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   const { t } = useI18n()
-  const [activeFilter, setActiveFilter] = useState('all')
+  const isMobile = useIsMobile()
+  const [activeFilter, setActiveFilter] = useState('for-you')
 
-  const filters = [
+  const allFilters = [
     { id: 'for-you', name: t.post.forYou, icon: Sparkles },
     { id: 'all', name: t.post.all, icon: Home },
     { id: 'following', name: t.post.following, icon: Users },
@@ -21,6 +23,14 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
     { id: 'new', name: t.post.new, icon: Zap },
     { id: 'top', name: t.post.top, icon: Clock },
   ]
+
+  const mobileFilters = [
+    { id: 'for-you', name: t.post.forYou, icon: Sparkles },
+    { id: 'following', name: t.post.following, icon: Users },
+    { id: 'hot', name: t.post.trends, icon: TrendingUp },
+  ]
+
+  const filters = isMobile ? mobileFilters : allFilters
 
   useEffect(() => {
     if (onFilterChange) {

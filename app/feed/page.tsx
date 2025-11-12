@@ -68,7 +68,7 @@ function FeedContent() {
   }, [searchParams, router, language])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 sm:space-y-4">
       {/* Mensajes de error/success */}
       {errorMessage && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
