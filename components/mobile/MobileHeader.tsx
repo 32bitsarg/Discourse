@@ -1,16 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Menu, X, User, LogOut, ChevronDown } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function MobileHeader() {
   const { t } = useI18n()
-  const [user, setUser] = useState<{ username: string; id: number } | null>(null)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const userMenuRef = useRef<HTMLDivElement>(null)
+  const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
+  const [avatarErrors, setAvatarErrors] = useState<{ [key: number]: boolean }>({})
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -18,33 +16,13 @@ export default function MobileHeader() {
       .then(data => {
         if (data.user) {
           setUser(data.user)
+          if (data.user.id) {
+            setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
+          }
         }
       })
       .catch(() => {})
   }, [])
-
-  // Cerrar menú al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false)
-      }
-    }
-
-    if (isUserMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isUserMenuOpen])
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    setUser(null)
-    setIsUserMenuOpen(false)
-  }
 
   return (
     <>
@@ -64,53 +42,33 @@ export default function MobileHeader() {
               </motion.div>
             </Link>
 
-            {/* User Menu - Solo si hay usuario, posicionado a la derecha */}
+            {/* User Link - Solo si hay usuario, posicionado a la derecha */}
             {user && (
-              <div className="absolute right-4" ref={userMenuRef}>
-                <motion.button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+              <Link href={`/user/${user.username}`} className="absolute right-4">
+                <motion.div
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <User className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700 hidden sm:inline">
+                  {user.avatar_url && user.avatar_url.trim() !== '' && !avatarErrors[user.id] ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.username}
+                      className="w-5 h-5 rounded-full object-cover border border-gray-300"
+                      onError={() => {
+                        setAvatarErrors(prev => ({ ...prev, [user.id]: true }))
+                      }}
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-xs">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-xs font-medium text-gray-700 hidden sm:inline">
                     {user.username}
                   </span>
-                  <ChevronDown className={`w-3 h-3 text-gray-600 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-                </motion.button>
-
-                <AnimatePresence>
-                  {isUserMenuOpen && (
-                    <motion.div
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Link
-                        href={`/user/${user.username}`}
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <User className="w-4 h-4" />
-                        {t.auth.profile}
-                      </Link>
-                      <button
-                        onClick={() => {
-                          handleLogout()
-                          setIsUserMenuOpen(false)
-                        }}
-                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-200"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        {t.auth.logout}
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                </motion.div>
+              </Link>
             )}
           </div>
         </div>

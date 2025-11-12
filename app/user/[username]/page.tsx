@@ -190,15 +190,16 @@ export default function UserProfilePage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {isOwnProfile ? (
                     <>
                       <button
                         onClick={() => setShowEditModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs sm:text-sm"
                       >
-                        <Edit className="w-4 h-4" />
-                        <span>{t.user.editProfile}</span>
+                        <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">{t.user.editProfile}</span>
+                        <span className="sm:hidden">Editar</span>
                       </button>
                       <button
                         onClick={async () => {
@@ -208,10 +209,11 @@ export default function UserProfilePage() {
                             router.refresh()
                           }
                         }}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium"
                       >
-                        <LogOut className="w-4 h-4" />
-                        <span>{t.auth.logout}</span>
+                        <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">{t.auth.logout}</span>
+                        <span className="sm:hidden">Salir</span>
                       </button>
                     </>
                   ) : (

@@ -224,30 +224,27 @@ export default function Header() {
                 ))}
                 <div className="pt-4 border-t border-gray-200 flex flex-col gap-2">
                   {user ? (
-                    <>
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100">
-                        <User className="w-4 h-4 text-gray-600" />
-                        <span className="text-sm font-medium text-gray-700">{user.username}</span>
-                      </div>
-                      <Link
-                        href={`/user/${user.username}`}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium"
-                      >
-                        <User className="w-4 h-4" />
-                        {t.auth.profile}
-                      </Link>
-                      <button
-                        onClick={() => {
-                          handleLogout()
-                          setIsMobileMenuOpen(false)
-                        }}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        {t.auth.logout}
-                      </button>
-                    </>
+                    <Link
+                      href={`/user/${user.username}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium"
+                    >
+                      {user.avatar_url && user.avatar_url.trim() !== '' && !avatarErrors[user.id] ? (
+                        <img
+                          src={user.avatar_url}
+                          alt={user.username}
+                          className="w-5 h-5 rounded-full object-cover border border-gray-300"
+                          onError={() => {
+                            setAvatarErrors(prev => ({ ...prev, [user.id]: true }))
+                          }}
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-xs">
+                          {user.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">{user.username}</span>
+                    </Link>
                   ) : (
                     <>
                       <button
