@@ -11,6 +11,7 @@ import EditProfileModal from '@/components/EditProfileModal'
 import AdminBadge from '@/components/AdminBadge'
 import PostContentRenderer from '@/components/PostContentRenderer'
 import RichTextEditor from '@/components/RichTextEditor'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const socialIcons: Record<string, any> = {
   twitter: Twitter,
@@ -24,6 +25,7 @@ export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
   const username = params.username as string
+  const isMobile = useIsMobile()
 
   const [user, setUser] = useState<any>(null)
   const [posts, setPosts] = useState<any[]>([])
@@ -97,6 +99,384 @@ export default function UserProfilePage() {
   const isOwnProfile = currentUser?.username === username
   const themeColor = user.theme_color || '#6366f1'
 
+  // Layout móvil estilo X
+  if (isMobile) {
+    return (
+      <div className="space-y-0">
+        {/* Banner */}
+        <div 
+          className="h-32 w-full relative"
+          style={{ 
+            backgroundColor: themeColor,
+            backgroundImage: user.banner_url ? `url(${user.banner_url})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
+        >
+          {!user.banner_url && (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-purple-500 opacity-80"></div>
+          )}
+        </div>
+
+        {/* Contenido del perfil móvil */}
+        <div className="bg-white px-4 pb-4">
+          {/* Avatar y botones de acción */}
+          <div className="flex items-start justify-between -mt-12 mb-3">
+            {/* Avatar */}
+            <div 
+              className="w-20 h-20 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-bold text-2xl"
+              style={{ backgroundColor: themeColor }}
+            >
+              {user.avatar_url ? (
+                <img 
+                  src={user.avatar_url} 
+                  alt={user.username}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                user.username.charAt(0).toUpperCase()
+              )}
+            </div>
+
+            {/* Botones de acción */}
+            {isOwnProfile ? (
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="px-3 py-1.5 bg-gray-900 text-white rounded-full text-sm font-semibold hover:bg-gray-800 transition-colors"
+                >
+                  Editar perfil
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                      await fetch('/api/auth/logout', { method: 'POST' })
+                      router.push('/feed')
+                      router.refresh()
+                    }
+                  }}
+                  className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  title={t.auth.logout}
+                >
+                  <LogOut className="w-4 h-4 text-gray-700" />
+                </button>
+              </div>
+            ) : (
+              <div className="mt-2">
+                <FollowButton username={username} onFollowChange={loadProfile} />
+              </div>
+            )}
+          </div>
+
+          {/* Información del usuario */}
+          <div className="mb-4">
+            <h1 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <span>{user.username}</span>
+              <AdminBadge username={user.username} />
+            </h1>
+            {user.bio && (
+              <p className="text-sm text-gray-700 mb-2">{user.bio}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
+              {user.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span>{user.location}</span>
+                </div>
+              )}
+              {user.website && (
+                <a 
+                  href={user.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-primary-600 hover:underline"
+                >
+                  <Globe className="w-3 h-3" />
+                  <span>{user.website.replace(/^https?:\/\//, '')}</span>
+                </a>
+              )}
+              {user.created_at && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>{t.user.memberSince} {new Date(user.created_at).getFullYear()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Estadísticas */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <span className="font-bold text-gray-900">{user.following || 0}</span>
+                <span className="text-gray-500">{t.user.following}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="font-bold text-gray-900">{user.followers || 0}</span>
+                <span className="text-gray-500">{t.user.followers}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Links sociales */}
+          {user.socialLinks && user.socialLinks.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {user.socialLinks.map((link: any) => {
+                const Icon = socialIcons[link.platform.toLowerCase()] || Globe
+                return (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200 transition-colors"
+                  >
+                    <Icon className="w-3 h-3" />
+                    <span className="capitalize">{link.platform}</span>
+                  </a>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Posts del usuario */}
+        <div className="border-t border-gray-200">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h2 className="text-base font-bold text-gray-900">{t.user.publications}</h2>
+          </div>
+          {posts.length === 0 ? (
+            <div className="p-12 text-center">
+              <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm text-gray-500">
+                {isOwnProfile ? 'No has publicado nada aún' : 'Este usuario no ha publicado nada aún'}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {posts.map((post) => (
+                <motion.article
+                  key={post.id}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="flex items-center gap-1.5 mb-1.5 text-xs text-gray-500">
+                    <Link
+                      href={`/r/${post.subforum_slug}`}
+                      className="text-primary-600 hover:text-primary-700 font-semibold"
+                    >
+                      r/{post.subforum_name}
+                    </Link>
+                    <span>·</span>
+                    <span>{post.timeAgo}</span>
+                  </div>
+                  <Link href={post.slug && post.subforum_slug ? `/r/${post.subforum_slug}/${post.slug}` : `/post/${post.id}`}>
+                    <h3 className="text-sm font-semibold text-gray-900 hover:text-primary-600 transition-colors mb-1.5 line-clamp-2">
+                      {post.title}
+                    </h3>
+                  </Link>
+                  <div className="text-xs text-gray-600 mb-2 line-clamp-2">
+                    <PostContentRenderer content={post.content} />
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3" />
+                      <span>{post.comment_count}</span>
+                    </div>
+                  </div>
+                  {(post.canEdit || post.canDelete) && (
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+                      {post.canEdit && (
+                        <button
+                          onClick={() => {
+                            setEditTitle(post.title)
+                            setEditContent(post.content)
+                            setEditingPostId(post.id)
+                          }}
+                          className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                          <span>{t.post.edit}</span>
+                        </button>
+                      )}
+                      {post.canDelete && (
+                        <button
+                          onClick={() => setDeletingPostId(post.id)}
+                          className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>{t.post.delete}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </motion.article>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modales para móvil */}
+        {showEditModal && (
+          <EditProfileModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            user={user}
+            onSave={loadProfile}
+          />
+        )}
+
+        {editingPostId && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">{t.post.edit}</h2>
+                <button
+                  onClick={() => {
+                    setEditingPostId(null)
+                    setEditTitle('')
+                    setEditContent('')
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.post.title}
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                      maxLength={255}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.post.content}
+                    </label>
+                    <div className="border border-gray-300 rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+                      <RichTextEditor
+                        value={editContent}
+                        onChange={setEditContent}
+                        placeholder={t.post.writePost}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 p-4 sm:p-6 border-t">
+                <button
+                  onClick={() => {
+                    setEditingPostId(null)
+                    setEditTitle('')
+                    setEditContent('')
+                  }}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                  disabled={isEditing}
+                >
+                  {t.post.cancel}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!editTitle.trim() || !editContent.trim()) {
+                      alert(t.post.title + ' y ' + t.post.content + ' son requeridos')
+                      return
+                    }
+
+                    setIsEditing(true)
+                    try {
+                      const res = await fetch(`/api/posts/${editingPostId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim() }),
+                      })
+
+                      if (!res.ok) {
+                        const error = await res.json()
+                        throw new Error(error.message || 'Error al editar el post')
+                      }
+
+                      setEditingPostId(null)
+                      setEditTitle('')
+                      setEditContent('')
+                      loadProfile()
+                    } catch (error) {
+                      alert(error instanceof Error ? error.message : 'Error al editar el post')
+                    } finally {
+                      setIsEditing(false)
+                    }
+                  }}
+                  disabled={isEditing || !editTitle.trim() || !editContent.trim()}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isEditing ? t.post.editing : t.post.save}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {deletingPostId && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 sm:p-6"
+            >
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">{t.post.confirmDelete}</h2>
+              <p className="text-sm sm:text-base text-gray-600 mb-6">{t.post.confirmDeletePost}</p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setDeletingPostId(null)}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                  disabled={isDeleting}
+                >
+                  {t.post.cancel}
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsDeleting(true)
+                    try {
+                      const res = await fetch(`/api/posts/${deletingPostId}`, {
+                        method: 'DELETE',
+                      })
+
+                      if (!res.ok) {
+                        const error = await res.json()
+                        throw new Error(error.message || 'Error al eliminar el post')
+                      }
+
+                      setDeletingPostId(null)
+                      loadProfile()
+                    } catch (error) {
+                      alert(error instanceof Error ? error.message : 'Error al eliminar el post')
+                    } finally {
+                      setIsDeleting(false)
+                    }
+                  }}
+                  disabled={isDeleting}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? t.post.deleting : t.post.delete}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Layout desktop (original)
   return (
     <div className="space-y-4">
       {/* Botón volver */}
