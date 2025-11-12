@@ -55,6 +55,8 @@ export async function GET(request: NextRequest) {
     })
 
     // Scopes mínimos necesarios para login - solo los esenciales
+    // Nota: Si 'users.read' requiere aprobación, intentar solo con 'offline.access'
+    // o verificar en Twitter Developer Portal si hay scopes más básicos disponibles
     const twitterScopes = ['users.read', 'offline.access']
     const authUrl = `https://twitter.com/i/oauth2/authorize?` +
       `response_type=code&` +

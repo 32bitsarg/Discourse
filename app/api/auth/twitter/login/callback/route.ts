@@ -112,54 +112,57 @@ export async function GET(request: NextRequest) {
     const tokenData = await twitterTokenRes.json()
 
     // Obtener información del usuario de Twitter
-    // Intentar primero con API v2 (incluida en el nivel gratuito para autenticación)
-    // Si falla, intentar con v1.1
+    // Según la documentación oficial:
+    // - API v1.1 (Standard) está disponible y es más estable para empezar
+    // - API v2 está en Early Access y puede requerir aprobación para algunos scopes
+    // Usamos v1.1 primero ya que es más confiable en el nivel gratuito
     let twitterData: any = null
     let adaptedTwitterData: any = null
     
-    // Intentar con API v2 primero (users/me está disponible en nivel gratuito para OAuth 2.0)
-    const twitterV2Res = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,username', {
+    // Intentar primero con API v1.1 (Standard - más estable y disponible)
+    const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`
       }
     })
 
-    if (twitterV2Res.ok) {
-      const twitterV2Data = await twitterV2Res.json()
-      if (twitterV2Data.data) {
-        adaptedTwitterData = {
-          id: twitterV2Data.data.id,
-          username: twitterV2Data.data.username,
-          email: null, // API v2 no proporciona email sin scopes adicionales
-          profile_image_url: twitterV2Data.data.profile_image_url?.replace('_normal', '_400x400') || null,
-          profile_banner_url: null // API v2 no proporciona banner directamente
-        }
-        twitterData = twitterV2Data.data
+    if (twitterV1Res.ok) {
+      const twitterV1Data = await twitterV1Res.json()
+      adaptedTwitterData = {
+        id: twitterV1Data.id_str,
+        username: twitterV1Data.screen_name,
+        email: twitterV1Data.email || null,
+        profile_image_url: twitterV1Data.profile_image_url_https?.replace('_normal', '_400x400') || null,
+        profile_banner_url: twitterV1Data.profile_banner_url || null
       }
-    }
-
-    // Si v2 falla, intentar con v1.1 como fallback
-    if (!adaptedTwitterData) {
-      const twitterV1Res = await fetch('https://api.twitter.com/1.1/account/verify_credentials.json?include_entities=false&skip_status=true', {
+      twitterData = twitterV1Data
+    } else {
+      // Si v1.1 falla, intentar con v2 como fallback (puede requerir aprobación)
+      console.log('Twitter API v1.1 failed, trying v2 as fallback...')
+      const twitterV2Res = await fetch('https://api.twitter.com/2/users/me?user.fields=profile_image_url,username', {
         headers: {
           'Authorization': `Bearer ${tokenData.access_token}`
         }
       })
 
-      if (twitterV1Res.ok) {
-        const twitterV1Data = await twitterV1Res.json()
-        adaptedTwitterData = {
-          id: twitterV1Data.id_str,
-          username: twitterV1Data.screen_name,
-          email: twitterV1Data.email || null,
-          profile_image_url: twitterV1Data.profile_image_url_https?.replace('_normal', '_400x400') || null,
-          profile_banner_url: twitterV1Data.profile_banner_url || null
+      if (twitterV2Res.ok) {
+        const twitterV2Data = await twitterV2Res.json()
+        if (twitterV2Data.data) {
+          adaptedTwitterData = {
+            id: twitterV2Data.data.id,
+            username: twitterV2Data.data.username,
+            email: null, // API v2 no proporciona email sin scopes adicionales
+            profile_image_url: twitterV2Data.data.profile_image_url?.replace('_normal', '_400x400') || null,
+            profile_banner_url: null // API v2 no proporciona banner directamente
+          }
+          twitterData = twitterV2Data.data
         }
-        twitterData = twitterV1Data
       } else {
-        const errorText = await twitterV1Res.text()
-        console.error('Twitter API v1.1 error:', errorText)
-        throw new Error('Failed to fetch Twitter user info')
+        const errorTextV1 = await twitterV1Res.text()
+        const errorTextV2 = await twitterV2Res.text()
+        console.error('Twitter API v1.1 error:', errorTextV1)
+        console.error('Twitter API v2 error:', errorTextV2)
+        throw new Error('Failed to fetch Twitter user info from both v1.1 and v2')
       }
     }
 
