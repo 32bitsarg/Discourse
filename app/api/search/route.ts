@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Buscar posts
     const [posts] = await pool.execute(
-      `SELECT p.id, p.title, p.content, p.author_id, u.username as author_username
+      `SELECT DISTINCT p.id, p.title, p.content, p.author_id, u.username as author_username
        FROM posts p
        LEFT JOIN users u ON p.author_id = u.id
        WHERE p.title LIKE ? OR p.content LIKE ?

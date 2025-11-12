@@ -1,14 +1,15 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Hash, FileText, Lock } from 'lucide-react'
-import { useState } from 'react'
+import { X, Hash, FileText, Lock, Image, Upload } from 'lucide-react'
+import { useState, useRef } from 'react'
 import { useI18n } from '@/lib/i18n/context'
+import ImageCropper from './ImageCropper'
 
 interface CreateSubforumModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: { name: string; description: string; isPublic: boolean; requiresApproval: boolean }) => void
+  onSubmit: (data: { name: string; description: string; isPublic: boolean; requiresApproval: boolean; image_url?: string; banner_url?: string }) => void
 }
 
 export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: CreateSubforumModalProps) {
@@ -17,6 +18,87 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
   const [description, setDescription] = useState('')
   const [isPublic, setIsPublic] = useState(true)
   const [requiresApproval, setRequiresApproval] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+  const [bannerUrl, setBannerUrl] = useState('')
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [showImageCropper, setShowImageCropper] = useState(false)
+  const [showBannerCropper, setShowBannerCropper] = useState(false)
+  const [tempImageSrc, setTempImageSrc] = useState<string>('')
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
+  // Dimensiones recomendadas
+  const AVATAR_WIDTH = 256
+  const AVATAR_HEIGHT = 256
+  const BANNER_WIDTH = 1920
+  const BANNER_HEIGHT = 400
+
+  const handleImageUpload = () => {
+    imageInputRef.current?.click()
+  }
+
+  const handleBannerUpload = () => {
+    bannerInputRef.current?.click()
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. El tamaño máximo es 5MB.')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string
+        setTempImageSrc(base64)
+        setShowImageCropper(true)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('El banner es demasiado grande. El tamaño máximo es 5MB.')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string
+        setTempImageSrc(base64)
+        setShowBannerCropper(true)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageCropComplete = (croppedImage: string) => {
+    setImageUrl(croppedImage)
+    setImagePreview(croppedImage)
+    setShowImageCropper(false)
+    setTempImageSrc('')
+    if (imageInputRef.current) {
+      imageInputRef.current.value = ''
+    }
+  }
+
+  const handleBannerCropComplete = (croppedImage: string) => {
+    setBannerUrl(croppedImage)
+    setBannerPreview(croppedImage)
+    setShowBannerCropper(false)
+    setTempImageSrc('')
+    if (bannerInputRef.current) {
+      bannerInputRef.current.value = ''
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,12 +107,18 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
         name: name.trim(), 
         description: description.trim(), 
         isPublic,
-        requiresApproval: !isPublic || requiresApproval // Si es privada, siempre requiere aprobación
+        requiresApproval: !isPublic || requiresApproval, // Si es privada, siempre requiere aprobación
+        image_url: imageUrl || undefined,
+        banner_url: bannerUrl || undefined,
       })
       setName('')
       setDescription('')
       setIsPublic(true)
       setRequiresApproval(false)
+      setImageUrl('')
+      setBannerUrl('')
+      setImagePreview(null)
+      setBannerPreview(null)
       onClose()
     }
   }
@@ -162,6 +250,132 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
                   )}
                 </div>
 
+                {/* Imagen de la comunidad */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Imagen de la comunidad (opcional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-16 h-16 rounded-full object-cover border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImagePreview(null)
+                            setImageUrl('')
+                            if (imageInputRef.current) {
+                              imageInputRef.current.value = ''
+                            }
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                        <Image className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <button
+                        type="button"
+                        onClick={handleImageUpload}
+                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        {imagePreview ? 'Cambiar imagen' : 'Subir imagen'}
+                      </button>
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-gray-500">
+                      Se mostrará como avatar de la comunidad
+                    </p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      📐 Dimensiones recomendadas: {AVATAR_WIDTH} × {AVATAR_HEIGHT} píxeles (1:1)
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      La imagen será recortada y optimizada automáticamente
+                    </p>
+                  </div>
+                </div>
+
+                {/* Banner de la comunidad */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Banner de la comunidad (opcional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {bannerPreview ? (
+                      <div className="relative">
+                        <img
+                          src={bannerPreview}
+                          alt="Preview"
+                          className="w-32 h-16 rounded-lg object-cover border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBannerPreview(null)
+                            setBannerUrl('')
+                            if (bannerInputRef.current) {
+                              bannerInputRef.current.value = ''
+                            }
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-32 h-16 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                        <Image className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <button
+                        type="button"
+                        onClick={handleBannerUpload}
+                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        {bannerPreview ? 'Cambiar banner' : 'Subir banner'}
+                      </button>
+                      <input
+                        ref={bannerInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerChange}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs text-gray-500">
+                      Se mostrará en la parte superior de la comunidad
+                    </p>
+                    <p className="text-xs text-blue-600 font-medium">
+                      📐 Dimensiones recomendadas: {BANNER_WIDTH} × {BANNER_HEIGHT} píxeles (4.8:1)
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      El banner será recortado y optimizado automáticamente
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -181,6 +395,44 @@ export default function CreateSubforumModal({ isOpen, onClose, onSubmit }: Creat
             </motion.div>
           </motion.div>
         </>
+      )}
+
+      {/* Image Cropper para Avatar */}
+      {showImageCropper && tempImageSrc && (
+        <ImageCropper
+          imageSrc={tempImageSrc}
+          aspectRatio={1}
+          targetWidth={AVATAR_WIDTH}
+          targetHeight={AVATAR_HEIGHT}
+          onCropComplete={handleImageCropComplete}
+          onCancel={() => {
+            setShowImageCropper(false)
+            setTempImageSrc('')
+            if (imageInputRef.current) {
+              imageInputRef.current.value = ''
+            }
+          }}
+          type="avatar"
+        />
+      )}
+
+      {/* Image Cropper para Banner */}
+      {showBannerCropper && tempImageSrc && (
+        <ImageCropper
+          imageSrc={tempImageSrc}
+          aspectRatio={BANNER_WIDTH / BANNER_HEIGHT}
+          targetWidth={BANNER_WIDTH}
+          targetHeight={BANNER_HEIGHT}
+          onCropComplete={handleBannerCropComplete}
+          onCancel={() => {
+            setShowBannerCropper(false)
+            setTempImageSrc('')
+            if (bannerInputRef.current) {
+              bannerInputRef.current.value = ''
+            }
+          }}
+          type="banner"
+        />
       )}
     </AnimatePresence>
   )

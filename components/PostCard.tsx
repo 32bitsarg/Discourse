@@ -30,6 +30,7 @@ interface PostCardProps {
   userVote?: 'up' | 'down' | null
   canEdit?: boolean
   canDelete?: boolean
+  onDelete?: (postId: string) => void
 }
 
 export default function PostCard({
@@ -49,6 +50,7 @@ export default function PostCard({
   canEdit = false,
   canDelete = false,
   editedAt = null,
+  onDelete,
 }: PostCardProps) {
   const { t } = useI18n()
   const { trackBehavior } = useBehaviorTracking()
@@ -175,8 +177,13 @@ export default function PostCard({
         throw new Error(error.message || 'Error al eliminar el post')
       }
 
-      // Redirigir al feed
-      router.push('/feed')
+      // Si hay callback, llamarlo para eliminar del estado inmediatamente
+      if (onDelete) {
+        onDelete(id)
+      } else {
+        // Si no hay callback, redirigir (fallback)
+        router.push('/feed')
+      }
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al eliminar el post')
       setIsDeleting(false)

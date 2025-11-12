@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
             s.description,
             s.member_count,
             s.post_count,
+            s.image_url,
+            s.banner_url,
             s.is_public,
             s.requires_approval,
             s.created_at,

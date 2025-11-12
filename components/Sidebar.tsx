@@ -31,14 +31,14 @@ export default function Sidebar() {
       .then(data => setStats(data))
       .catch(() => {})
 
-    // Obtener comunidades reales
-    fetch('/api/subforums')
+    // Obtener top 5 comunidades más activas
+    fetch('/api/subforums/top')
       .then(res => res.json())
       .then(data => setCommunities(data.subforums || []))
       .catch(() => {})
   }, [])
 
-  const handleCreateSubforum = async (data: { name: string; description: string; isPublic: boolean; requiresApproval: boolean }) => {
+  const handleCreateSubforum = async (data: { name: string; description: string; isPublic: boolean; requiresApproval: boolean; image_url?: string; banner_url?: string }) => {
     if (!user) {
       alert('Debes iniciar sesión para crear una comunidad')
       return
@@ -57,7 +57,7 @@ export default function Sidebar() {
       }
 
       // Recargar comunidades
-      const communitiesRes = await fetch('/api/subforums')
+      const communitiesRes = await fetch('/api/subforums/top')
       const communitiesData = await communitiesRes.json()
       setCommunities(communitiesData.subforums || [])
       setIsCreateModalOpen(false)
@@ -166,7 +166,26 @@ export default function Sidebar() {
                   whileHover={{ x: 2 }}
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex-shrink-0"></div>
+                    {community.image_url ? (
+                      <img
+                        src={community.image_url}
+                        alt={community.name}
+                        className="w-6 h-6 rounded-full object-cover flex-shrink-0 border border-gray-200"
+                        onError={(e) => {
+                          // Si falla la imagen, ocultar y mostrar el fallback
+                          (e.target as HTMLImageElement).style.display = 'none'
+                          const fallback = (e.target as HTMLImageElement).nextElementSibling as HTMLElement
+                          if (fallback) {
+                            fallback.style.display = 'flex'
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 bg-gradient-to-br from-primary-500 to-purple-500 ${community.image_url ? 'hidden' : ''}`}
+                    >
+                      {community.name.charAt(0).toUpperCase()}
+                    </div>
                     <span className="font-medium truncate group-hover:text-primary-600">
                       r/{community.name}
                     </span>

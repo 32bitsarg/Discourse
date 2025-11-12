@@ -11,6 +11,7 @@ interface PostFeedProps {
 
 export interface PostFeedRef {
   refresh: () => void
+  removePost: (postId: string) => void
 }
 
 const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subforumId }, ref) => {
@@ -23,6 +24,10 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const lastUpdateRef = useRef<number>(0)
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  const removePost = useCallback((postId: string) => {
+    setPosts(prev => prev.filter(p => p.id.toString() !== postId))
+  }, [])
 
   const loadPosts = useCallback(async (showLoading = false, pageNum = 1, append = false) => {
     if (showLoading && !append) {
@@ -110,8 +115,9 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
       setPage(1)
       setHasMore(true)
       loadPosts(false, 1, false)
-    }
-  }))
+    },
+    removePost: removePost
+  }), [loadPosts, removePost])
 
   // Intersection Observer para detectar cuando el usuario llega al final
   useEffect(() => {
@@ -267,6 +273,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           canEdit={post.canEdit || false}
           canDelete={post.canDelete || false}
           editedAt={post.edited_at || null}
+          onDelete={removePost}
         />
       ))}
       

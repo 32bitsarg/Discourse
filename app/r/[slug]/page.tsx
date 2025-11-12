@@ -90,6 +90,21 @@ export default function CommunityPage() {
           </motion.div>
         </Link>
 
+        {/* Banner de la comunidad */}
+        {community.banner_url && (
+          <motion.div
+            className="w-full h-48 rounded-lg overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <img
+              src={community.banner_url}
+              alt={`${community.name} banner`}
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
+        )}
+
         {/* Header de la comunidad */}
         <motion.div
           className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-6"
@@ -99,8 +114,28 @@ export default function CommunityPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0">
-                  r/
+                {community.image_url ? (
+                  <img
+                    src={community.image_url}
+                    alt={community.name}
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+                    onError={(e) => {
+                      // Si falla la imagen, mostrar inicial
+                      (e.target as HTMLImageElement).style.display = 'none'
+                      const parent = (e.target as HTMLImageElement).parentElement
+                      if (parent) {
+                        const fallback = parent.querySelector('.community-avatar-fallback')
+                        if (fallback) {
+                          (fallback as HTMLElement).style.display = 'flex'
+                        }
+                      }
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0 ${community.image_url ? 'hidden community-avatar-fallback' : ''}`}
+                >
+                  {community.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">

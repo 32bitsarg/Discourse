@@ -180,8 +180,8 @@ export default function Header() {
                         }}
                       />
                     ) : (
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0 text-white font-semibold text-xs sm:text-sm">
+                        {user.username.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">{user.username}</span>
@@ -210,7 +210,9 @@ export default function Header() {
                               onError={() => setAvatarErrors(prev => ({ ...prev, [user.id]: true }))}
                             />
                           ) : (
-                            <User className="w-4 h-4" />
+                            <div className="w-5 h-5 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-xs">
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
                           )}
                           <div className="flex flex-col">
                             <span className="font-medium">{user.username}</span>

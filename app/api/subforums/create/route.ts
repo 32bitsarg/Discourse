@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, description, isPublic, requiresApproval } = await request.json()
+    const { name, description, isPublic, requiresApproval, image_url, banner_url } = await request.json()
 
     if (!name || !description) {
       return NextResponse.json(
@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
 
     // Crear el subforo (category_id es opcional, puede ser NULL)
     const [result] = await pool.execute(
-      'INSERT INTO subforums (creator_id, name, slug, description, is_public, requires_approval, category_id) VALUES (?, ?, ?, ?, ?, ?, NULL)',
-      [user.id, name, slug, description, isPublic, finalRequiresApproval]
+      'INSERT INTO subforums (creator_id, name, slug, description, is_public, requires_approval, image_url, banner_url, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)',
+      [user.id, name, slug, description, isPublic, finalRequiresApproval, image_url || null, banner_url || null]
     ) as any
 
     // Agregar al creador como admin del subforo (status approved automáticamente)
