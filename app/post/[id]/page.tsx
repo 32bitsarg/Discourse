@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowUp, ArrowDown, MessageCircle, Share2, Bookmark, ArrowLeft } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, ArrowLeft, Edit, Trash2, X } from 'lucide-react'
 import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
 import { useI18n } from '@/lib/i18n/context'
@@ -23,6 +23,12 @@ export default function PostPage() {
   const [vote, setVote] = useState<'up' | 'down' | null>(null)
   const [voteCount, setVoteCount] = useState(0)
   const [timeAgo, setTimeAgo] = useState(t.common.seconds)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editContent, setEditContent] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
   
   const postIdNum = postId ? parseInt(postId) : undefined
   const { trackBehavior } = useBehaviorTracking()
@@ -85,6 +91,9 @@ export default function PostPage() {
         if (data.id) {
           setPost(data)
           setVoteCount(data.upvotes - data.downvotes)
+          setVote(data.userVote || null) // Cargar el voto del usuario
+          setEditTitle(data.title)
+          setEditContent(data.content)
         } else {
           console.error('Post no encontrado en la respuesta')
         }
@@ -96,6 +105,61 @@ export default function PostPage() {
         setLoading(false)
       })
   }, [postId])
+
+  const handleEdit = async () => {
+    if (!editTitle.trim() || !editContent.trim()) {
+      alert(t.post.title + ' y ' + t.post.content + ' son requeridos')
+      return
+    }
+
+    setIsEditing(true)
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim() }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || 'Error al editar el post')
+      }
+
+      setShowEditModal(false)
+      // Recargar el post
+      const res2 = await fetch(`/api/posts/${postId}`)
+      const data = await res2.json()
+      if (data.id) {
+        setPost(data)
+        setEditTitle(data.title)
+        setEditContent(data.content)
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al editar el post')
+    } finally {
+      setIsEditing(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || 'Error al eliminar el post')
+      }
+
+      // Redirigir al feed
+      router.push('/feed')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al eliminar el post')
+      setIsDeleting(false)
+    }
+  }
 
   const handleVote = async (type: 'up' | 'down') => {
     // Trackear voto
@@ -125,13 +189,17 @@ export default function PostPage() {
 
       const data = await res.json()
       
+      // Actualizar el estado del voto inmediatamente
+      setVote(data.voteType)
+      
       // Recargar el post para obtener datos actualizados
       const postRes = await fetch(`/api/posts/${postId}`)
       const postData = await postRes.json()
       if (postData.id) {
         setPost(postData)
         setVoteCount(postData.upvotes - postData.downvotes)
-        setVote(data.voteType)
+        // Asegurar que el voto se mantenga sincronizado
+        setVote(postData.userVote || data.voteType)
       }
     } catch (error) {
       console.error('Error voting:', error)
@@ -182,31 +250,37 @@ export default function PostPage() {
         >
           <div className="flex">
             {/* Vote Section */}
-            <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50">
+            <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50 rounded-l-lg">
               <motion.button
                 onClick={() => handleVote('up')}
-                className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
-                  vote === 'up' ? 'text-orange-500' : 'text-gray-500'
+                className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                  vote === 'up' 
+                    ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                    : 'text-gray-500 hover:bg-gray-100'
                 }`}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                title="Me gusta"
               >
-                <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ThumbsUp className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'up' ? 'fill-current' : ''}`} />
               </motion.button>
-              <span className={`text-xs sm:text-sm font-bold py-0.5 sm:py-1 ${
-                vote === 'up' ? 'text-orange-500' : vote === 'down' ? 'text-blue-500' : 'text-gray-700'
+              <span className={`text-xs sm:text-sm font-bold py-1 sm:py-1.5 ${
+                vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-700'
               }`}>
                 {voteCount}
               </span>
               <motion.button
                 onClick={() => handleVote('down')}
-                className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
-                  vote === 'down' ? 'text-blue-500' : 'text-gray-500'
+                className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                  vote === 'down' 
+                    ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                    : 'text-gray-500 hover:bg-gray-100'
                 }`}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                title="No me gusta"
               >
-                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ThumbsDown className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
               </motion.button>
             </div>
 
@@ -229,12 +303,43 @@ export default function PostPage() {
                 </Link>
                 <span className="text-gray-400 hidden sm:inline">•</span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
+                {post.edited_at && (
+                  <>
+                    <span className="text-gray-600 hidden sm:inline">•</span>
+                    <span className="text-xs text-gray-500 italic">
+                      {t.post.edited} {new Date(post.edited_at).toLocaleDateString()}
+                    </span>
+                  </>
+                )}
                 {post.is_hot && (
                   <>
                     <span className="text-gray-600 hidden sm:inline">•</span>
                     <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
                       🔥 {t.post.hot}
                     </span>
+                  </>
+                )}
+                {post.canEdit && (
+                  <>
+                    <span className="text-gray-600 hidden sm:inline">•</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowEditModal(true)}
+                        className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
+                        title={t.post.edit}
+                      >
+                        <Edit className="w-3 h-3" />
+                        <span className="hidden sm:inline">{t.post.edit}</span>
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteModal(true)}
+                        className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                        title={t.post.delete}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span className="hidden sm:inline">{t.post.delete}</span>
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
@@ -291,6 +396,100 @@ export default function PostPage() {
 
         {/* Comments Section */}
         <CommentsSection postId={parseInt(postId)} />
+
+        {/* Modal de edición */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b">
+                <h2 className="text-xl font-bold text-gray-900">{t.post.edit}</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.post.title}
+                    </label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      maxLength={255}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      {t.post.content}
+                    </label>
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                      rows={15}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 p-6 border-t">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                  disabled={isEditing}
+                >
+                  {t.post.cancel}
+                </button>
+                <button
+                  onClick={handleEdit}
+                  disabled={isEditing || !editTitle.trim() || !editContent.trim()}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isEditing ? t.post.editing : t.post.save}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Modal de confirmación de eliminación */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            >
+              <h2 className="text-xl font-bold text-gray-900 mb-4">{t.post.confirmDelete}</h2>
+              <p className="text-gray-600 mb-6">{t.post.confirmDeletePost}</p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                  disabled={isDeleting}
+                >
+                  {t.post.cancel}
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? t.post.deleting : t.post.delete}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
   )
 }

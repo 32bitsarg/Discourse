@@ -18,6 +18,10 @@ export async function GET(
       )
     }
 
+    // Obtener usuario actual para verificar permisos de edición/eliminación
+    const currentUser = await getCurrentUser()
+    const currentUserId = currentUser?.id || null
+
     // Obtener comentarios (solo comentarios principales, sin replies por ahora)
     const [comments] = await pool.execute(`
       SELECT 
@@ -26,6 +30,8 @@ export async function GET(
         c.upvotes,
         c.downvotes,
         c.created_at,
+        c.edited_at,
+        c.author_id,
         u.username as author_username
       FROM comments c
       LEFT JOIN users u ON c.author_id = u.id
@@ -57,10 +63,14 @@ export async function GET(
         id: comment.id,
         content: comment.content,
         author_username: comment.author_username || 'Usuario desconocido',
+        author_id: comment.author_id,
         upvotes: comment.upvotes || 0,
         downvotes: comment.downvotes || 0,
         created_at: comment.created_at,
+        edited_at: comment.edited_at,
         timeAgo,
+        canEdit: currentUserId === comment.author_id,
+        canDelete: currentUserId === comment.author_id,
         replies: [], // Por ahora sin replies
       }
     })

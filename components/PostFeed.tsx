@@ -263,6 +263,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           isHot={post.is_hot}
           isNew={post.isNew}
           isFromMemberCommunity={post.isFromMemberCommunity || false}
+          userVote={post.userVote || null}
         />
       ))}
       

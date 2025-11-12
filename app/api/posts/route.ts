@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
     // Obtener el número real de comentarios para cada post (para asegurar sincronización)
     const postIds = posts.map((p: any) => p.id)
     let realCommentCounts: Record<number, number> = {}
+    let userVotes: Record<number, 'up' | 'down'> = {}
     
     if (postIds.length > 0) {
       const placeholders = postIds.map(() => '?').join(',')
@@ -112,6 +113,18 @@ export async function GET(request: NextRequest) {
       commentCounts.forEach((cc: any) => {
         realCommentCounts[cc.post_id] = cc.count
       })
+
+      // Obtener votos del usuario actual para todos los posts
+      if (userId && postIds.length > 0) {
+        const [votes] = await pool.execute(
+          `SELECT post_id, vote_type FROM votes WHERE user_id = ? AND post_id IN (${placeholders})`,
+          [userId, ...postIds]
+        ) as any[]
+        
+        votes.forEach((v: any) => {
+          userVotes[v.post_id] = v.vote_type
+        })
+      }
     }
 
         // Formatear fechas y sincronizar comment_count
@@ -137,6 +150,7 @@ export async function GET(request: NextRequest) {
             subforum_name: post.subforum_name,
             subforum_slug: post.subforum_slug,
             is_public: post.is_public,
+            userVote: userVotes[post.id] || null, // Voto del usuario actual
             author_username: post.author_username,
             author_id: post.author_id,
             timeAgo: getTimeAgo(post.created_at),

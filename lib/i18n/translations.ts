@@ -59,6 +59,16 @@ export interface Translations {
     popularPosts: string
     following: string
     forYou: string
+    edit: string
+    delete: string
+    editing: string
+    deleting: string
+    edited: string
+    editedOn: string
+    confirmDelete: string
+    confirmDeletePost: string
+    confirmDeleteComment: string
+    cancel: string
   }
   
   // Community
@@ -225,6 +235,16 @@ export const translations: Record<Language, Translations> = {
       popularPosts: 'Popular and most commented posts',
       following: 'Following',
       forYou: 'For You',
+      edit: 'Edit',
+      delete: 'Delete',
+      editing: 'Editing...',
+      deleting: 'Deleting...',
+      edited: 'Edited',
+      editedOn: 'Edited on',
+      confirmDelete: 'Are you sure?',
+      confirmDeletePost: 'Are you sure you want to delete this post? This action cannot be undone.',
+      confirmDeleteComment: 'Are you sure you want to delete this comment? This action cannot be undone.',
+      cancel: 'Cancel',
     },
     community: {
       communities: 'Communities',
@@ -377,6 +397,16 @@ export const translations: Record<Language, Translations> = {
       popularPosts: 'Los posts más populares y comentados de la comunidad',
       following: 'Siguiendo',
       forYou: 'Para Ti',
+      edit: 'Editar',
+      delete: 'Eliminar',
+      editing: 'Editando...',
+      deleting: 'Eliminando...',
+      edited: 'Editado',
+      editedOn: 'Editado el',
+      confirmDelete: '¿Estás seguro?',
+      confirmDeletePost: '¿Estás seguro de que quieres eliminar este post? Esta acción no se puede deshacer.',
+      confirmDeleteComment: '¿Estás seguro de que quieres eliminar este comentario? Esta acción no se puede deshacer.',
+      cancel: 'Cancelar',
     },
     community: {
       communities: 'Comunidades',

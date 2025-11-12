@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { MessageCircle, Send, ArrowUp, ArrowDown } from 'lucide-react'
+import { MessageCircle, Send, ThumbsUp, ThumbsDown, Edit, Trash2, X } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
 import { useBehaviorTracking } from '@/hooks/useBehaviorTracking'
 
@@ -11,9 +11,13 @@ interface Comment {
   id: number
   content: string
   author_username: string
+  author_id?: number
   upvotes: number
   downvotes: number
   created_at: string
+  edited_at?: string
+  canEdit?: boolean
+  canDelete?: boolean
   replies?: Comment[]
 }
 
@@ -124,6 +128,16 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
     const [vote, setVote] = useState<'up' | 'down' | null>(null)
     const voteCount = comment.upvotes - comment.downvotes
     const [timeAgo, setTimeAgo] = useState('hace unos segundos')
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [editContent, setEditContent] = useState(comment.content)
+    const [isEditing, setIsEditing] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    // Actualizar editContent cuando el comentario cambia
+    useEffect(() => {
+      setEditContent(comment.content)
+    }, [comment.content])
 
     // Función para calcular tiempo transcurrido
     const calculateTimeAgo = (date: string | Date): string => {
@@ -162,6 +176,54 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       return () => clearInterval(interval)
     }, [comment.created_at])
 
+    const handleEdit = async () => {
+      if (!editContent.trim()) {
+        alert('El contenido del comentario es requerido')
+        return
+      }
+
+      setIsEditing(true)
+      try {
+        const res = await fetch(`/api/comments/${comment.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: editContent.trim() }),
+        })
+
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.message || 'Error al editar el comentario')
+        }
+
+        setShowEditModal(false)
+        loadComments() // Recargar comentarios
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Error al editar el comentario')
+      } finally {
+        setIsEditing(false)
+      }
+    }
+
+    const handleDelete = async () => {
+      setIsDeleting(true)
+      try {
+        const res = await fetch(`/api/comments/${comment.id}`, {
+          method: 'DELETE',
+        })
+
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.message || 'Error al eliminar el comentario')
+        }
+
+        setShowDeleteModal(false)
+        loadComments() // Recargar comentarios
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Error al eliminar el comentario')
+        setIsDeleting(false)
+      }
+    }
+
     return (
       <motion.div
         className={`${depth > 0 ? 'ml-8 mt-2' : ''} border-l-2 border-gray-200 pl-4`}
@@ -170,35 +232,155 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       >
         <div className="flex gap-3">
           {/* Vote buttons */}
-          <div className="flex flex-col items-center pt-1">
+          <div className="flex flex-col items-center pt-1 gap-1">
             <button
               onClick={() => setVote(vote === 'up' ? null : 'up')}
-              className={`p-1 rounded hover:bg-gray-100 ${vote === 'up' ? 'text-orange-500' : 'text-gray-400'}`}
+              className={`p-1.5 rounded-lg transition-all ${
+                vote === 'up' 
+                  ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                  : 'text-gray-400 hover:bg-gray-100'
+              }`}
+              title="Me gusta"
             >
-              <ArrowUp className="w-3 h-3" />
+              <ThumbsUp className={`w-3 h-3 ${vote === 'up' ? 'fill-current' : ''}`} />
             </button>
-            <span className="text-xs font-semibold text-gray-600 py-0.5">{voteCount}</span>
+            <span className={`text-xs font-semibold py-0.5 ${
+              vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-600'
+            }`}>
+              {voteCount}
+            </span>
             <button
               onClick={() => setVote(vote === 'down' ? null : 'down')}
-              className={`p-1 rounded hover:bg-gray-100 ${vote === 'down' ? 'text-blue-500' : 'text-gray-400'}`}
+              className={`p-1.5 rounded-lg transition-all ${
+                vote === 'down' 
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                  : 'text-gray-400 hover:bg-gray-100'
+              }`}
+              title="No me gusta"
             >
-              <ArrowDown className="w-3 h-3" />
+              <ThumbsDown className={`w-3 h-3 ${vote === 'down' ? 'fill-current' : ''}`} />
             </button>
           </div>
 
           {/* Content */}
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-xs font-semibold text-gray-700">
                 u/{comment.author_username}
               </span>
               <span className="text-xs text-gray-500">{timeAgo}</span>
+              {comment.edited_at && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-xs text-gray-500 italic">
+                    {t.post.edited} {new Date(comment.edited_at).toLocaleDateString()}
+                  </span>
+                </>
+              )}
+              {(comment.canEdit || comment.canDelete) && (
+                <div className="flex items-center gap-2 ml-auto">
+                  {comment.canEdit && (
+                    <button
+                      onClick={() => {
+                        setEditContent(comment.content)
+                        setShowEditModal(true)
+                      }}
+                      className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
+                      title={t.post.edit}
+                    >
+                      <Edit className="w-3 h-3" />
+                    </button>
+                  )}
+                  {comment.canDelete && (
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                      title={t.post.delete}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <p className="text-sm text-gray-700 mb-2">{comment.content}</p>
             {depth < 3 && (
               <button className="text-xs text-gray-500 hover:text-gray-700">
                 Responder
               </button>
+            )}
+
+            {/* Modal de edición de comentario */}
+            {showEditModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">{t.post.edit}</h2>
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none mb-4"
+                    rows={8}
+                  />
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                      disabled={isEditing}
+                    >
+                      {t.post.cancel}
+                    </button>
+                    <button
+                      onClick={handleEdit}
+                      disabled={isEditing || !editContent.trim()}
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isEditing ? t.post.editing : t.post.save}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Modal de confirmación de eliminación de comentario */}
+            {showDeleteModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+                >
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">{t.post.confirmDelete}</h2>
+                  <p className="text-gray-600 mb-6">{t.post.confirmDeleteComment}</p>
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                      disabled={isDeleting}
+                    >
+                      {t.post.cancel}
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isDeleting ? t.post.deleting : t.post.delete}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
             )}
           </div>
         </div>

@@ -11,6 +11,7 @@
     "migrate-profiles": "node scripts/migrate-enriched-profiles.js",
     "migrate-votes": "node scripts/migrate-votes-table.js",
     "migrate-social": "node scripts/migrate-social-integrations.js",
+    "migrate-edit-tracking": "node scripts/migrate-edit-tracking.js",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync",

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowUp, ArrowDown, MessageCircle, Share2, Bookmark } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import PostContentRenderer from './PostContentRenderer'
@@ -23,6 +23,7 @@ interface PostCardProps {
   isHot?: boolean
   isNew?: boolean
   isFromMemberCommunity?: boolean
+  userVote?: 'up' | 'down' | null
 }
 
 export default function PostCard({
@@ -38,15 +39,21 @@ export default function PostCard({
   isHot = false,
   isNew = false,
   isFromMemberCommunity = false,
+  userVote = null,
 }: PostCardProps) {
   const { t } = useI18n()
   const { trackBehavior } = useBehaviorTracking()
   const postIdNum = parseInt(id)
   const startTimeRef = useRef<number | null>(null)
   
-  const [vote, setVote] = useState<'up' | 'down' | null>(null)
+  const [vote, setVote] = useState<'up' | 'down' | null>(userVote)
   const [voteCount, setVoteCount] = useState(upvotes)
   const [timeAgo, setTimeAgo] = useState(t.common.seconds)
+
+  // Actualizar el voto cuando cambie userVote
+  useEffect(() => {
+    setVote(userVote)
+  }, [userVote])
 
   // Trackear visualización del post en el feed (optimizado - solo una vez)
   useEffect(() => {
@@ -138,23 +145,20 @@ export default function PostCard({
 
       const data = await res.json()
       
-      if (data.voteType === null) {
-        // Voto eliminado
-        setVote(null)
-        setVoteCount(upvotes)
-      } else {
-        // Voto actualizado o nuevo
-        setVote(data.voteType)
-        // Recargar el post para obtener el conteo actualizado
-        fetch(`/api/posts/${id}`)
-          .then(res => res.json())
-          .then(postData => {
-            if (postData.id) {
-              setVoteCount(postData.upvotes - postData.downvotes)
-            }
-          })
-          .catch(() => {})
-      }
+      // Actualizar el estado del voto
+      setVote(data.voteType)
+      
+      // Recargar el post para obtener el conteo actualizado
+      fetch(`/api/posts/${id}`)
+        .then(res => res.json())
+        .then(postData => {
+          if (postData.id) {
+            setVoteCount(postData.upvotes - postData.downvotes)
+            // Asegurar que el voto se mantenga sincronizado
+            setVote(postData.userVote || data.voteType)
+          }
+        })
+        .catch(() => {})
     } catch (error) {
       console.error('Error voting:', error)
     }
@@ -173,31 +177,37 @@ export default function PostCard({
     >
       <div className="flex">
         {/* Vote Section */}
-        <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50">
+        <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50 rounded-l-lg">
           <motion.button
             onClick={() => handleVote('up')}
-            className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
-              vote === 'up' ? 'text-orange-500' : 'text-gray-500'
+            className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+              vote === 'up' 
+                ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                : 'text-gray-500 hover:bg-gray-100'
             }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
+            title="Me gusta"
           >
-            <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ThumbsUp className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'up' ? 'fill-current' : ''}`} />
           </motion.button>
-          <span className={`text-xs sm:text-sm font-bold py-0.5 sm:py-1 ${
-            vote === 'up' ? 'text-orange-500' : vote === 'down' ? 'text-blue-500' : 'text-gray-700'
+          <span className={`text-xs sm:text-sm font-bold py-1 sm:py-1.5 ${
+            vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-700'
           }`}>
             {voteCount}
           </span>
           <motion.button
             onClick={() => handleVote('down')}
-            className={`p-0.5 sm:p-1 rounded hover:bg-gray-200 transition-colors ${
-              vote === 'down' ? 'text-blue-500' : 'text-gray-500'
+            className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+              vote === 'down' 
+                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                : 'text-gray-500 hover:bg-gray-100'
             }`}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
+            title="No me gusta"
           >
-            <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ThumbsDown className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
           </motion.button>
         </div>
 
