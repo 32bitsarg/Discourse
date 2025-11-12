@@ -127,7 +127,7 @@ export default function BottomNavigation() {
               <Link
                 key={item.name}
                 href={item.href === '/user' && user ? `/user/${user.username}` : item.href}
-                className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0"
+                className="flex flex-col items-center justify-center gap-1 flex-1 relative min-w-0 pb-0.5"
               >
                 <motion.div
                   className="flex flex-col items-center justify-center relative"
@@ -187,15 +187,15 @@ export default function BottomNavigation() {
                   >
                     {item.name}
                   </span>
-                  {active && (
-                    <motion.div
-                      className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full"
-                      layoutId="activeIndicator"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
                 </motion.div>
+                {active && (
+                  <motion.div
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-600 rounded-full"
+                    layoutId="activeIndicator"
+                    initial={false}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
               </Link>
             )
           })}

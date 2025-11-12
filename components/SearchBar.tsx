@@ -14,6 +14,7 @@ interface SearchResult {
   name?: string
   username?: string
   slug?: string
+  subforum_slug?: string
   content?: string
 }
 
