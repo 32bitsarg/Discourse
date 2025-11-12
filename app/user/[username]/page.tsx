@@ -76,6 +76,10 @@ export default function UserProfilePage() {
     }
   }, [username, loadProfile])
 
+  // Los hooks deben estar antes de cualquier return condicional
+  const isOwnProfile = useMemo(() => currentUser?.username === username, [currentUser?.username, username])
+  const themeColor = useMemo(() => user?.theme_color || '#6366f1', [user?.theme_color])
+
   if (loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
@@ -98,9 +102,6 @@ export default function UserProfilePage() {
       </div>
     )
   }
-
-  const isOwnProfile = useMemo(() => currentUser?.username === username, [currentUser?.username, username])
-  const themeColor = useMemo(() => user.theme_color || '#6366f1', [user.theme_color])
 
   // Layout móvil estilo X
   if (isMobile) {
