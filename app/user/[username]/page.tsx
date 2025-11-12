@@ -239,7 +239,7 @@ export default function UserProfilePage() {
         </div>
 
         {/* Posts del usuario */}
-        <div className="border-t border-gray-200">
+        <div className="border-t border-gray-200 relative z-10">
           <div className="px-4 py-3 border-b border-gray-200">
             <h2 className="text-base font-bold text-gray-900">{t.user.publications}</h2>
           </div>
