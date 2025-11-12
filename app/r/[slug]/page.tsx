@@ -27,13 +27,19 @@ export default function CommunityPage() {
 
     setLoading(true)
     Promise.all([
-      fetch('/api/subforums').then(res => res.json()),
+      fetch('/api/subforums?t=' + Date.now()).then(res => res.json()),
       fetch('/api/auth/me').then(res => res.json()).catch(() => ({ user: null }))
     ])
       .then(([subforumsData, authData]) => {
         const found = subforumsData.subforums?.find((s: any) => s.slug === slug)
         if (found) {
-          setCommunity(found)
+          // Asegurar que image_url y banner_url estén presentes
+          const communityWithImages = {
+            ...found,
+            image_url: found.image_url || null,
+            banner_url: found.banner_url || null,
+          }
+          setCommunity(communityWithImages)
           
           // Verificar membresía del usuario
           if (authData.user) {
@@ -91,7 +97,7 @@ export default function CommunityPage() {
         </Link>
 
         {/* Banner de la comunidad */}
-        {community.banner_url && (
+        {community.banner_url && community.banner_url.trim() !== '' && (
           <motion.div
             className="w-full h-48 rounded-lg overflow-hidden"
             initial={{ opacity: 0 }}
@@ -101,6 +107,10 @@ export default function CommunityPage() {
               src={community.banner_url}
               alt={`${community.name} banner`}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                // Si falla la imagen, ocultar el banner
+                (e.target as HTMLImageElement).style.display = 'none'
+              }}
             />
           </motion.div>
         )}
@@ -114,13 +124,13 @@ export default function CommunityPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                {community.image_url ? (
+                {community.image_url && community.image_url.trim() !== '' ? (
                   <img
                     src={community.image_url}
                     alt={community.name}
                     className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
                     onError={(e) => {
-                      // Si falla la imagen, mostrar inicial
+                      // Si falla la imagen, ocultar y mostrar inicial
                       (e.target as HTMLImageElement).style.display = 'none'
                       const parent = (e.target as HTMLImageElement).parentElement
                       if (parent) {
@@ -133,7 +143,7 @@ export default function CommunityPage() {
                   />
                 ) : null}
                 <div 
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0 ${community.image_url ? 'hidden community-avatar-fallback' : ''}`}
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0 ${community.image_url && community.image_url.trim() !== '' ? 'hidden community-avatar-fallback' : ''}`}
                 >
                   {community.name.charAt(0).toUpperCase()}
                 </div>

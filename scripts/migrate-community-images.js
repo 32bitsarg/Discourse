@@ -27,11 +27,33 @@ async function migrate() {
     console.log('Agregando campos a tabla subforums...')
     
     try {
-      await connection.execute(`
-        ALTER TABLE subforums 
-        ADD COLUMN image_url VARCHAR(500) NULL DEFAULT NULL
-      `)
-      console.log('✅ Campo image_url agregado a subforums')
+      // Verificar si el campo existe y su tipo
+      const [columns] = await connection.execute(`
+        SELECT COLUMN_NAME, COLUMN_TYPE 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'subforums' AND COLUMN_NAME = 'image_url'
+      `, [process.env.DB_NAME || 'discourse'])
+      
+      if (Array.isArray(columns) && columns.length === 0) {
+        // Campo no existe, crearlo como TEXT
+        await connection.execute(`
+          ALTER TABLE subforums 
+          ADD COLUMN image_url TEXT NULL DEFAULT NULL
+        `)
+        console.log('✅ Campo image_url agregado a subforums')
+      } else if (columns.length > 0) {
+        // Campo existe, verificar si es VARCHAR(500) y cambiarlo a TEXT
+        const columnType = columns[0].COLUMN_TYPE
+        if (columnType && columnType.includes('varchar')) {
+          await connection.execute(`
+            ALTER TABLE subforums 
+            MODIFY COLUMN image_url TEXT NULL DEFAULT NULL
+          `)
+          console.log('✅ Campo image_url actualizado a TEXT')
+        } else {
+          console.log('ℹ️  Campo image_url ya existe con tipo correcto')
+        }
+      }
     } catch (error) {
       if (error.code === 'ER_DUP_FIELDNAME') {
         console.log('⚠️  Campo image_url ya existe, omitiendo...')
@@ -41,11 +63,33 @@ async function migrate() {
     }
 
     try {
-      await connection.execute(`
-        ALTER TABLE subforums 
-        ADD COLUMN banner_url VARCHAR(500) NULL DEFAULT NULL
-      `)
-      console.log('✅ Campo banner_url agregado a subforums')
+      // Verificar si el campo existe y su tipo
+      const [columns] = await connection.execute(`
+        SELECT COLUMN_NAME, COLUMN_TYPE 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'subforums' AND COLUMN_NAME = 'banner_url'
+      `, [process.env.DB_NAME || 'discourse'])
+      
+      if (Array.isArray(columns) && columns.length === 0) {
+        // Campo no existe, crearlo como TEXT
+        await connection.execute(`
+          ALTER TABLE subforums 
+          ADD COLUMN banner_url TEXT NULL DEFAULT NULL
+        `)
+        console.log('✅ Campo banner_url agregado a subforums')
+      } else if (columns.length > 0) {
+        // Campo existe, verificar si es VARCHAR(500) y cambiarlo a TEXT
+        const columnType = columns[0].COLUMN_TYPE
+        if (columnType && columnType.includes('varchar')) {
+          await connection.execute(`
+            ALTER TABLE subforums 
+            MODIFY COLUMN banner_url TEXT NULL DEFAULT NULL
+          `)
+          console.log('✅ Campo banner_url actualizado a TEXT')
+        } else {
+          console.log('ℹ️  Campo banner_url ya existe con tipo correcto')
+        }
+      }
     } catch (error) {
       if (error.code === 'ER_DUP_FIELDNAME') {
         console.log('⚠️  Campo banner_url ya existe, omitiendo...')

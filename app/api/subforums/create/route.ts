@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     // Invalidar cache de comunidades y estadísticas
     await invalidateCache('subforums:*')
     await invalidateCache('stats:*')
+    await invalidateCache(`user:${user.id}:communities`) // Invalidar cache de "Mis comunidades"
 
     return NextResponse.json({
       message: 'Comunidad creada exitosamente',

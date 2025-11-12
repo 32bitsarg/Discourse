@@ -73,10 +73,10 @@ export default function Sidebar() {
         throw new Error(error.message || 'Error al crear la comunidad')
       }
 
-      // Recargar comunidades
+      // Recargar comunidades - forzar recarga sin cache
       const [communitiesRes, myCommunitiesRes] = await Promise.all([
-        fetch('/api/subforums/top').then(res => res.json()),
-        user ? fetch('/api/subforums/my-communities').then(res => res.json()).catch(() => ({ subforums: [] })) : Promise.resolve({ subforums: [] })
+        fetch('/api/subforums/top?t=' + Date.now()).then(res => res.json()),
+        user ? fetch('/api/subforums/my-communities?t=' + Date.now()).then(res => res.json()).catch(() => ({ subforums: [] })) : Promise.resolve({ subforums: [] })
       ])
       setCommunities(communitiesRes.subforums || [])
       if (user) {
@@ -187,7 +187,7 @@ export default function Sidebar() {
         ) : (
           <div className="space-y-1">
             {communities.map((community) => (
-              <Link key={community.id} href={`/r/${community.slug}`}>
+              <Link key={community.id} href={`/r/${community.slug}`} className="no-underline">
                 <motion.div
                   className="flex items-center justify-between px-2 py-2 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors group cursor-pointer"
                   whileHover={{ x: 2 }}
@@ -258,7 +258,7 @@ export default function Sidebar() {
                 const isMod = community.role === 'moderator'
                 
                 return (
-                  <Link key={community.id} href={`/r/${community.slug}`}>
+                  <Link key={community.id} href={`/r/${community.slug}`} className="no-underline">
                     <motion.div
                       className="flex items-center justify-between px-2 py-2 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors group cursor-pointer"
                       whileHover={{ x: 2 }}
