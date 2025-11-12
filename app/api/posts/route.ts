@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
         p.is_hot,
         p.is_pinned,
         p.created_at,
+        p.edited_at,
         s.id as subforum_id,
         s.name as subforum_name,
         s.slug as subforum_slug,
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
             is_hot: post.is_hot,
             is_pinned: post.is_pinned,
             created_at: post.created_at,
+            edited_at: post.edited_at, // Fecha de edición
             subforum_id: post.subforum_id,
             subforum_name: post.subforum_name,
             subforum_slug: post.subforum_slug,

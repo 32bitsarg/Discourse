@@ -23,6 +23,7 @@ interface PostCardProps {
   upvotes: number
   comments: number
   createdAt: string | Date
+  editedAt?: string | Date | null
   isHot?: boolean
   isNew?: boolean
   isFromMemberCommunity?: boolean
@@ -47,6 +48,7 @@ export default function PostCard({
   userVote = null,
   canEdit = false,
   canDelete = false,
+  editedAt = null,
 }: PostCardProps) {
   const { t } = useI18n()
   const { trackBehavior } = useBehaviorTracking()
@@ -239,8 +241,160 @@ export default function PostCard({
       whileHover={{ scale: 1.01 }}
     >
       <div className="flex">
-        {/* Vote Section */}
-        <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50 rounded-l-lg">
+        {/* Content Section */}
+        <div className="flex-1 p-3 sm:p-4 min-w-0">
+          {/* Header */}
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+            <Link
+              href={`/r/${forum}`}
+              className="text-xs font-semibold text-primary-600 hover:text-primary-700 truncate"
+            >
+              r/{forum}
+            </Link>
+            <span className="text-gray-600 hidden sm:inline">•</span>
+            <span className="text-xs text-gray-500 hidden sm:inline">{t.post.postedBy}</span>
+            <Link href={`/user/${author}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate flex items-center gap-1">
+              <span className="hidden sm:inline">u/</span>
+              <span>{author}</span>
+              <AdminBadge username={author} />
+            </Link>
+            <span className="text-gray-400 hidden sm:inline">•</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
+            {editedAt && (
+              <>
+                <span className="text-gray-600 hidden sm:inline">•</span>
+                <span className="text-xs text-gray-500 italic">
+                  {t.post.edited} {new Date(editedAt).toLocaleDateString()}
+                </span>
+              </>
+            )}
+            {(isHot || isNew) && (
+              <>
+                <span className="text-gray-600 hidden sm:inline">•</span>
+                {isHot && (
+                  <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
+                    🔥 {t.post.hot}
+                  </span>
+                )}
+                {isNew && (
+                  <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-semibold whitespace-nowrap">
+                    ✨ {t.post.new}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Title */}
+          <Link 
+            href={`/post/${id}`}
+            onClick={() => {
+              if (!isNaN(postIdNum)) {
+                trackBehavior({
+                  postId: postIdNum,
+                  actionType: 'click',
+                  metadata: { target: 'title' },
+                })
+              }
+            }}
+            className="block mb-2"
+          >
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer line-clamp-2">
+              {title}
+            </h2>
+          </Link>
+
+              {/* Content Preview */}
+              <div className="text-gray-600 text-sm mb-3 line-clamp-3">
+                <PostContentRenderer content={content} />
+              </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+              <Link
+                href={`/post/${id}`}
+                onClick={() => {
+                  if (!isNaN(postIdNum)) {
+                    trackBehavior({
+                      postId: postIdNum,
+                      actionType: 'click',
+                      metadata: { target: 'comments' },
+                    })
+                  }
+                }}
+                className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm"
+              >
+                <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{comments} {t.post.comments}</span>
+                <span className="sm:hidden">{comments}</span>
+              </Link>
+              <SharePostButton
+                postId={postIdNum}
+                postTitle={title}
+                postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${id}`}
+                onShareComplete={() => {
+                  if (!isNaN(postIdNum)) {
+                    trackBehavior({
+                      postId: postIdNum,
+                      actionType: 'share',
+                      metadata: { source: 'postcard' },
+                    })
+                  }
+                }}
+              />
+              <button 
+                onClick={() => {
+                  if (!isNaN(postIdNum)) {
+                    trackBehavior({
+                      postId: postIdNum,
+                      actionType: 'save',
+                    })
+                  }
+                }}
+                className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm"
+              >
+                <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{t.post.save}</span>
+              </button>
+            </div>
+            {(canEdit || canDelete) && (
+              <div className="flex items-center gap-2">
+                {canEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setShowEditModal(true)
+                    }}
+                    className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                    title={t.post.edit}
+                  >
+                    <Edit className="w-3 h-3" />
+                    <span className="hidden sm:inline">{t.post.edit}</span>
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setShowDeleteModal(true)
+                    }}
+                    className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                    title={t.post.delete}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">{t.post.delete}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Vote Section - Right Side */}
+        <div className="flex flex-col items-center p-1.5 sm:p-2 bg-gray-50 rounded-r-lg">
           <motion.button
             onClick={() => handleVote('up')}
             className={`p-1.5 sm:p-2 rounded-lg transition-all ${
@@ -272,149 +426,6 @@ export default function PostCard({
           >
             <ThumbsDown className={`w-4 h-4 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
           </motion.button>
-        </div>
-
-        {/* Content Section */}
-        <div className="flex-1 p-3 sm:p-4 min-w-0">
-          {/* Header */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
-            <Link
-              href={`/r/${forum}`}
-              className="text-xs font-semibold text-primary-600 hover:text-primary-700 truncate"
-            >
-              r/{forum}
-            </Link>
-            <span className="text-gray-600 hidden sm:inline">•</span>
-            <span className="text-xs text-gray-500 hidden sm:inline">{t.post.postedBy}</span>
-            <Link href={`/user/${author}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate flex items-center gap-1">
-              <span className="hidden sm:inline">u/</span>
-              <span>{author}</span>
-              <AdminBadge username={author} />
-            </Link>
-            <span className="text-gray-400 hidden sm:inline">•</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
-            {(isHot || isNew) && (
-              <>
-                <span className="text-gray-600 hidden sm:inline">•</span>
-                {isHot && (
-                  <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
-                    🔥 {t.post.hot}
-                  </span>
-                )}
-                {isNew && (
-                  <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 font-semibold whitespace-nowrap">
-                    ✨ {t.post.new}
-                  </span>
-                )}
-              </>
-            )}
-            {(canEdit || canDelete) && (
-              <>
-                <span className="text-gray-600 hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  {canEdit && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setShowEditModal(true)
-                      }}
-                      className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
-                      title={t.post.edit}
-                    >
-                      <Edit className="w-3 h-3" />
-                      <span className="hidden sm:inline">{t.post.edit}</span>
-                    </button>
-                  )}
-                  {canDelete && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setShowDeleteModal(true)
-                      }}
-                      className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
-                      title={t.post.delete}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span className="hidden sm:inline">{t.post.delete}</span>
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Title */}
-          <Link 
-            href={`/post/${id}`}
-            onClick={() => {
-              if (!isNaN(postIdNum)) {
-                trackBehavior({
-                  postId: postIdNum,
-                  actionType: 'click',
-                  metadata: { target: 'title' },
-                })
-              }
-            }}
-            className="block mb-2"
-          >
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 hover:text-primary-600 transition-colors cursor-pointer line-clamp-2">
-              {title}
-            </h2>
-          </Link>
-
-              {/* Content Preview */}
-              <div className="text-gray-600 text-sm mb-3 line-clamp-3">
-                <PostContentRenderer content={content} />
-              </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-            <Link
-              href={`/post/${id}`}
-              onClick={() => {
-                if (!isNaN(postIdNum)) {
-                  trackBehavior({
-                    postId: postIdNum,
-                    actionType: 'click',
-                    metadata: { target: 'comments' },
-                  })
-                }
-              }}
-              className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-xs sm:text-sm"
-            >
-              <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{comments} {t.post.comments}</span>
-              <span className="sm:hidden">{comments}</span>
-            </Link>
-            <SharePostButton
-              postId={postIdNum}
-              postTitle={title}
-              postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${id}`}
-              onShareComplete={() => {
-                if (!isNaN(postIdNum)) {
-                  trackBehavior({
-                    postId: postIdNum,
-                    actionType: 'share',
-                    metadata: { source: 'postcard' },
-                  })
-                }
-              }}
-            />
-            <button 
-              onClick={() => {
-                if (!isNaN(postIdNum)) {
-                  trackBehavior({
-                    postId: postIdNum,
-                    actionType: 'save',
-                  })
-                }
-              }}
-              className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-xs sm:text-sm"
-            >
-              <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{t.post.save}</span>
-            </button>
-          </div>
         </div>
       </div>
 

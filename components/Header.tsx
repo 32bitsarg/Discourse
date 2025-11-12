@@ -6,6 +6,7 @@ import { Menu, X, LogIn, UserPlus, User, LogOut, ChevronDown } from 'lucide-reac
 import Link from 'next/link'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
+import SearchBar from './SearchBar'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function Header() {
@@ -16,7 +17,7 @@ export default function Header() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [avatarError, setAvatarError] = useState(false)
+  const [avatarErrors, setAvatarErrors] = useState<{ [key: number]: boolean }>({})
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const navLinks = [
@@ -39,7 +40,10 @@ export default function Header() {
       .then(data => {
         if (data.user) {
           setUser(data.user)
-          setAvatarError(false) // Resetear error de avatar cuando cambia el usuario
+          // Resetear error de avatar cuando cambia el usuario
+          if (data.user.id) {
+            setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
+          }
         }
       })
       .catch(() => {})
@@ -75,7 +79,12 @@ export default function Header() {
     }
 
     const data = await res.json()
-    setUser(data.user)
+    if (data.user) {
+      setUser(data.user)
+      if (data.user.id) {
+        setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
+      }
+    }
   }
 
   const handleRegister = async (username: string, email: string, password: string) => {
@@ -91,7 +100,12 @@ export default function Header() {
     }
 
     const data = await res.json()
-    setUser(data.user)
+    if (data.user) {
+      setUser(data.user)
+      if (data.user.id) {
+        setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
+      }
+    }
   }
 
   const handleLogout = async () => {
@@ -126,6 +140,11 @@ export default function Header() {
               </motion.div>
             </Link>
 
+            {/* Search Bar */}
+            <div className="hidden md:block flex-1 max-w-2xl mx-4">
+              <SearchBar />
+            </div>
+
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
               {navLinks.map((link) => (
@@ -151,15 +170,19 @@ export default function Header() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    {user.avatar_url && !avatarError ? (
+                    {user.avatar_url && user.avatar_url.trim() !== '' && !avatarErrors[user.id] ? (
                       <img
                         src={user.avatar_url}
                         alt={user.username}
-                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-gray-300"
-                        onError={() => setAvatarError(true)}
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-gray-300 flex-shrink-0"
+                        onError={() => {
+                          setAvatarErrors(prev => ({ ...prev, [user.id]: true }))
+                        }}
                       />
                     ) : (
-                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                      </div>
                     )}
                     <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">{user.username}</span>
                     <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-600 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
@@ -179,12 +202,12 @@ export default function Header() {
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                          {user.avatar_url && !avatarError ? (
+                          {user.avatar_url && !avatarErrors[user.id] ? (
                             <img
                               src={user.avatar_url}
                               alt={user.username}
                               className="w-5 h-5 rounded-full object-cover border border-gray-300"
-                              onError={() => setAvatarError(true)}
+                              onError={() => setAvatarErrors(prev => ({ ...prev, [user.id]: true }))}
                             />
                           ) : (
                             <User className="w-4 h-4" />
