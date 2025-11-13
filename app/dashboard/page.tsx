@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Settings, Save, Loader2, CheckCircle, XCircle, Globe, Shield, Palette,
-  Users, FileText, ThumbsUp, Mail, Search, Lock, ChevronDown, ChevronUp
+  Users, FileText, ThumbsUp, Mail, Search, Lock, ChevronDown, ChevronUp, Home
 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardSidebar from '@/components/DashboardSidebar'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -17,16 +18,7 @@ export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-    general: true,
-    appearance: false,
-    users: false,
-    content: false,
-    voting: false,
-    email: false,
-    seo: false,
-    security: false,
-  })
+  const [activeSection, setActiveSection] = useState('general')
   
   const [settings, setSettings] = useState({
     // General
@@ -163,13 +155,6 @@ export default function DashboardPage() {
     }
   }
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }))
-  }
-
   const updateSetting = async (key: string, value: string, description?: string) => {
     const res = await fetch('/api/settings', {
       method: 'PUT',
@@ -241,8 +226,8 @@ export default function DashboardPage() {
       setSuccess('Configuración guardada exitosamente')
       
       setTimeout(() => {
-        window.location.reload()
-      }, 1500)
+        setSuccess(null)
+      }, 3000)
     } catch (err: any) {
       setError(err.message || 'Error guardando configuración')
     } finally {
@@ -262,733 +247,717 @@ export default function DashboardPage() {
     return null
   }
 
-  const SectionHeader = ({ icon: Icon, title, description, sectionKey }: any) => (
-    <button
-      onClick={() => toggleSection(sectionKey)}
-      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-          <Icon className="w-5 h-5 text-indigo-600" />
-        </div>
-        <div className="text-left">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-500">{description}</p>
-        </div>
-      </div>
-      {expandedSections[sectionKey] ? (
-        <ChevronUp className="w-5 h-5 text-gray-400" />
-      ) : (
-        <ChevronDown className="w-5 h-5 text-gray-400" />
-      )}
-    </button>
-  )
+  const renderSection = () => {
+    switch (activeSection) {
+      case 'general':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Configuración General</h2>
+              <p className="text-gray-600">Configuración básica de tu foro</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre del Foro
+              </label>
+              <input
+                type="text"
+                required
+                value={settings.siteName}
+                onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Mi Foro"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Este nombre aparecerá en el header y otros lugares del sitio
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descripción del Sitio (Opcional)
+              </label>
+              <textarea
+                value={settings.siteDescription}
+                onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Una breve descripción de tu foro..."
+              />
+            </div>
+          </div>
+        )
+
+      case 'appearance':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Apariencia y Branding</h2>
+              <p className="text-gray-600">Personaliza el aspecto visual de tu foro</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Logo del Sitio (URL)
+              </label>
+              <input
+                type="url"
+                value={settings.siteLogo}
+                onChange={(e) => setSettings({ ...settings, siteLogo: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="https://ejemplo.com/logo.png"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Favicon (URL)
+              </label>
+              <input
+                type="url"
+                value={settings.siteFavicon}
+                onChange={(e) => setSettings({ ...settings, siteFavicon: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="https://ejemplo.com/favicon.ico"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Color Primario
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={settings.primaryColor}
+                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={settings.primaryColor}
+                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="#6366f1"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Banner/Header Image (URL)
+              </label>
+              <input
+                type="url"
+                value={settings.headerBanner}
+                onChange={(e) => setSettings({ ...settings, headerBanner: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="https://ejemplo.com/banner.jpg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meta Title (SEO)
+              </label>
+              <input
+                type="text"
+                value={settings.metaTitle}
+                onChange={(e) => setSettings({ ...settings, metaTitle: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Título para motores de búsqueda"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meta Description (SEO)
+              </label>
+              <textarea
+                value={settings.metaDescription}
+                onChange={(e) => setSettings({ ...settings, metaDescription: e.target.value })}
+                rows={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Descripción para motores de búsqueda"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meta Keywords (SEO)
+              </label>
+              <input
+                type="text"
+                value={settings.metaKeywords}
+                onChange={(e) => setSettings({ ...settings, metaKeywords: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="palabra1, palabra2, palabra3"
+              />
+            </div>
+          </div>
+        )
+
+      case 'users':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Configuración de Usuarios</h2>
+              <p className="text-gray-600">Controla el registro y permisos de usuarios</p>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Registro Público
+                </label>
+                <p className="text-sm text-gray-500">Permitir que nuevos usuarios se registren</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.publicRegistration}
+                  onChange={(e) => setSettings({ ...settings, publicRegistration: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Verificación de Email Requerida
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios deben verificar su email</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.emailVerificationRequired}
+                  onChange={(e) => setSettings({ ...settings, emailVerificationRequired: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Edad Mínima para Registrarse
+              </label>
+              <input
+                type="number"
+                min="13"
+                value={settings.minimumAge}
+                onChange={(e) => setSettings({ ...settings, minimumAge: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Avatares Personalizados
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden subir sus propios avatares</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowCustomAvatars}
+                  onChange={(e) => setSettings({ ...settings, allowCustomAvatars: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Banners de Perfil
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden personalizar sus banners</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowProfileBanners}
+                  onChange={(e) => setSettings({ ...settings, allowProfileBanners: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Karma Mínimo para Crear Comunidades
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={settings.minKarmaCreateCommunity}
+                onChange={(e) => setSettings({ ...settings, minKarmaCreateCommunity: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        )
+
+      case 'content':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Configuración de Contenido</h2>
+              <p className="text-gray-600">Controla qué tipo de contenido se permite</p>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Creación de Comunidades
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden crear nuevas comunidades</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowCommunityCreation}
+                  onChange={(e) => setSettings({ ...settings, allowCommunityCreation: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Requiere Aprobación para Comunidades
+                </label>
+                <p className="text-sm text-gray-500">Las nuevas comunidades necesitan aprobación</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.communityApprovalRequired}
+                  onChange={(e) => setSettings({ ...settings, communityApprovalRequired: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Límite de Caracteres en Posts
+              </label>
+              <input
+                type="number"
+                min="100"
+                value={settings.maxPostLength}
+                onChange={(e) => setSettings({ ...settings, maxPostLength: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Límite de Caracteres en Comentarios
+              </label>
+              <input
+                type="number"
+                min="50"
+                value={settings.maxCommentLength}
+                onChange={(e) => setSettings({ ...settings, maxCommentLength: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Imágenes en Posts
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden incluir imágenes</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowImagesInPosts}
+                  onChange={(e) => setSettings({ ...settings, allowImagesInPosts: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Videos en Posts
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden incluir videos</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowVideosInPosts}
+                  onChange={(e) => setSettings({ ...settings, allowVideosInPosts: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Enlaces Externos
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden compartir enlaces</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowExternalLinks}
+                  onChange={(e) => setSettings({ ...settings, allowExternalLinks: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Palabras Prohibidas
+              </label>
+              <textarea
+                value={settings.bannedWords}
+                onChange={(e) => setSettings({ ...settings, bannedWords: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="palabra1, palabra2, palabra3 (separadas por comas)"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Palabras que serán filtradas automáticamente del contenido
+              </p>
+            </div>
+          </div>
+        )
+
+      case 'voting':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Configuración de Votación</h2>
+              <p className="text-gray-600">Controla cómo funcionan los votos y el karma</p>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mostrar Contador de Votos
+                </label>
+                <p className="text-sm text-gray-500">Mostrar el número de votos públicamente</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.showVoteCounts}
+                  onChange={(e) => setSettings({ ...settings, showVoteCounts: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Permitir Downvotes
+                </label>
+                <p className="text-sm text-gray-500">Los usuarios pueden votar negativamente</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.allowDownvotes}
+                  onChange={(e) => setSettings({ ...settings, allowDownvotes: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Karma Mínimo para Votar
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={settings.minKarmaToVote}
+                onChange={(e) => setSettings({ ...settings, minKarmaToVote: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Karma Mínimo para Comentar
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={settings.minKarmaToComment}
+                onChange={(e) => setSettings({ ...settings, minKarmaToComment: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        )
+
+      case 'email':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Email y Notificaciones</h2>
+              <p className="text-gray-600">Configura las notificaciones por email</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email del Administrador
+              </label>
+              <input
+                type="email"
+                value={settings.adminEmail}
+                onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="admin@ejemplo.com"
+              />
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enviar Emails de Bienvenida
+                </label>
+                <p className="text-sm text-gray-500">Enviar email cuando un usuario se registra</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.sendWelcomeEmails}
+                  onChange={(e) => setSettings({ ...settings, sendWelcomeEmails: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notificaciones de Nuevos Posts
+                </label>
+                <p className="text-sm text-gray-500">Enviar notificaciones cuando hay nuevos posts</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.sendPostNotifications}
+                  onChange={(e) => setSettings({ ...settings, sendPostNotifications: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          </div>
+        )
+
+      case 'seo':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">SEO y Analytics</h2>
+              <p className="text-gray-600">Mejora el SEO y rastrea visitantes</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Google Analytics ID
+              </label>
+              <input
+                type="text"
+                value={settings.googleAnalyticsId}
+                onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="G-XXXXXXXXXX"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                ID de seguimiento de Google Analytics (ej: G-XXXXXXXXXX)
+              </p>
+            </div>
+          </div>
+        )
+
+      case 'security':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Seguridad</h2>
+              <p className="text-gray-600">Protege tu foro de spam y abusos</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rate Limiting (Requests por Minuto)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={settings.rateLimitPerMinute}
+                onChange={(e) => setSettings({ ...settings, rateLimitPerMinute: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Número máximo de requests por minuto por IP
+              </p>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CAPTCHA en Registro
+                </label>
+                <p className="text-sm text-gray-500">Requerir CAPTCHA al registrarse</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.captchaOnRegistration}
+                  onChange={(e) => setSettings({ ...settings, captchaOnRegistration: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CAPTCHA en Posts
+                </label>
+                <p className="text-sm text-gray-500">Requerir CAPTCHA al crear posts</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.captchaOnPosts}
+                  onChange={(e) => setSettings({ ...settings, captchaOnPosts: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader />
-      <div className="pt-20 pb-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Dashboard de Administración
-            </h1>
-            <p className="text-gray-600">
-              Gestiona la configuración completa de tu foro
-            </p>
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      {/* Mobile sidebar */}
+      <aside
+        className={`fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 lg:hidden ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="p-4 h-full overflow-y-auto">
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <div className="flex items-center gap-2 text-xl font-bold text-gray-900">
+              <Home className="w-5 h-5" />
+              <span>Dashboard</span>
+            </div>
           </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <XCircle className="w-5 h-5 text-red-500" />
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <p className="text-green-800 text-sm">{success}</p>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSave}>
-            <div className="space-y-4">
-              {/* Configuración General */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={Globe}
-                  title="Configuración General"
-                  description="Nombre y descripción básica del foro"
-                  sectionKey="general"
-                />
-                {expandedSections.general && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre del Foro
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={settings.siteName}
-                        onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Mi Foro"
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Este nombre aparecerá en el header y otros lugares del sitio
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Descripción del Sitio (Opcional)
-                      </label>
-                      <textarea
-                        value={settings.siteDescription}
-                        onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-                        rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Una breve descripción de tu foro..."
-                      />
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Apariencia y Branding */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={Palette}
-                  title="Apariencia y Branding"
-                  description="Personaliza el aspecto visual de tu foro"
-                  sectionKey="appearance"
-                />
-                {expandedSections.appearance && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Logo del Sitio (URL)
-                      </label>
-                      <input
-                        type="url"
-                        value={settings.siteLogo}
-                        onChange={(e) => setSettings({ ...settings, siteLogo: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="https://ejemplo.com/logo.png"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Favicon (URL)
-                      </label>
-                      <input
-                        type="url"
-                        value={settings.siteFavicon}
-                        onChange={(e) => setSettings({ ...settings, siteFavicon: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="https://ejemplo.com/favicon.ico"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Color Primario
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={settings.primaryColor}
-                          onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                          className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
-                        />
-                        <input
-                          type="text"
-                          value={settings.primaryColor}
-                          onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          placeholder="#6366f1"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Banner/Header Image (URL)
-                      </label>
-                      <input
-                        type="url"
-                        value={settings.headerBanner}
-                        onChange={(e) => setSettings({ ...settings, headerBanner: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="https://ejemplo.com/banner.jpg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Meta Title (SEO)
-                      </label>
-                      <input
-                        type="text"
-                        value={settings.metaTitle}
-                        onChange={(e) => setSettings({ ...settings, metaTitle: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Título para motores de búsqueda"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Meta Description (SEO)
-                      </label>
-                      <textarea
-                        value={settings.metaDescription}
-                        onChange={(e) => setSettings({ ...settings, metaDescription: e.target.value })}
-                        rows={2}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="Descripción para motores de búsqueda"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Meta Keywords (SEO)
-                      </label>
-                      <input
-                        type="text"
-                        value={settings.metaKeywords}
-                        onChange={(e) => setSettings({ ...settings, metaKeywords: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="palabra1, palabra2, palabra3"
-                      />
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Configuración de Usuarios */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={Users}
-                  title="Configuración de Usuarios"
-                  description="Controla el registro y permisos de usuarios"
-                  sectionKey="users"
-                />
-                {expandedSections.users && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Registro Público
-                        </label>
-                        <p className="text-sm text-gray-500">Permitir que nuevos usuarios se registren</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.publicRegistration}
-                          onChange={(e) => setSettings({ ...settings, publicRegistration: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Verificación de Email Requerida
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios deben verificar su email</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.emailVerificationRequired}
-                          onChange={(e) => setSettings({ ...settings, emailVerificationRequired: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Edad Mínima para Registrarse
-                      </label>
-                      <input
-                        type="number"
-                        min="13"
-                        value={settings.minimumAge}
-                        onChange={(e) => setSettings({ ...settings, minimumAge: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Avatares Personalizados
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden subir sus propios avatares</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowCustomAvatars}
-                          onChange={(e) => setSettings({ ...settings, allowCustomAvatars: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Banners de Perfil
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden personalizar sus banners</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowProfileBanners}
-                          onChange={(e) => setSettings({ ...settings, allowProfileBanners: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Karma Mínimo para Crear Comunidades
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={settings.minKarmaCreateCommunity}
-                        onChange={(e) => setSettings({ ...settings, minKarmaCreateCommunity: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Configuración de Contenido */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={FileText}
-                  title="Configuración de Contenido"
-                  description="Controla qué tipo de contenido se permite"
-                  sectionKey="content"
-                />
-                {expandedSections.content && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Creación de Comunidades
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden crear nuevas comunidades</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowCommunityCreation}
-                          onChange={(e) => setSettings({ ...settings, allowCommunityCreation: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Requiere Aprobación para Comunidades
-                        </label>
-                        <p className="text-sm text-gray-500">Las nuevas comunidades necesitan aprobación</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.communityApprovalRequired}
-                          onChange={(e) => setSettings({ ...settings, communityApprovalRequired: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Límite de Caracteres en Posts
-                      </label>
-                      <input
-                        type="number"
-                        min="100"
-                        value={settings.maxPostLength}
-                        onChange={(e) => setSettings({ ...settings, maxPostLength: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Límite de Caracteres en Comentarios
-                      </label>
-                      <input
-                        type="number"
-                        min="50"
-                        value={settings.maxCommentLength}
-                        onChange={(e) => setSettings({ ...settings, maxCommentLength: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Imágenes en Posts
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden incluir imágenes</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowImagesInPosts}
-                          onChange={(e) => setSettings({ ...settings, allowImagesInPosts: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Videos en Posts
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden incluir videos</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowVideosInPosts}
-                          onChange={(e) => setSettings({ ...settings, allowVideosInPosts: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Enlaces Externos
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden compartir enlaces</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowExternalLinks}
-                          onChange={(e) => setSettings({ ...settings, allowExternalLinks: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Palabras Prohibidas
-                      </label>
-                      <textarea
-                        value={settings.bannedWords}
-                        onChange={(e) => setSettings({ ...settings, bannedWords: e.target.value })}
-                        rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="palabra1, palabra2, palabra3 (separadas por comas)"
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Palabras que serán filtradas automáticamente del contenido
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Configuración de Votación */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={ThumbsUp}
-                  title="Configuración de Votación"
-                  description="Controla cómo funcionan los votos y el karma"
-                  sectionKey="voting"
-                />
-                {expandedSections.voting && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Mostrar Contador de Votos
-                        </label>
-                        <p className="text-sm text-gray-500">Mostrar el número de votos públicamente</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.showVoteCounts}
-                          onChange={(e) => setSettings({ ...settings, showVoteCounts: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Permitir Downvotes
-                        </label>
-                        <p className="text-sm text-gray-500">Los usuarios pueden votar negativamente</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.allowDownvotes}
-                          onChange={(e) => setSettings({ ...settings, allowDownvotes: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Karma Mínimo para Votar
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={settings.minKarmaToVote}
-                        onChange={(e) => setSettings({ ...settings, minKarmaToVote: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Karma Mínimo para Comentar
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={settings.minKarmaToComment}
-                        onChange={(e) => setSettings({ ...settings, minKarmaToComment: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Email y Notificaciones */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={Mail}
-                  title="Email y Notificaciones"
-                  description="Configura las notificaciones por email"
-                  sectionKey="email"
-                />
-                {expandedSections.email && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email del Administrador
-                      </label>
-                      <input
-                        type="email"
-                        value={settings.adminEmail}
-                        onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="admin@ejemplo.com"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Enviar Emails de Bienvenida
-                        </label>
-                        <p className="text-sm text-gray-500">Enviar email cuando un usuario se registra</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.sendWelcomeEmails}
-                          onChange={(e) => setSettings({ ...settings, sendWelcomeEmails: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Notificaciones de Nuevos Posts
-                        </label>
-                        <p className="text-sm text-gray-500">Enviar notificaciones cuando hay nuevos posts</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.sendPostNotifications}
-                          onChange={(e) => setSettings({ ...settings, sendPostNotifications: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* SEO y Analytics */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={Search}
-                  title="SEO y Analytics"
-                  description="Mejora el SEO y rastrea visitantes"
-                  sectionKey="seo"
-                />
-                {expandedSections.seo && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Google Analytics ID
-                      </label>
-                      <input
-                        type="text"
-                        value={settings.googleAnalyticsId}
-                        onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        placeholder="G-XXXXXXXXXX"
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        ID de seguimiento de Google Analytics (ej: G-XXXXXXXXXX)
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Seguridad */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <SectionHeader
-                  icon={Lock}
-                  title="Seguridad"
-                  description="Protege tu foro de spam y abusos"
-                  sectionKey="security"
-                />
-                {expandedSections.security && (
-                  <div className="px-6 pb-6 space-y-4 border-t">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Rate Limiting (Requests por Minuto)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={settings.rateLimitPerMinute}
-                        onChange={(e) => setSettings({ ...settings, rateLimitPerMinute: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                      <p className="mt-1 text-sm text-gray-500">
-                        Número máximo de requests por minuto por IP
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          CAPTCHA en Registro
-                        </label>
-                        <p className="text-sm text-gray-500">Requerir CAPTCHA al registrarse</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.captchaOnRegistration}
-                          onChange={(e) => setSettings({ ...settings, captchaOnRegistration: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          CAPTCHA en Posts
-                        </label>
-                        <p className="text-sm text-gray-500">Requerir CAPTCHA al crear posts</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settings.captchaOnPosts}
-                          onChange={(e) => setSettings({ ...settings, captchaOnPosts: e.target.checked })}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </div>
-
-            {/* Botón de guardar */}
-            <div className="mt-8 flex justify-end">
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Guardar Todos los Cambios
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+          <nav className="space-y-1">
+            {[
+              { id: 'general', label: 'General', icon: Globe },
+              { id: 'appearance', label: 'Apariencia', icon: Palette },
+              { id: 'users', label: 'Usuarios', icon: Users },
+              { id: 'content', label: 'Contenido', icon: FileText },
+              { id: 'voting', label: 'Votación', icon: ThumbsUp },
+              { id: 'email', label: 'Email', icon: Mail },
+              { id: 'seo', label: 'SEO', icon: Search },
+              { id: 'security', label: 'Seguridad', icon: Lock },
+            ].map((item) => {
+              const Icon = item.icon
+              const isActive = activeSection === item.id
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveSection(item.id)
+                    setSidebarOpen(false)
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-indigo-600' : 'text-gray-500'}`} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                </button>
+              )
+            })}
+          </nav>
         </div>
+      </aside>
+      <div className="flex pt-16">
+        <DashboardSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <main className="flex-1 lg:ml-64 p-4 lg:p-8 w-full">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden fixed top-20 left-4 z-50 p-2 bg-white border border-gray-200 rounded-lg shadow-sm"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+          <div className="max-w-4xl">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <p className="text-red-800 text-sm">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <p className="text-green-800 text-sm">{success}</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSave}>
+              <motion.div
+                key={activeSection}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-8"
+              >
+                {renderSection()}
+              </motion.div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </main>
       </div>
     </div>
   )
