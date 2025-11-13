@@ -120,28 +120,34 @@ export default function Sidebar() {
           {t.sidebar.quickNav}
         </h3>
         <div className="space-y-2">
-          <Link href="/feed">
+          <Link href="/feed" className="no-underline block" style={{ textDecoration: 'none' }}>
             <motion.div
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group cursor-pointer"
               whileHover={{ x: 4 }}
+              style={{ textDecoration: 'none', outline: 'none' }}
+              onFocus={(e) => e.currentTarget.blur()}
             >
               <Home className="w-5 h-5 text-primary-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">{t.nav.home}</span>
             </motion.div>
           </Link>
-          <Link href="/feed?filter=hot">
+          <Link href="/feed?filter=hot" className="no-underline block" style={{ textDecoration: 'none' }}>
             <motion.div
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group cursor-pointer"
               whileHover={{ x: 4 }}
+              style={{ textDecoration: 'none', outline: 'none' }}
+              onFocus={(e) => e.currentTarget.blur()}
             >
               <TrendingUp className="w-5 h-5 text-orange-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">{t.nav.trends}</span>
             </motion.div>
           </Link>
-          <Link href="/feed?filter=new">
+          <Link href="/feed?filter=new" className="no-underline block" style={{ textDecoration: 'none' }}>
             <motion.div
               className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors group cursor-pointer"
               whileHover={{ x: 4 }}
+              style={{ textDecoration: 'none', outline: 'none' }}
+              onFocus={(e) => e.currentTarget.blur()}
             >
               <Zap className="w-5 h-5 text-green-400 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-medium">{t.nav.new}</span>
@@ -187,10 +193,17 @@ export default function Sidebar() {
         ) : (
           <div className="space-y-1">
             {communities.map((community) => (
-              <Link key={community.id} href={`/r/${community.slug}`} className="no-underline">
+              <Link 
+                key={community.id} 
+                href={`/r/${community.slug}`} 
+                className="no-underline block"
+                style={{ textDecoration: 'none' }}
+              >
                 <motion.div
                   className="flex items-center justify-between px-2 py-2 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors group cursor-pointer"
                   whileHover={{ x: 2 }}
+                  style={{ textDecoration: 'none', outline: 'none' }}
+                  onFocus={(e) => e.currentTarget.blur()}
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {community.image_url ? (
@@ -266,7 +279,8 @@ export default function Sidebar() {
                     <motion.div
                       className="flex items-center justify-between px-2 py-2 rounded text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                       whileHover={{ x: 2 }}
-                      style={{ textDecoration: 'none' }}
+                      style={{ textDecoration: 'none', outline: 'none' }}
+                      onFocus={(e) => e.currentTarget.blur()}
                     >
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {community.image_url ? (

@@ -127,3 +127,19 @@ body {
   }
 }
 
+/* Eliminar efectos azules en Links del sidebar */
+.no-underline,
+.no-underline:hover,
+.no-underline:focus,
+.no-underline:active,
+.no-underline:visited {
+  text-decoration: none !important;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.no-underline * {
+  text-decoration: none !important;
+}
+
