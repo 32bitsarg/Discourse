@@ -1,22 +1,22 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Descarga Gratis - Plataforma de Foros Open Source | Discourse',
+  title: 'Self-Hosting Discourse - Descarga Gratis | Discourse',
   description: 'Descarga gratis nuestra plataforma de foros open source. Código completo, instalador web incluido y sin restricciones. Hostea tu propia instancia con control total.',
-  keywords: 'descargar foro, plataforma foros open source, código fuente foros, instalar foro propio, hostear foro, foro open source, descargar discourse, instalar discourse, foro gratuito, código abierto foros',
+  keywords: 'self-hosting foros, descargar foro, código fuente foros, instalar foro propio, hostear foro, foro open source, descargar discourse, instalar discourse, foro gratuito, código abierto foros',
   openGraph: {
-    title: 'Descarga Gratis - Plataforma de Foros Open Source',
+    title: 'Self-Hosting Discourse - Descarga Gratis',
     description: 'Descarga gratis nuestra plataforma de foros open source. Código completo, instalador web incluido.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Descarga Gratis - Plataforma de Foros Open Source',
+    title: 'Self-Hosting Discourse - Descarga Gratis',
     description: 'Descarga gratis nuestra plataforma de foros open source. Código completo, instalador web incluido.',
   },
 }
 
-export default function SaasLayout({
+export default function SelfHostLayout({
   children,
 }: {
   children: React.ReactNode

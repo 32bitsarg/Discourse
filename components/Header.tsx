@@ -7,6 +7,7 @@ import Link from 'next/link'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
 import SearchBar from './SearchBar'
+import SiteNameClient from './SiteNameClient'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function Header() {
@@ -115,9 +116,7 @@ export default function Header() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span className="bg-gradient-to-r from-primary-600 via-purple-600 to-primary-500 bg-clip-text text-transparent">
-                  Discourse
-                </span>
+                <SiteNameClient />
               </motion.div>
             </Link>
 

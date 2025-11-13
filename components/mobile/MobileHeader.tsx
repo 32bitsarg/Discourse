@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import SiteNameClient from '../SiteNameClient'
 
 export default function MobileHeader() {
   return (
@@ -15,8 +16,8 @@ export default function MobileHeader() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-lg font-black bg-gradient-to-r from-primary-600 via-purple-600 to-primary-500 bg-clip-text text-transparent">
-                Discourse
+              <span className="text-lg font-black">
+                <SiteNameClient />
               </span>
             </motion.div>
           </Link>

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { LogIn, UserPlus, Menu, X } from 'lucide-react'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
+import SiteNameClient from './SiteNameClient'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function LandingHeader() {
@@ -89,9 +90,7 @@ export default function LandingHeader() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                  Discourse
-                </span>
+                <SiteNameClient />
               </motion.div>
             </Link>
 

@@ -13,10 +13,10 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const isMobile = useIsMobile()
   const pathname = usePathname()
   
-  // No mostrar layout en la landing page
-  const isLandingPage = pathname === '/landing'
+  // Páginas independientes que no usan el layout del foro
+  const independentPages = ['/landing', '/saas', '/self-host', '/install']
 
-  if (isLandingPage) {
+  if (independentPages.includes(pathname)) {
     return <>{children}</>
   }
 

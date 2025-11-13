@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Probar conexión a BD
+    // Conectar a BD (ya probada y con tablas creadas)
     let connection
     try {
       connection = await mysql.createConnection({
@@ -45,12 +45,8 @@ export async function POST(request: NextRequest) {
         port: parseInt(dbPort || '3306'),
         user: dbUser,
         password: dbPassword,
-        multipleStatements: true,
+        database: dbName,
       })
-
-      // Crear BD si no existe
-      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``)
-      await connection.query(`USE \`${dbName}\``)
     } catch (error: any) {
       return NextResponse.json(
         { message: `Error conectando a MySQL: ${error.message}` },
@@ -59,28 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Leer y ejecutar el esquema SQL
-      const sqlPath = path.join(process.cwd(), 'lib', 'database.sql')
-      if (!fs.existsSync(sqlPath)) {
-        throw new Error(`No se encontró el archivo: ${sqlPath}`)
-      }
 
-      const sqlContent = fs.readFileSync(sqlPath, 'utf8')
-      const statements = cleanSqlContent(sqlContent)
-
-      // Ejecutar cada statement
-      for (let i = 0; i < statements.length; i++) {
-        const statement = statements[i] + ';'
-        
-        try {
-          await connection.execute(statement)
-        } catch (error: any) {
-          // Ignorar errores de "table already exists"
-          if (error.code !== 'ER_TABLE_EXISTS_ERROR' && error.code !== 'ER_DUP_ENTRY') {
-            console.error(`Error en statement ${i + 1}:`, error.message)
-          }
-        }
-      }
+      // Guardar configuración del sitio (nombre del foro)
+      await connection.query(
+        'INSERT INTO settings (key_name, value, description) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = ?',
+        ['site_name', siteName, 'Nombre del sitio/foro', siteName]
+      )
 
       // Crear usuario admin
       const passwordHash = await hashPassword(adminPassword)

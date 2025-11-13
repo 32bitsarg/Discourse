@@ -52,6 +52,73 @@ export default function InstallPage() {
     }
   }
 
+  // Probar conexión a BD
+  const testConnection = async () => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/install/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dbHost: formData.dbHost,
+          dbPort: formData.dbPort,
+          dbUser: formData.dbUser,
+          dbPassword: formData.dbPassword,
+          dbName: formData.dbName,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Error conectando a la base de datos')
+      }
+
+      // Si la conexión es exitosa, avanzar al siguiente paso
+      setStep(2)
+    } catch (err: any) {
+      setError(err.message || 'Error conectando a la base de datos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Crear tablas
+  const createTables = async () => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/install/create-tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dbHost: formData.dbHost,
+          dbPort: formData.dbPort,
+          dbUser: formData.dbUser,
+          dbPassword: formData.dbPassword,
+          dbName: formData.dbName,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Error creando las tablas')
+      }
+
+      // Si las tablas se crearon exitosamente, avanzar al siguiente paso
+      setStep(3)
+    } catch (err: any) {
+      setError(err.message || 'Error creando las tablas')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Crear admin y finalizar instalación
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -96,7 +163,7 @@ export default function InstallPage() {
       }
 
       // Instalación exitosa
-      setStep(3)
+      setStep(4)
       // Redirigir después de mostrar mensaje de éxito
       setTimeout(() => {
         router.push('/feed')
@@ -156,7 +223,7 @@ export default function InstallPage() {
           </div>
         )}
 
-        {step === 3 ? (
+        {step === 4 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -280,17 +347,76 @@ ${formData.redisToken ? `UPSTASH_REDIS_REST_TOKEN=${formData.redisToken}` : ''}`
                 <div className="mt-6 flex justify-end">
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
-                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    onClick={testConnection}
+                    disabled={loading}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Siguiente
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Probando conexión...
+                      </span>
+                    ) : (
+                      'Probar Conexión y Continuar'
+                    )}
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {/* Paso 2: Información del Foro y Admin */}
+            {/* Paso 2: Crear Tablas */}
             {step === 2 && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Database className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Crear Tablas de Base de Datos
+                    </h2>
+                    <p className="text-gray-600">Conexión exitosa. Ahora crearemos las tablas necesarias.</p>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-700">
+                    Se crearán todas las tablas necesarias para el funcionamiento del foro.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                  >
+                    Atrás
+                  </button>
+                  <button
+                    type="button"
+                    onClick={createTables}
+                    disabled={loading}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Creando tablas...
+                      </span>
+                    ) : (
+                      'Crear Tablas y Continuar'
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Paso 3: Información del Foro y Admin */}
+            {step === 3 && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -423,7 +549,7 @@ ${formData.redisToken ? `UPSTASH_REDIS_REST_TOKEN=${formData.redisToken}` : ''}`
                 <div className="mt-6 flex justify-between">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(2)}
                     className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
                   >
                     Atrás
@@ -436,10 +562,10 @@ ${formData.redisToken ? `UPSTASH_REDIS_REST_TOKEN=${formData.redisToken}` : ''}`
                     {loading ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Instalando...
+                        Finalizando instalación...
                       </span>
                     ) : (
-                      'Instalar'
+                      'Finalizar Instalación'
                     )}
                   </button>
                 </div>

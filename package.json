@@ -10,6 +10,8 @@
     "create-tables": "node scripts/create-tables.js",
     "setup-saas": "node scripts/setup-saas.js",
     "setup-app": "node scripts/installer.js",
+    "migrate:settings": "node scripts/migrate-add-settings.js",
+    "setup:admin": "node scripts/setup-admin.js",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync",
