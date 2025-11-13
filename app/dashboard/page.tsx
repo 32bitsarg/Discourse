@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('general')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   
   const [settings, setSettings] = useState({
     // General
@@ -837,8 +838,6 @@ export default function DashboardPage() {
         return null
     }
   }
-
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
