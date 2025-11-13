@@ -250,6 +250,7 @@ export default function DashboardPage() {
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>Más opciones de configuración próximamente...</p>
         </div>
+        </div>
       </div>
     </div>
   )
