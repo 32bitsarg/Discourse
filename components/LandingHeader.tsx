@@ -108,6 +108,18 @@ export default function LandingHeader() {
               >
                 Comunidades
               </Link>
+              <Link
+                href="/saas"
+                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+              >
+                Descargar
+              </Link>
+              <Link
+                href="/self-host"
+                className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+              >
+                Self-Hosting
+              </Link>
               {user ? (
                 <Link
                   href="/feed"
@@ -165,6 +177,20 @@ export default function LandingHeader() {
                   className="text-gray-700 hover:text-primary-600 font-medium"
                 >
                   Comunidades
+                </Link>
+                <Link
+                  href="/saas"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-gray-700 hover:text-primary-600 font-medium"
+                >
+                  Descargar
+                </Link>
+                <Link
+                  href="/self-host"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-gray-700 hover:text-primary-600 font-medium"
+                >
+                  Self-Hosting
                 </Link>
                 {user ? (
                   <Link

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Settings, Save, Loader2, CheckCircle, XCircle, Globe, Shield } from 'lucide-react'
+import DashboardHeader from '@/components/DashboardHeader'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -142,8 +143,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader />
+      <div className="pt-20 pb-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Dashboard de Administración

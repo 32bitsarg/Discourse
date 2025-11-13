@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Download, Code, Database, Server, CheckCircle, Github, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useLatestRelease } from '@/lib/hooks/useLatestRelease'
+import LandingHeader from '@/components/LandingHeader'
 
 export default function SelfHostPage() {
   const { release, loading } = useLatestRelease()
@@ -15,7 +16,8 @@ export default function SelfHostPage() {
   const hasRelease = release?.available === true
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <LandingHeader />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">

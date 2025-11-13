@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import { Menu, X, LogIn, UserPlus, User, LogOut } from 'lucide-react'
+import { Menu, X, LogIn, UserPlus, User, LogOut, ChevronDown, Settings } from 'lucide-react'
 import Link from 'next/link'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
@@ -18,6 +18,8 @@ export default function Header() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
   const [avatarErrors, setAvatarErrors] = useState<{ [key: number]: boolean }>({})
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const navLinks = [
     { name: t.nav.home, href: '/feed' },
@@ -42,10 +44,32 @@ export default function Header() {
           if (data.user.id) {
             setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
           }
+          
+          // Verificar si es admin
+          fetch('/api/admin/check')
+            .then(adminRes => adminRes.json())
+            .then(adminData => {
+              setIsAdmin(adminData.isAdmin || false)
+            })
+            .catch(() => setIsAdmin(false))
         }
       })
       .catch(() => {})
   }, [])
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isUserMenuOpen) {
+        const target = event.target as HTMLElement
+        if (!target.closest('.user-menu-container')) {
+          setIsUserMenuOpen(false)
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isUserMenuOpen])
 
 
   const handleLogin = async (email: string, password: string) => {
@@ -143,9 +167,10 @@ export default function Header() {
             {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
               {user ? (
-                <Link href={`/user/${user.username}`}>
-                  <motion.div
-                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                <div className="relative user-menu-container">
+                  <motion.button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -164,8 +189,51 @@ export default function Header() {
                       </div>
                     )}
                     <span className="text-xs sm:text-sm font-medium text-gray-700 hidden sm:inline">{user.username}</span>
-                  </motion.div>
-                </Link>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                  </motion.button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {isUserMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                      >
+                        <Link
+                          href={`/user/${user.username}`}
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          <span className="text-sm">Mi Perfil</span>
+                        </Link>
+                        {isAdmin && (
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <Settings className="w-4 h-4" />
+                            <span className="text-sm">Administración</span>
+                          </Link>
+                        )}
+                        <div className="border-t border-gray-200 my-1" />
+                        <button
+                          onClick={() => {
+                            setIsUserMenuOpen(false)
+                            handleLogout()
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span className="text-sm">Cerrar Sesión</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ) : (
                 <>
                   <motion.button

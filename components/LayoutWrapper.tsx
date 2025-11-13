@@ -14,7 +14,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname()
   
   // Páginas independientes que no usan el layout del foro
-  const independentPages = ['/landing', '/saas', '/self-host', '/install']
+  const independentPages = ['/landing', '/saas', '/self-host', '/install', '/dashboard']
 
   if (independentPages.includes(pathname)) {
     return <>{children}</>
