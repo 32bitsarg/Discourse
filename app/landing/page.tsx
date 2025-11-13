@@ -255,6 +255,80 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* SaaS Section */}
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                ¿Quieres tu Propio Foro?
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Crea tu propio foro en minutos con nuestra plataforma SaaS. 
+                Hosting gestionado, sin configuración técnica, o descarga el código 
+                y hostea tu propia instancia con control total.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/saas"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+                >
+                  Crear Mi Foro
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/self-host"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-lg font-semibold border-2 border-primary-600 hover:bg-primary-50 transition-colors"
+                >
+                  <Globe className="w-5 h-5" />
+                  Self-Hosting
+                </Link>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="bg-white rounded-2xl shadow-xl p-8"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Opciones Disponibles
+              </h3>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-gray-900">SaaS:</strong>
+                    <span className="text-gray-600 ml-2">Hosting gestionado, configuración en minutos</span>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-gray-900">Self-Hosting:</strong>
+                    <span className="text-gray-600 ml-2">Control total, código open source</span>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-gray-900">Planes desde Gratis:</strong>
+                    <span className="text-gray-600 ml-2">Empieza gratis y escala según crezcas</span>
+                  </div>
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-primary-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -271,13 +345,21 @@ export default function LandingPage() {
               La plataforma colaborativa perfecta para crear foros de discusión, 
               gestionar comunidades de marca y fomentar el engagement.
             </p>
-            <Link
-              href="/feed"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
-            >
-              Explorar Discourse
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/feed"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
+              >
+                Explorar Discourse
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                href="/saas"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-white rounded-lg font-semibold text-lg border-2 border-white hover:bg-white/10 transition-colors"
+              >
+                Crear Mi Foro
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

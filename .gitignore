@@ -166,3 +166,9 @@ service-account.json
 android/
 ios/
 .capacitor/
+
+# Dashboard Admin del SaaS (NO subir a GitHub)
+/app/admin-saas/
+/app/api/admin-saas/
+/lib/admin.ts
+/components/admin/
