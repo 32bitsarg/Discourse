@@ -127,7 +127,7 @@ export default function SelfHostPage() {
               </div>
               <div className="bg-gray-900 rounded-lg p-4 ml-11">
                 <code className="text-green-400 text-sm">
-                  npm run install
+                  npm run setup-app
                 </code>
               </div>
               <p className="text-gray-600 text-sm mt-2 ml-11">
@@ -197,7 +197,7 @@ export default function SelfHostPage() {
             🚀 Instalador Interactivo
           </h2>
           <p className="text-gray-700 mb-4">
-            El instalador (<code className="bg-white px-1 rounded">npm run install</code>) te guía paso a paso:
+            El instalador (<code className="bg-white px-1 rounded">npm run setup-app</code>) te guía paso a paso:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-700 mb-4">
             <li>Verifica requisitos del sistema (Node.js, MySQL)</li>

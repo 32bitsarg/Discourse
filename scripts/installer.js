@@ -107,7 +107,7 @@ function generateSessionSecret() {
 async function createEnvFile(dbConfig, redisConfig, sessionSecret) {
   console.log('\n📝 Creando archivo .env.local...\n')
   
-  const envContent = `# Configuración de Base de Datos
+  let envContent = `# Configuración de Base de Datos
 DB_HOST=${dbConfig.host}
 DB_PORT=${dbConfig.port}
 DB_USER=${dbConfig.user}
@@ -115,10 +115,19 @@ DB_PASSWORD=${dbConfig.password}
 DB_NAME=${dbConfig.database}
 
 # Redis (Opcional)
-${redisConfig ? `UPSTASH_REDIS_REST_URL=${redisConfig.url}
-UPSTASH_REDIS_REST_TOKEN=${redisConfig.token}` : '# UPSTASH_REDIS_REST_URL=
-# UPSTASH_REDIS_REST_TOKEN='}
-
+`
+  
+  if (redisConfig && redisConfig.url) {
+    envContent += `UPSTASH_REDIS_REST_URL=${redisConfig.url}
+UPSTASH_REDIS_REST_TOKEN=${redisConfig.token || ''}
+`
+  } else {
+    envContent += `# UPSTASH_REDIS_REST_URL=
+# UPSTASH_REDIS_REST_TOKEN=
+`
+  }
+  
+  envContent += `
 # Seguridad
 SESSION_SECRET=${sessionSecret}
 
@@ -325,17 +334,14 @@ async function main() {
     console.log('')
     console.log('📋 Próximos pasos:')
     console.log('')
-    console.log('1. Instala las dependencias:')
-    console.log('   npm install')
-    console.log('')
-    console.log('2. Inicia el servidor de desarrollo:')
+    console.log('1. Inicia el servidor de desarrollo:')
     console.log('   npm run dev')
     console.log('')
-    console.log('3. O crea el build de producción:')
+    console.log('2. O crea el build de producción:')
     console.log('   npm run build')
     console.log('   npm start')
     console.log('')
-    console.log('4. Abre http://localhost:3000 en tu navegador')
+    console.log('3. Abre http://localhost:3000 en tu navegador')
     console.log('')
     console.log('📚 Documentación completa: /self-host')
     console.log('')

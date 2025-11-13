@@ -9,7 +9,7 @@
     "lint": "next lint",
     "create-tables": "node scripts/create-tables.js",
     "setup-saas": "node scripts/setup-saas.js",
-    "install": "node scripts/installer.js",
+    "setup-app": "node scripts/installer.js",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync",
