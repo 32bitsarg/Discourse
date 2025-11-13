@@ -109,6 +109,34 @@ export async function POST(
       )
     }
 
+    // Validar longitud máxima del comentario
+    const { getMaxCommentLength, containsBannedWords, getMinKarmaToComment } = await import('@/lib/settings-validation')
+    const maxLength = await getMaxCommentLength()
+    if (content.length > maxLength) {
+      return NextResponse.json(
+        { message: `El comentario no puede exceder ${maxLength} caracteres` },
+        { status: 400 }
+      )
+    }
+
+    // Validar karma mínimo para comentar
+    const minKarma = await getMinKarmaToComment()
+    if (user.karma < minKarma) {
+      return NextResponse.json(
+        { message: `Necesitas al menos ${minKarma} karma para comentar` },
+        { status: 403 }
+      )
+    }
+
+    // Validar palabras prohibidas
+    const hasBannedWords = await containsBannedWords(content)
+    if (hasBannedWords) {
+      return NextResponse.json(
+        { message: 'El contenido contiene palabras no permitidas' },
+        { status: 400 }
+      )
+    }
+
     if (isNaN(postId)) {
       return NextResponse.json(
         { message: 'ID de post inválido' },

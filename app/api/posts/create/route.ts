@@ -3,6 +3,13 @@ import { getCurrentUser } from '@/lib/auth'
 import pool from '@/lib/db'
 import { invalidateKeys } from '@/lib/redis'
 import { generateSlug, ensureUniqueSlug } from '@/lib/utils/slug'
+import {
+  getMaxPostLength,
+  containsBannedWords,
+  areImagesAllowedInPosts,
+  areVideosAllowedInPosts,
+  areExternalLinksAllowed,
+} from '@/lib/settings-validation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +29,56 @@ export async function POST(request: NextRequest) {
         { message: 'Contenido y comunidad son requeridos' },
         { status: 400 }
       )
+    }
+
+    // Validar longitud máxima del post
+    const maxLength = await getMaxPostLength()
+    if (content.length > maxLength) {
+      return NextResponse.json(
+        { message: `El contenido no puede exceder ${maxLength} caracteres` },
+        { status: 400 }
+      )
+    }
+
+    // Validar palabras prohibidas
+    const hasBannedWords = await containsBannedWords(content)
+    if (hasBannedWords) {
+      return NextResponse.json(
+        { message: 'El contenido contiene palabras no permitidas' },
+        { status: 400 }
+      )
+    }
+
+    // Validar imágenes, videos y enlaces según configuración
+    const imagesAllowed = await areImagesAllowedInPosts()
+    const videosAllowed = await areVideosAllowedInPosts()
+    const linksAllowed = await areExternalLinksAllowed()
+
+    // Verificar si hay imágenes en el contenido
+    if (!imagesAllowed && (content.includes('<img') || content.includes('![image]'))) {
+      return NextResponse.json(
+        { message: 'Las imágenes no están permitidas en los posts' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar si hay videos en el contenido
+    if (!videosAllowed && (content.includes('<video') || content.includes('![video]'))) {
+      return NextResponse.json(
+        { message: 'Los videos no están permitidos en los posts' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar si hay enlaces externos en el contenido
+    if (!linksAllowed) {
+      const urlRegex = /(https?:\/\/[^\s]+)/g
+      if (urlRegex.test(content)) {
+        return NextResponse.json(
+          { message: 'Los enlaces externos no están permitidos en los posts' },
+          { status: 400 }
+        )
+      }
     }
 
     // Si no hay título, usar las primeras palabras del contenido

@@ -11,6 +11,7 @@
     "setup-saas": "node scripts/setup-saas.js",
     "setup-app": "node scripts/installer.js",
     "migrate:settings": "node scripts/migrate-add-settings.js",
+    "migrate:all-settings": "node scripts/migrate-all-settings.js",
     "setup:admin": "node scripts/setup-admin.js",
     "cap:init": "npx cap init",
     "cap:add:android": "npx cap add android",

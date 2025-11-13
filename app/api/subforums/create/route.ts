@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import pool from '@/lib/db'
 import { invalidateCache } from '@/lib/redis'
+import {
+  isCommunityCreationAllowed,
+  isCommunityApprovalRequired,
+  getMinKarmaForCommunity,
+} from '@/lib/settings-validation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +19,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verificar si se permite la creación de comunidades
+    const communityCreationAllowed = await isCommunityCreationAllowed()
+    if (!communityCreationAllowed) {
+      return NextResponse.json(
+        { message: 'La creación de comunidades está deshabilitada' },
+        { status: 403 }
+      )
+    }
+
+    // Verificar karma mínimo
+    const minKarma = await getMinKarmaForCommunity()
+    if (user.karma < minKarma) {
+      return NextResponse.json(
+        { message: `Necesitas al menos ${minKarma} karma para crear una comunidad` },
+        { status: 403 }
+      )
+    }
+
     const { name, description, isPublic, requiresApproval, image_url, banner_url } = await request.json()
 
     if (!name || !description) {
@@ -23,8 +46,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Si es privada, siempre requiere aprobación
-    const finalRequiresApproval = !isPublic || requiresApproval || false
+    // Verificar si se requiere aprobación automáticamente
+    const approvalRequired = await isCommunityApprovalRequired()
+    const finalRequiresApproval = approvalRequired || requiresApproval || false
+
 
     // Generar slug único
     const slug = name

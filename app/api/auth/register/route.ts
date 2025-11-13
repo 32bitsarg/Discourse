@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUser, getUserByEmail, setUserSession } from '@/lib/auth'
+import { isPublicRegistrationEnabled } from '@/lib/settings-validation'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar si el registro público está habilitado
+    const publicRegistrationEnabled = await isPublicRegistrationEnabled()
+    if (!publicRegistrationEnabled) {
+      return NextResponse.json(
+        { message: 'El registro público está deshabilitado' },
+        { status: 403 }
+      )
+    }
+
     const { username, email, password } = await request.json()
 
     if (!username || !email || !password) {
