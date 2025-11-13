@@ -269,24 +269,24 @@ export default function LandingPage() {
                 ¿Quieres tu Propio Foro?
               </h2>
               <p className="text-lg text-gray-600 mb-6">
-                Crea tu propio foro en minutos con nuestra plataforma SaaS. 
-                Hosting gestionado, sin configuración técnica, o descarga el código 
-                y hostea tu propia instancia con control total.
+                Descarga gratis nuestra plataforma de foros open source. 
+                Código completo, instalador web incluido y sin restricciones. 
+                Hostea tu propia instancia con control total.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/saas"
+                  href="/self-host"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
                 >
-                  Crear Mi Foro
+                  Descargar Gratis
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link
-                  href="/self-host"
+                  href="/saas"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-lg font-semibold border-2 border-primary-600 hover:bg-primary-50 transition-colors"
                 >
                   <Globe className="w-5 h-5" />
-                  Self-Hosting
+                  Más Información
                 </Link>
               </div>
             </motion.div>
@@ -305,22 +305,22 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-gray-900">SaaS:</strong>
-                    <span className="text-gray-600 ml-2">Hosting gestionado, configuración en minutos</span>
+                    <strong className="text-gray-900">100% Gratuito:</strong>
+                    <span className="text-gray-600 ml-2">Código open source sin restricciones</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-gray-900">Self-Hosting:</strong>
-                    <span className="text-gray-600 ml-2">Control total, código open source</span>
+                    <strong className="text-gray-900">Instalador Web:</strong>
+                    <span className="text-gray-600 ml-2">Configuración rápida sin conocimientos técnicos</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-gray-900">Planes desde Gratis:</strong>
-                    <span className="text-gray-600 ml-2">Empieza gratis y escala según crezcas</span>
+                    <strong className="text-gray-900">Control Total:</strong>
+                    <span className="text-gray-600 ml-2">Tus datos, tu servidor, tu control</span>
                   </div>
                 </li>
               </ul>
@@ -354,10 +354,10 @@ export default function LandingPage() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                href="/saas"
+                href="/self-host"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-white rounded-lg font-semibold text-lg border-2 border-white hover:bg-white/10 transition-colors"
               >
-                Crear Mi Foro
+                Descargar Gratis
               </Link>
             </div>
           </motion.div>

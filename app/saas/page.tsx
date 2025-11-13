@@ -2,77 +2,68 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowRight, Cloud, Download, CheckCircle, Zap, Users, Database, Globe, Code, Shield, Rocket, TrendingUp } from 'lucide-react'
+import { ArrowRight, Download, CheckCircle, Code, Heart, Github, Gift, Zap, Shield, Globe } from 'lucide-react'
 import LandingHeader from '@/components/LandingHeader'
 
 export default function SaasLandingPage() {
   const features = [
     {
-      icon: Cloud,
-      title: 'Hosting Gestionado',
-      description: 'No te preocupes por servidores, actualizaciones o mantenimiento. Nosotros nos encargamos de todo.',
+      icon: Download,
+      title: '100% Gratuito',
+      description: 'Descarga el código completo sin costo. Sin límites, sin restricciones. El proyecto es completamente open source.',
+    },
+    {
+      icon: Code,
+      title: 'Código Abierto',
+      description: 'Código fuente completo disponible en GitHub. Modifica, personaliza y adapta a tus necesidades.',
     },
     {
       icon: Zap,
-      title: 'Configuración en Minutos',
-      description: 'Crea tu foro en menos de 5 minutos. Sin configuración técnica, sin complicaciones.',
+      title: 'Instalación Rápida',
+      description: 'Instalador web incluido. Configura tu foro en minutos sin conocimientos técnicos avanzados.',
     },
     {
       icon: Shield,
-      title: 'Seguridad y Backup',
-      description: 'Tus datos están seguros con backups automáticos y protección contra ataques.',
-    },
-    {
-      icon: TrendingUp,
-      title: 'Escalabilidad Automática',
-      description: 'Tu foro crece sin límites. Nosotros manejamos el tráfico y la infraestructura.',
+      title: 'Control Total',
+      description: 'Tus datos permanecen en tus servidores. Control completo sobre la infraestructura y configuración.',
     },
     {
       icon: Globe,
-      title: 'Dominio Personalizado',
-      description: 'Usa tu propio dominio (planes Pro+). Tu marca, tu identidad.',
+      title: 'Sin Límites',
+      description: 'Sin límites de usuarios, comunidades o almacenamiento. Escala según tus necesidades.',
     },
     {
-      icon: Database,
-      title: 'Base de Datos Dedicada',
-      description: 'Cada foro tiene su propia base de datos. Aislamiento total de datos.',
+      icon: Gift,
+      title: 'Actualizaciones Incluidas',
+      description: 'Acceso a todas las actualizaciones y mejoras del proyecto sin costo adicional.',
     },
   ]
 
-  const saasBenefits = [
-    'Sin conocimientos técnicos necesarios',
-    'Actualizaciones automáticas',
-    'Soporte técnico incluido',
-    'SSL/HTTPS automático',
-    'CDN global para velocidad',
-    'Monitoreo 24/7',
-  ]
-
-  const selfHostBenefits = [
-    'Control total sobre tus datos',
-    'Sin límites de usuarios o comunidades',
-    'Personalización completa del código',
-    'Sin costos de hosting mensuales',
-    'Puedes modificar todo lo que quieras',
-    'Código open source (MIT)',
+  const benefits = [
+    'Código fuente completo disponible',
+    'Licencia MIT - uso comercial permitido',
+    'Instalador web incluido',
+    'Documentación completa',
+    'Sin dependencias de servicios externos',
+    'Compatible con cualquier hosting',
   ]
 
   const seoContent = [
     {
-      title: 'Crea tu Propio Foro - Plataforma SaaS de Foros',
-      content: 'Crea tu propio foro en minutos con nuestra plataforma SaaS. Hosting gestionado, configuración automática y sin necesidad de conocimientos técnicos. Perfecto para comunidades, empresas y organizaciones que quieren su propio espacio de discusión sin complicaciones.',
+      title: 'Descarga Gratuita de Plataforma de Foros',
+      content: 'Descarga completamente gratis nuestra plataforma de foros open source. Código fuente completo, instalador web incluido y sin restricciones. Perfecto para comunidades, empresas y organizaciones que quieren su propio foro con control total sobre los datos y la infraestructura.',
     },
     {
-      title: 'Plataforma de Foros como Servicio (SaaS)',
-      content: 'Discourse ofrece una solución SaaS completa para crear y gestionar foros. Con planes desde gratis hasta enterprise, puedes crear tu comunidad virtual con subdominio personalizado, base de datos dedicada y todas las herramientas de moderación que necesitas.',
+      title: 'Plataforma de Foros Open Source',
+      content: 'Discourse es una plataforma de foros open source bajo licencia MIT. Descarga el código, personalízalo y hostea tu propia instancia sin límites. Ideal para desarrolladores y organizaciones que necesitan control completo sobre su plataforma de comunidad.',
     },
     {
-      title: 'Self-Hosting: Hostea tu Propio Foro',
-      content: '¿Prefieres control total? Descarga el código fuente y hostea tu propia instancia. Código open source bajo licencia MIT, instalador incluido y documentación completa. Perfecto para desarrolladores y organizaciones que necesitan control completo sobre su infraestructura.',
+      title: 'Instalación y Configuración',
+      content: 'Nuestro instalador web te guía paso a paso en la configuración de tu foro. Configura la base de datos, crea tu usuario administrador y comienza a usar tu foro en minutos. Sin necesidad de conocimientos técnicos avanzados.',
     },
     {
-      title: 'Comparación: SaaS vs Self-Hosting',
-      content: 'SaaS: Ideal para quienes quieren empezar rápido sin preocuparse por servidores. Self-Hosting: Perfecto para quienes necesitan control total, personalización avanzada o tienen requisitos específicos de seguridad y privacidad.',
+      title: 'Soporta el Proyecto con una Donación',
+      content: 'El proyecto es completamente gratuito y open source. Si te resulta útil, considera hacer una donación para ayudar a mantener el desarrollo, mejoras y soporte de la plataforma. Cada contribución ayuda a hacer el proyecto mejor para todos.',
     },
   ]
 
@@ -90,29 +81,30 @@ export default function SaasLandingPage() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Crea tu Propio{' '}
-              <span className="text-primary-600">Foro en Minutos</span>
+              Descarga Gratis tu{' '}
+              <span className="text-primary-600">Plataforma de Foros</span>
             </h1>
             <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Plataforma SaaS para crear foros y comunidades. Hosting gestionado, 
-              configuración automática y sin complicaciones técnicas. O descarga el código 
-              y hostea tu propia instancia.
+              Código open source completo. Descarga, instala y hostea tu propio foro 
+              sin límites. 100% gratuito, sin restricciones.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
-                href="/register"
+                href="/self-host"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-lg font-semibold text-lg hover:bg-primary-700 transition-colors shadow-lg hover:shadow-xl"
               >
-                Crear Mi Foro Gratis
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="/self-host"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 rounded-lg font-semibold text-lg border-2 border-primary-600 hover:bg-primary-50 transition-colors"
-              >
                 <Download className="w-5 h-5" />
-                Descargar Código
+                Descargar Gratis
               </Link>
+              <a
+                href="https://github.com/tu-usuario/discourse"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-lg font-semibold text-lg hover:bg-gray-800 transition-colors"
+              >
+                <Github className="w-5 h-5" />
+                Ver en GitHub
+              </a>
             </div>
           </motion.div>
         </div>
@@ -135,10 +127,10 @@ export default function SaasLandingPage() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              ¿Por qué elegir nuestra plataforma?
+              ¿Por qué descargar nuestro código?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              SaaS gestionado o self-hosting, tú decides
+              Plataforma completa, open source y sin restricciones
             </p>
           </motion.div>
 
@@ -170,102 +162,43 @@ export default function SaasLandingPage() {
         </div>
       </section>
 
-      {/* Comparison Section */}
+      {/* Benefits Section */}
       <section className="py-20 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-16"
+            className="bg-white rounded-2xl shadow-xl p-8 md:p-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              SaaS vs Self-Hosting
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+              Todo lo que incluye
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Elige la opción que mejor se adapte a tus necesidades
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* SaaS Column */}
-            <motion.div
-              className="bg-white rounded-2xl shadow-xl p-8"
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <Cloud className="w-6 h-6 text-primary-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  SaaS (Hosting Gestionado)
-                </h3>
-              </div>
-              <p className="text-gray-600 mb-6">
-                Perfecto para quienes quieren empezar rápido sin preocuparse por la infraestructura.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {saasBenefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors w-full justify-center"
-              >
-                Crear Foro SaaS
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </motion.div>
-
-            {/* Self-Host Column */}
-            <motion.div
-              className="bg-white rounded-2xl shadow-xl p-8"
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Code className="w-6 h-6 text-purple-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">
-                  Self-Hosting
-                </h3>
-              </div>
-              <p className="text-gray-600 mb-6">
-                Ideal para desarrolladores y organizaciones que necesitan control total.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {selfHostBenefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{benefit}</span>
-                  </li>
-                ))}
-              </ul>
+            <ul className="space-y-4">
+              {benefits.map((benefit, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-700 text-lg">{benefit}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 text-center">
               <Link
                 href="/self-host"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors w-full justify-center"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-lg font-semibold text-lg hover:bg-primary-700 transition-colors"
               >
                 <Download className="w-5 h-5" />
-                Descargar Código
+                Ver Guía de Instalación
+                <ArrowRight className="w-5 h-5" />
               </Link>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Pricing CTA */}
-      <section className="py-20 bg-white">
+      {/* Donation Section */}
+      <section className="py-20 bg-primary-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -273,19 +206,37 @@ export default function SaasLandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Planes desde Gratis
+            <Heart className="w-16 h-16 text-white mx-auto mb-6" />
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              ¿Te gusta el proyecto?
             </h2>
-            <p className="text-xl text-gray-600 mb-8">
-              Empieza gratis y escala según crezca tu comunidad
+            <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+              El proyecto es completamente gratuito y open source. Si te resulta útil, 
+              considera hacer una donación para ayudar a mantener el desarrollo y las mejoras.
             </p>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-lg font-semibold text-lg hover:bg-primary-700 transition-colors shadow-lg"
-            >
-              Ver Planes y Precios
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="https://paypal.me/tu-usuario"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
+              >
+                <Heart className="w-5 h-5" />
+                Donar con PayPal
+              </a>
+              <a
+                href="https://ko-fi.com/tu-usuario"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-white rounded-lg font-semibold text-lg border-2 border-white hover:bg-white/10 transition-colors"
+              >
+                <Gift className="w-5 h-5" />
+                Donar con Ko-fi
+              </a>
+            </div>
+            <p className="text-primary-200 mt-6 text-sm">
+              Las donaciones ayudan a mantener el proyecto activo y mejorar continuamente
+            </p>
           </motion.div>
         </div>
       </section>
@@ -328,7 +279,7 @@ export default function SaasLandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-primary-600">
+      <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -336,28 +287,31 @@ export default function SaasLandingPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Rocket className="w-16 h-16 text-white mx-auto mb-6" />
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              ¿Listo para crear tu foro?
+            <Download className="w-16 h-16 text-primary-600 mx-auto mb-6" />
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+              ¿Listo para empezar?
             </h2>
-            <p className="text-xl text-primary-100 mb-8">
-              Empieza gratis hoy mismo o descarga el código para hostear tu propia instancia
+            <p className="text-xl text-gray-600 mb-8">
+              Descarga el código gratis y crea tu propio foro en minutos
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary-600 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg"
-              >
-                Crear Foro Gratis
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
                 href="/self-host"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-transparent text-white rounded-lg font-semibold text-lg border-2 border-white hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-lg font-semibold text-lg hover:bg-primary-700 transition-colors shadow-lg"
               >
                 <Download className="w-5 h-5" />
-                Self-Hosting
+                Descargar Ahora
+                <ArrowRight className="w-5 h-5" />
               </Link>
+              <a
+                href="https://github.com/tu-usuario/discourse"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-lg font-semibold text-lg hover:bg-gray-800 transition-colors"
+              >
+                <Github className="w-5 h-5" />
+                Ver Código
+              </a>
             </div>
           </motion.div>
         </div>
@@ -365,4 +319,3 @@ export default function SaasLandingPage() {
     </div>
   )
 }
-
