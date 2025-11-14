@@ -111,7 +111,7 @@ export default function InterestsManager({ onSave, initialInterests = [] }: Inte
         if (onSave) {
           onSave(interests)
         }
-        alert(t.user.interestsSaved)
+        alert('Intereses guardados exitosamente')
       } else {
         alert(t.common.error)
       }

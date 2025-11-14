@@ -29,7 +29,7 @@ export async function POST(
     }
 
     // Verificar si es admin o moderador
-    const admin = await isAdmin(user.id)
+    const admin = await isAdmin()
     let isModerator = false
 
     if (!admin) {

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Send } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import RichTextEditor from './RichTextEditor'
+import { useMyCommunities } from '@/lib/hooks/useSubforums'
 
 interface CreatePostModalProps {
   isOpen: boolean

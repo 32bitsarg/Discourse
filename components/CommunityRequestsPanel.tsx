@@ -67,7 +67,7 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
         </h3>
       </div>
       <div className="space-y-3">
-        {requests.map((request) => (
+        {requests.map((request: any) => (
           <motion.div
             key={request.id}
             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"

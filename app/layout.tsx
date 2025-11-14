@@ -6,8 +6,7 @@ import { I18nProvider } from '@/lib/i18n/context'
 import SettingsProvider from '@/components/SettingsProvider'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import { getSiteSettings } from '@/lib/get-settings-server'
-import { SWRConfig } from 'swr'
-import { swrConfig, fetcher } from '@/lib/hooks/useSWRConfig'
+import SWRProvider from '@/components/SWRProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -59,13 +58,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <GoogleAnalytics />
         <ErrorBoundary>
-          <SWRConfig value={{ ...swrConfig, fetcher }}>
+          <SWRProvider>
             <I18nProvider>
               <SettingsProvider>
                 <LayoutWrapper>{children}</LayoutWrapper>
               </SettingsProvider>
             </I18nProvider>
-          </SWRConfig>
+          </SWRProvider>
         </ErrorBoundary>
       </body>
     </html>

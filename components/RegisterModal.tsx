@@ -38,7 +38,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
     if (isOpen && settings) {
       const age = parseInt(settings.minimumAge || '13', 10)
       setMinimumAge(age)
-      setCaptchaRequired(settings.captcha_on_registration === 'true')
+      setCaptchaRequired(settings.captcha_on_registration === true)
     }
   }, [isOpen, settings])
 
@@ -115,7 +115,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
       const errorMessage = errorData.message || t.common.error
       
       // Verificar si requiere verificación de email
-      if (errorData.requiresVerification) {
+      if (errorData && typeof errorData === 'object' && 'requiresVerification' in errorData && errorData.requiresVerification) {
         setRequiresVerification(true)
         setRegisteredEmail(email)
       } else {

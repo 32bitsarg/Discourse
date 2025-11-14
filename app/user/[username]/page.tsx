@@ -168,7 +168,7 @@ export default function UserProfilePage() {
               </div>
             ) : (
               <div className="mt-2">
-                <FollowButton username={username} onFollowChange={loadProfile} />
+                <FollowButton username={username} onFollowChange={() => mutate()} />
               </div>
             )}
           </div>
@@ -257,7 +257,7 @@ export default function UserProfilePage() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {posts.map((post) => (
+              {posts.map((post: any) => (
                 <motion.article
                   key={post.id}
                   className="p-4 hover:bg-gray-50 transition-colors"
@@ -326,7 +326,7 @@ export default function UserProfilePage() {
             onClose={() => setShowEditModal(false)}
             user={user}
             onSave={() => {
-              loadProfile()
+              mutate()
               setShowEditModal(false)
             }}
           />
@@ -415,7 +415,7 @@ export default function UserProfilePage() {
                       setEditingPostId(null)
                       setEditTitle('')
                       setEditContent('')
-                      loadProfile()
+                      mutate()
                     } catch (error) {
                       alert(error instanceof Error ? error.message : 'Error al editar el post')
                     } finally {
@@ -463,7 +463,7 @@ export default function UserProfilePage() {
                       }
 
                       setDeletingPostId(null)
-                      loadProfile()
+                      mutate()
                     } catch (error) {
                       alert(error instanceof Error ? error.message : 'Error al eliminar el post')
                     } finally {
@@ -604,7 +604,7 @@ export default function UserProfilePage() {
                       </button>
                     </>
                   ) : (
-                    <FollowButton username={username} onFollowChange={loadProfile} />
+                    <FollowButton username={username} onFollowChange={() => mutate()} />
                   )}
                 </div>
               </div>
@@ -707,7 +707,7 @@ export default function UserProfilePage() {
           </div>
         ) : (
           <div className="space-y-2 sm:space-y-4">
-            {posts.map((post) => (
+            {posts.map((post: any) => (
               <motion.article
                 key={post.id}
                 className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 shadow-sm transition-colors overflow-hidden"
@@ -860,7 +860,7 @@ export default function UserProfilePage() {
                     setEditingPostId(null)
                     setEditTitle('')
                     setEditContent('')
-                    loadProfile() // Recargar el perfil
+                    mutate() // Recargar el perfil
                   } catch (error) {
                     alert(error instanceof Error ? error.message : 'Error al editar el post')
                   } finally {
@@ -909,7 +909,7 @@ export default function UserProfilePage() {
                     }
 
                     setDeletingPostId(null)
-                    loadProfile() // Recargar el perfil
+                    mutate() // Recargar el perfil
                   } catch (error) {
                     alert(error instanceof Error ? error.message : 'Error al eliminar el post')
                   } finally {
@@ -933,7 +933,7 @@ export default function UserProfilePage() {
           onClose={() => setShowEditModal(false)}
           onSave={() => {
             setShowEditModal(false)
-            loadProfile()
+            mutate()
           }}
         />
       )}

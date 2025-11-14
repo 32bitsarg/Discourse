@@ -21,7 +21,7 @@ export async function POST(
     }
 
     // Solo admins pueden banear
-    const admin = await isAdmin(user.id)
+    const admin = await isAdmin()
     if (!admin) {
       return NextResponse.json(
         { message: 'No tienes permisos para banear usuarios' },

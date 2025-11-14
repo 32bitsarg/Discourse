@@ -143,7 +143,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   if (allPosts.length === 0 && !loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-500 text-lg">{t.post.noPosts || 'No hay posts aún. ¡Sé el primero en crear uno!'}</p>
+        <p className="text-gray-500 text-lg">No hay posts aún. ¡Sé el primero en crear uno!</p>
       </div>
     )
   }

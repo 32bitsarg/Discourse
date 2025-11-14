@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verificar si es admin o moderador
-    const admin = await isAdmin(user.id)
+    const admin = await isAdmin()
     if (!admin) {
       // Verificar si es moderador de alguna comunidad
       const [moderatorCheck] = await pool.execute(

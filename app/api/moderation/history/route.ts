@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Solo admins pueden ver el historial completo
-    const admin = await isAdmin(user.id)
+    const admin = await isAdmin()
     if (!admin) {
       return NextResponse.json(
         { message: 'No tienes permisos para ver el historial de moderación' },

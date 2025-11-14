@@ -331,7 +331,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               {t.community.communities}
             </label>
-            {subforums.length === 0 ? (
+            {userCommunities.length === 0 ? (
               <div className="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
                 {t.community.noCommunities}
               </div>

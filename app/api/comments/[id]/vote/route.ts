@@ -8,6 +8,7 @@ import {
 } from '@/lib/settings-validation'
 import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit'
 import { createNotification } from '@/lib/notifications'
+import { isUserBanned } from '@/lib/moderation'
 
 export async function POST(
   request: NextRequest,

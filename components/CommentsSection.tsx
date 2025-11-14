@@ -659,7 +659,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         </div>
       ) : (
         <div className="space-y-2 sm:space-y-4">
-          {comments.map((comment) => (
+          {comments.map((comment: any) => (
             <CommentItem key={comment.id} comment={comment} />
           ))}
         </div>

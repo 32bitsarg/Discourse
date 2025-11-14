@@ -19,8 +19,8 @@ export const swrConfig: SWRConfiguration = {
   shouldRetryOnError: true,
   errorRetryCount: 3,
   errorRetryInterval: 5000,
-  // Comparador de datos para evitar re-renders innecesarios
-  compare: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+  // Comparador de datos removido - SWR usa comparación por defecto (deepEqual)
+  // compare: (a, b) => JSON.stringify(a) === JSON.stringify(b), // Removido para evitar problemas de serialización en build
 }
 
 /**

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -101,52 +103,63 @@ export default function DashboardPage() {
 
   // Convertir settings de SWR al formato esperado
   useEffect(() => {
-    if (settingsData && !settingsLoading) {
-      const settingsMap = settingsData.settings?.reduce((acc: any, setting: any) => {
-        acc[setting.key_name] = setting.value
-        return acc
-      }, {}) || {}
-      
-      setSettings({
-        siteName: settingsMap.site_name || 'Discourse',
-        siteDescription: settingsMap.site_description || '',
-        siteLogo: settingsMap.site_logo || '',
-        siteFavicon: settingsMap.site_favicon || '',
-        primaryColor: settingsMap.primary_color || '#6366f1',
-        headerBanner: settingsMap.header_banner || '',
-        metaTitle: settingsMap.meta_title || '',
-        metaDescription: settingsMap.meta_description || '',
-        metaKeywords: settingsMap.meta_keywords || '',
-        publicRegistration: settingsMap.public_registration === 'true',
-        emailVerificationRequired: settingsMap.email_verification_required === 'true',
-        minimumAge: settingsMap.minimum_age || '13',
-        allowCustomAvatars: settingsMap.allow_custom_avatars === 'true',
-        allowProfileBanners: settingsMap.allow_profile_banners === 'true',
-        minKarmaCreateCommunity: settingsMap.min_karma_create_community || '0',
-        allowCommunityCreation: settingsMap.allow_community_creation === 'true',
-        communityApprovalRequired: settingsMap.community_approval_required === 'true',
-        maxPostLength: settingsMap.max_post_length || '10000',
-        maxCommentLength: settingsMap.max_comment_length || '5000',
-        allowImagesInPosts: settingsMap.allow_images_in_posts === 'true',
-        allowVideosInPosts: settingsMap.allow_videos_in_posts === 'true',
-        allowExternalLinks: settingsMap.allow_external_links === 'true',
-        bannedWords: settingsMap.banned_words || '',
-        showVoteCounts: settingsMap.show_vote_counts === 'true',
-        allowDownvotes: settingsMap.allow_downvotes === 'true',
-        minKarmaToVote: settingsMap.min_karma_to_vote || '0',
-        minKarmaToComment: settingsMap.min_karma_to_comment || '0',
-        adminEmail: settingsMap.admin_email || '',
-        sendWelcomeEmails: settingsMap.send_welcome_emails === 'true',
-        sendPostNotifications: settingsMap.send_post_notifications === 'true',
-        googleAnalyticsId: settingsMap.google_analytics_id || '',
-        rateLimitPerMinute: settingsMap.rate_limit_per_minute || '60',
-        captchaOnRegistration: settingsMap.captcha_on_registration === 'true',
-        captchaOnPosts: settingsMap.captcha_on_posts === 'true',
-      })
+    try {
+      if (settingsData && !settingsLoading) {
+        // settingsData ya viene procesado del hook useSettings
+        // Necesitamos obtener los datos raw de la API para tener todos los settings
+        fetch('/api/settings')
+          .then(res => res.json())
+          .then(data => {
+            const settingsMap = data.settings?.reduce((acc: any, setting: any) => {
+              acc[setting.key_name] = setting.value
+              return acc
+            }, {}) || {}
+            
+            setSettings({
+          siteName: settingsMap.site_name || 'Discourse',
+          siteDescription: settingsMap.site_description || '',
+          siteLogo: settingsMap.site_logo || '',
+          siteFavicon: settingsMap.site_favicon || '',
+          primaryColor: settingsMap.primary_color || '#6366f1',
+          headerBanner: settingsMap.header_banner || '',
+          metaTitle: settingsMap.meta_title || '',
+          metaDescription: settingsMap.meta_description || '',
+          metaKeywords: settingsMap.meta_keywords || '',
+          publicRegistration: settingsMap.public_registration === 'true',
+          emailVerificationRequired: settingsMap.email_verification_required === 'true',
+          minimumAge: settingsMap.minimum_age || '13',
+          allowCustomAvatars: settingsMap.allow_custom_avatars === 'true',
+          allowProfileBanners: settingsMap.allow_profile_banners === 'true',
+          minKarmaCreateCommunity: settingsMap.min_karma_create_community || '0',
+          allowCommunityCreation: settingsMap.allow_community_creation === 'true',
+          communityApprovalRequired: settingsMap.community_approval_required === 'true',
+          maxPostLength: settingsMap.max_post_length || '10000',
+          maxCommentLength: settingsMap.max_comment_length || '5000',
+          allowImagesInPosts: settingsMap.allow_images_in_posts === 'true',
+          allowVideosInPosts: settingsMap.allow_videos_in_posts === 'true',
+          allowExternalLinks: settingsMap.allow_external_links === 'true',
+          bannedWords: settingsMap.banned_words || '',
+          showVoteCounts: settingsMap.show_vote_counts === 'true',
+          allowDownvotes: settingsMap.allow_downvotes === 'true',
+          minKarmaToVote: settingsMap.min_karma_to_vote || '0',
+          minKarmaToComment: settingsMap.min_karma_to_comment || '0',
+          adminEmail: settingsMap.admin_email || '',
+          sendWelcomeEmails: settingsMap.send_welcome_emails === 'true',
+          sendPostNotifications: settingsMap.send_post_notifications === 'true',
+          googleAnalyticsId: settingsMap.google_analytics_id || '',
+          rateLimitPerMinute: settingsMap.rate_limit_per_minute || '60',
+          captchaOnRegistration: settingsMap.captcha_on_registration === 'true',
+          captchaOnPosts: settingsMap.captcha_on_posts === 'true',
+            })
+          })
+          .catch((err: any) => {
+            console.error('Error cargando settings:', err)
+          })
+      }
     } catch (err: any) {
       console.error('Error cargando settings:', err)
     }
-  }
+  }, [settingsData, settingsLoading])
 
   const updateSetting = async (key: string, value: string, description?: string) => {
     const res = await fetch('/api/settings', {

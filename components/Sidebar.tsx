@@ -7,6 +7,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { useI18n } from '@/lib/i18n/context'
 import { useSidebarData } from '@/lib/hooks/useSidebarData'
+import { mutate } from 'swr'
 
 // Lazy load del modal pesado
 const CreateSubforumModal = dynamic(
@@ -48,20 +49,12 @@ export default function Sidebar() {
         throw new Error(error.message || 'Error al crear la comunidad')
       }
 
-      // Recargar comunidades - forzar recarga sin cache
-      const [communitiesRes, myCommunitiesRes] = await Promise.all([
-        fetch('/api/subforums/top?t=' + Date.now()).then(res => res.json()),
-        user ? fetch('/api/subforums/my-communities?t=' + Date.now()).then(res => res.json()).catch(() => ({ subforums: [] })) : Promise.resolve({ subforums: [] })
+      // Revalidar datos usando SWR
+      await Promise.all([
+        mutate('/api/subforums/top'),
+        mutate('/api/subforums/my-communities'),
+        mutate('/api/sidebar-data')
       ])
-      setCommunities(communitiesRes.subforums || [])
-      if (user) {
-        const communitiesWithImages = (myCommunitiesRes.subforums || []).map((comm: any) => ({
-          ...comm,
-          image_url: comm.image_url || null,
-          banner_url: comm.banner_url || null,
-        }))
-        setMyCommunities(communitiesWithImages)
-      }
       setIsCreateModalOpen(false)
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al crear la comunidad')
@@ -167,7 +160,7 @@ export default function Sidebar() {
           </div>
         ) : (
           <div className="space-y-1">
-            {communities.map((community) => (
+            {communities.map((community: any) => (
               <Link 
                 key={community.id} 
                 href={`/r/${community.slug}`} 
@@ -240,7 +233,7 @@ export default function Sidebar() {
             </div>
           ) : (
             <div className="space-y-1 max-h-64 overflow-y-auto">
-              {myCommunities.map((community) => {
+              {myCommunities.map((community: any) => {
                 const isAdmin = community.role === 'admin' || community.creator_id === user.id
                 const isMod = community.role === 'moderator'
                 

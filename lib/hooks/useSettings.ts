@@ -22,6 +22,7 @@ interface Settings {
 const defaultSettings: Settings = {
   showVoteCounts: true,
   allowDownvotes: true,
+  siteName: 'Discourse',
   siteLogo: '',
   siteFavicon: '',
   primaryColor: '#6366f1',
@@ -30,6 +31,7 @@ const defaultSettings: Settings = {
   allowVideosInPosts: true,
   allowExternalLinks: true,
   googleAnalyticsId: '',
+  minimumAge: '13',
 }
 
 /**

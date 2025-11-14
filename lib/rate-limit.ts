@@ -19,8 +19,8 @@ export function getClientIP(request: NextRequest): string {
     return realIP
   }
 
-  // Fallback: usar IP del request (puede ser undefined en algunos entornos)
-  return request.ip || 'unknown'
+  // Fallback: usar 'unknown' si no se puede obtener la IP
+  return 'unknown'
 }
 
 /**
@@ -33,6 +33,7 @@ export type RateLimitAction =
   | 'create_comment'
   | 'vote'
   | 'create_community'
+  | 'create_report'
   | 'general' // Para requests generales
 
 /**
@@ -46,6 +47,7 @@ const DEFAULT_LIMITS: Record<RateLimitAction, number> = {
   create_comment: 20,    // 20 comentarios por minuto
   vote: 60,              // 60 votos por minuto
   create_community: 2,    // 2 comunidades por minuto
+  create_report: 10,     // 10 reportes por minuto
   general: 60,           // 60 requests generales por minuto
 }
 

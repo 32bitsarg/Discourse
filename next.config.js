@@ -28,6 +28,8 @@ const nextConfig = {
   reactStrictMode: true,
   // Optimizaciones de compresión
   compress: true,
+  // Configuración de Turbopack (vacía para compatibilidad con next-pwa)
+  turbopack: {},
   // Configuración de imágenes (para futura migración a next/image)
   images: {
     formats: ['image/avif', 'image/webp'],

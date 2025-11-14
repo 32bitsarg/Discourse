@@ -6,6 +6,8 @@ import SiteNameClient from '../SiteNameClient'
 import { useSettings } from '@/lib/hooks/useSettings'
 
 export default function MobileHeader() {
+  const { settings } = useSettings()
+  
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 safe-area-top lg:hidden">
       <div className="max-w-md mx-auto">

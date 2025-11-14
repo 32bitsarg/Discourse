@@ -28,13 +28,15 @@ export async function GET(
     const cached = await getCache<{ data: Buffer; mimeType: string }>(cacheKey)
     
     if (cached) {
-      return new NextResponse(cached.data, {
+      const buffer = Buffer.isBuffer(cached.data) ? cached.data : Buffer.from(cached.data)
+      return new NextResponse(new Uint8Array(buffer), {
         headers: {
           'Content-Type': cached.mimeType,
           'Cache-Control': 'public, max-age=31536000, immutable',
           'CDN-Cache-Control': 'public, max-age=31536000',
           'Vercel-CDN-Cache-Control': 'public, max-age=31536000',
           'X-Content-Type-Options': 'nosniff',
+          'Content-Length': buffer.length.toString(),
         },
       })
     }
@@ -60,7 +62,7 @@ export async function GET(
     await setCache(cacheKey, { data: imageBuffer, mimeType }, CACHE_TTL)
 
     // Retornar imagen con headers de caché agresivos
-    return new NextResponse(imageBuffer, {
+    return new NextResponse(new Uint8Array(imageBuffer), {
       headers: {
         'Content-Type': mimeType,
         'Cache-Control': 'public, max-age=31536000, immutable',

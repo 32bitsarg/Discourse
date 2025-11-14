@@ -14,6 +14,7 @@ import AdminBadge from './AdminBadge'
 import { X } from 'lucide-react'
 import { useSettings } from '@/lib/hooks/useSettings'
 import { usePost } from '@/lib/hooks/usePosts'
+import { useUser } from '@/lib/hooks/useUser'
 import { mutate } from 'swr'
 
 interface PostCardProps {

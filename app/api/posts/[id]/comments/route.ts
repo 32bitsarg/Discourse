@@ -150,21 +150,18 @@ export async function POST(
       )
     }
 
-    // Verificar que el post existe
-    const [posts] = await pool.execute('SELECT id FROM posts WHERE id = ?', [postId]) as any[]
-    if (posts.length === 0) {
+    // Verificar que el post existe y obtener información para notificaciones
+    const [postData] = await pool.execute(
+      'SELECT id, author_id, title FROM posts WHERE id = ?',
+      [postId]
+    ) as any[]
+    if (postData.length === 0) {
       return NextResponse.json(
         { message: 'Post no encontrado' },
         { status: 404 }
       )
     }
-
-    // Obtener información del post para notificaciones
-    const [posts] = await pool.execute(
-      'SELECT author_id, title FROM posts WHERE id = ?',
-      [postId]
-    ) as any[]
-    const post = posts[0]
+    const post = postData[0]
 
     // Crear comentario
     const [result] = await pool.execute(

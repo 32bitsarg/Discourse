@@ -116,7 +116,6 @@ export default function SearchBar() {
           <button
             onClick={() => {
               setQuery('')
-              setResults([])
               setIsOpen(false)
               inputRef.current?.focus()
             }}
