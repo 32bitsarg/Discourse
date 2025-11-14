@@ -44,10 +44,11 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
           return [...prev, ...newPosts]
         })
       }
-    } else if (page === 1) {
+    } else if (page === 1 && !loading) {
+      // Solo limpiar si no está cargando para evitar parpadeos
       setAllPosts([])
     }
-  }, [currentPosts, page])
+  }, [currentPosts, page, loading])
 
   // Reset cuando cambia el filtro o subforumId
   useEffect(() => {
@@ -140,10 +141,30 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
     )
   }
 
+  // Debug: Log para ver qué está pasando (también en producción para debug)
+  useEffect(() => {
+    console.log('[PostFeed] Estado actual:', {
+      filter,
+      currentPosts: currentPosts?.length || 0,
+      allPosts: allPosts.length,
+      loading,
+      isLoading,
+      forYouLoading,
+      followingLoading,
+      hasCurrentPosts: !!currentPosts,
+      currentPostsData: currentPosts?.slice(0, 2), // Primeros 2 posts para debug
+    })
+  }, [filter, currentPosts, allPosts, loading, isLoading, forYouLoading, followingLoading])
+
   if (allPosts.length === 0 && !loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">No hay posts aún. ¡Sé el primero en crear uno!</p>
+        {process.env.NODE_ENV === 'development' && (
+          <p className="text-xs text-gray-400 mt-2">
+            Filter: {filter} | Posts: {currentPosts?.length || 0} | Loading: {loading ? 'true' : 'false'}
+          </p>
+        )}
       </div>
     )
   }

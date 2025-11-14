@@ -8,6 +8,7 @@ import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import FilterTabs from '@/components/FilterTabs'
 import { useI18n } from '@/lib/i18n/context'
+import { useUser } from '@/lib/hooks/useUser'
 import { X, CheckCircle, AlertCircle } from 'lucide-react'
 
 // Hook para debounce
@@ -31,10 +32,21 @@ function FeedContent() {
   const { t, language } = useI18n()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [filter, setFilter] = useState('hot')
+  const { user } = useUser()
+  // Si hay usuario, empezar con 'for-you', si no con 'hot'
+  const [filter, setFilter] = useState(user ? 'for-you' : 'hot')
   const postFeedRef = useRef<PostFeedRef>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  // Sincronizar filtro cuando el usuario cambia
+  useEffect(() => {
+    if (user && filter === 'hot') {
+      setFilter('for-you')
+    } else if (!user && filter === 'for-you') {
+      setFilter('hot')
+    }
+  }, [user])
   
   // Debounce del cambio de filtro para dispositivos de gama baja
   const debouncedFilter = useDebounce(filter, 150)
@@ -153,7 +165,13 @@ function FeedContent() {
         </div>
       )}
 
-      <FilterTabs onFilterChange={setFilter} />
+      <FilterTabs onFilterChange={(newFilter) => {
+        setFilter(newFilter)
+        // Resetear el feed cuando cambia el filtro
+        if (postFeedRef.current) {
+          postFeedRef.current.refresh()
+        }
+      }} />
       <CreatePostBox onPostCreated={useCallback(() => {
         if (postFeedRef.current) {
           postFeedRef.current.refresh()

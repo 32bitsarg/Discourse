@@ -1,8 +1,9 @@
-// Solo aplicar PWA si no estamos en Vercel (para evitar conflictos con Turbopack)
+// Detectar el entorno de despliegue
 const isVercel = process.env.VERCEL === '1'
+const isCloudflare = process.env.CF_PAGES === '1' || process.env.CF_PAGES_BRANCH
 
-const withPWA = isVercel 
-  ? (config) => config // No aplicar PWA en Vercel
+const withPWA = (isVercel || isCloudflare)
+  ? (config) => config // No aplicar PWA en Vercel o Cloudflare
   : require('next-pwa')({
       dest: 'public',
       register: true,

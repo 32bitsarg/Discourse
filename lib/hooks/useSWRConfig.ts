@@ -27,15 +27,33 @@ export const swrConfig: SWRConfiguration = {
  * Fetcher por defecto para SWR
  */
 export const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) {
-    const error = new Error('An error occurred while fetching the data.')
-    // @ts-ignore
-    error.info = await res.json()
-    // @ts-ignore
-    error.status = res.status
+  try {
+    const res = await fetch(url)
+    if (!res.ok) {
+      const error = new Error('An error occurred while fetching the data.')
+      // @ts-ignore
+      error.info = await res.json().catch(() => ({ message: 'Error desconocido' }))
+      // @ts-ignore
+      error.status = res.status
+      throw error
+    }
+    const data = await res.json()
+    
+    // Debug en desarrollo
+    if (process.env.NODE_ENV === 'development' && url.includes('/api/posts')) {
+      console.log(`[SWR] ${url}:`, {
+        postsCount: data?.posts?.length || 0,
+        hasPagination: !!data?.pagination,
+      })
+    }
+    
+    return data
+  } catch (error) {
+    // Log error en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[SWR Error] ${url}:`, error)
+    }
     throw error
   }
-  return res.json()
 }
 

@@ -54,6 +54,15 @@ export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
       onFilterChange(activeFilter)
     }
   }, [activeFilter, onFilterChange])
+  
+  // Sincronizar con el filtro externo si se proporciona
+  useEffect(() => {
+    if (user && activeFilter === 'hot') {
+      setActiveFilter('for-you')
+    } else if (!user && activeFilter === 'for-you') {
+      setActiveFilter('hot')
+    }
+  }, [user, activeFilter])
 
   const handleFilterChange = (filterId: string) => {
     setPrevFilter(activeFilter)

@@ -1,4 +1,5 @@
 import useSWR from 'swr'
+import { useEffect } from 'react'
 import { fetcher } from './useSWRConfig'
 
 interface UsePostsOptions {
@@ -23,6 +24,19 @@ export function usePosts(options: UsePostsOptions = {}) {
     revalidateOnFocus: false,
     dedupingInterval: 60000, // 1 minuto
   })
+
+  // Debug: Log de errores y datos
+  useEffect(() => {
+    if (error) {
+      console.error(`[usePosts] Error en ${url}:`, error)
+    }
+    if (data) {
+      console.log(`[usePosts] Datos recibidos de ${url}:`, {
+        postsCount: data?.posts?.length || 0,
+        hasPagination: !!data?.pagination,
+      })
+    }
+  }, [error, data, url])
 
   return {
     posts: data?.posts || [],
