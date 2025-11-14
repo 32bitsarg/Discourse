@@ -56,7 +56,14 @@ export async function GET(
       ORDER BY r.requested_at ASC
     `, [subforumId]) as any[]
 
-    return NextResponse.json({ requests })
+    // Caché HTTP corto (1 min) - las solicitudes cambian frecuentemente
+    return NextResponse.json({ requests }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=120',
+        'CDN-Cache-Control': 'private, s-maxage=60',
+        'Vercel-CDN-Cache-Control': 'private, s-maxage=60',
+      },
+    })
   } catch (error) {
     return NextResponse.json(
       { message: 'Error al obtener las solicitudes' },

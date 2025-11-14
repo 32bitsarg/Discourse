@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Si no hay cache, obtener de la BD
+        // Excluir comunidades pendientes de aprobación (requires_approval = TRUE)
         const [subforums] = await pool.execute(`
           SELECT
             s.id,
@@ -32,16 +33,24 @@ export async function GET(request: NextRequest) {
             u.username as creator_username
           FROM subforums s
           LEFT JOIN users u ON s.creator_id = u.id
+          WHERE (s.requires_approval = FALSE OR s.requires_approval IS NULL)
           ORDER BY s.post_count DESC, s.created_at DESC
           LIMIT 50
         `) as any[]
 
     const result = { subforums: subforums || [] }
 
-    // Guardar en cache
+    // Guardar en cache Redis
     await setCache(CACHE_KEY, result, CACHE_TTL)
 
-    return NextResponse.json(result)
+    // Caché HTTP adicional para aprovechar CDN
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=600',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+      },
+    })
   } catch (error: any) {
     // Si las tablas no existen, devolver array vacío
     if (error?.code === 'ER_NO_SUCH_TABLE') {

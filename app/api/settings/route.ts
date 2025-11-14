@@ -21,11 +21,29 @@ export async function GET(request: NextRequest) {
     if (key) {
       // Obtener un setting específico
       const value = await getSetting(key)
-      return NextResponse.json({ key, value })
+      return NextResponse.json(
+        { key, value },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+            'CDN-Cache-Control': 'public, s-maxage=600',
+            'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+          },
+        }
+      )
     } else {
       // Obtener todos los settings
       const settings = await getAllSettings()
-      return NextResponse.json({ settings })
+      return NextResponse.json(
+        { settings },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+            'CDN-Cache-Control': 'public, s-maxage=600',
+            'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+          },
+        }
+      )
     }
   } catch (error: any) {
     console.error('Error obteniendo settings:', error)

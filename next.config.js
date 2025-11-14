@@ -26,11 +26,31 @@ const withPWA = isVercel
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Optimizaciones de compresión
+  compress: true,
+  // Configuración de imágenes (para futura migración a next/image)
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60,
+  },
+  // Headers de seguridad y optimización
+  async headers() {
+    return [
+      {
+        source: '/api/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ]
+  },
   // Configuración para Capacitor (cuando se use)
   // output: 'export', // Descomentar cuando quieras generar build estático para Capacitor
-  // images: {
-  //   unoptimized: true, // Necesario para export estático
-  // },
 }
 
 module.exports = withPWA(nextConfig)

@@ -1,9 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Image as ImageIcon, Video, X, Send, Trash2 } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useSettings } from '@/lib/hooks/useSettings'
+import { useUser } from '@/lib/hooks/useUser'
+import { useMyCommunities } from '@/lib/hooks/useSubforums'
+import Recaptcha from './Recaptcha'
 
 interface CreatePostBoxProps {
   defaultSubforumId?: number
@@ -11,61 +15,51 @@ interface CreatePostBoxProps {
 }
 
 export default function CreatePostBox({ defaultSubforumId, onPostCreated }: CreatePostBoxProps) {
+  const { settings } = useSettings()
   const { t } = useI18n()
+  // OPTIMIZACIÓN: Usar SWR para obtener datos
+  const { user } = useUser()
+  const { subforums: userCommunities } = useMyCommunities()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('') // Contenido completo con imágenes
   const [displayContent, setDisplayContent] = useState('') // Contenido visible en textarea (sin imágenes)
   const [subforumId, setSubforumId] = useState<number | null>(defaultSubforumId || null)
-  const [subforums, setSubforums] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [user, setUser] = useState<{ id: number; username: string; avatar_url?: string } | null>(null)
   const [showCommunitySelector, setShowCommunitySelector] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const [isInteracting, setIsInteracting] = useState(false)
   const [isSelectOpen, setIsSelectOpen] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const selectRef = useRef<HTMLSelectElement>(null)
 
+  // Obtener captchaRequired de settings
+  const captchaRequired = settings.captcha_on_posts || false
+
+  // Establecer subforumId cuando cambian las comunidades o defaultSubforumId
   useEffect(() => {
-    // Verificar si hay usuario logueado
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
+    if (defaultSubforumId) {
+      setSubforumId(defaultSubforumId)
+    } else if (userCommunities.length > 0 && !subforumId) {
+      setSubforumId(userCommunities[0].id)
+    }
+  }, [defaultSubforumId, userCommunities, subforumId])
 
-    // Cargar comunidades del usuario
-    fetch('/api/subforums/my-communities')
-      .then(res => res.json())
-      .then(data => {
-        const userCommunities = data.subforums || []
-        setSubforums(userCommunities)
-        if (defaultSubforumId) {
-          setSubforumId(defaultSubforumId)
-        } else if (userCommunities.length > 0) {
-          setSubforumId(userCommunities[0].id)
-        }
-      })
-      .catch(() => {})
-  }, [defaultSubforumId])
-
+  // OPTIMIZACIÓN: useCallback para evitar recrear funciones en cada render
   // Función para actualizar el contenido visible (sin imágenes) y el contenido completo
-  const updateContent = (newContent: string) => {
+  const updateContent = useCallback((newContent: string) => {
     setContent(newContent)
     // Remover imágenes del contenido visible (mantener solo el texto)
     const contentWithoutImages = newContent.replace(/!\[([^\]]*)\]\([^)]+\)/g, '').replace(/<video[^>]*>.*?<\/video>/g, '').trim()
     setDisplayContent(contentWithoutImages)
-  }
+  }, [])
 
   // Función para actualizar solo el texto visible, manteniendo las imágenes en el contenido completo
-  const updateDisplayContent = (newText: string) => {
+  const updateDisplayContent = useCallback((newText: string) => {
     setDisplayContent(newText)
     // Usar el estado actual de content para extraer imágenes y videos
     setContent(prevContent => {
@@ -75,7 +69,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
       const mediaContent = [...images, ...videos].join('\n')
       return newText.trim() + (mediaContent ? '\n' + mediaContent : '')
     })
-  }
+  }, [])
 
   useEffect(() => {
     // Mostrar selector de comunidad cuando hay contenido o está enfocado o interactuando o el select está abierto
@@ -259,12 +253,23 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
       return
     }
 
+    // Verificar CAPTCHA si está requerido
+    if (captchaRequired && !captchaToken) {
+      setError('Por favor completa la verificación CAPTCHA')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/posts/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), content: content.trim(), subforumId }),
+        body: JSON.stringify({ 
+          title: title.trim(), 
+          content: content.trim(), 
+          subforumId,
+          captchaToken: captchaToken || undefined,
+        }),
       })
 
       if (!res.ok) {
@@ -278,6 +283,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
       setDisplayContent('')
       setIsFocused(false)
       setShowCommunitySelector(false)
+      setCaptchaToken(null)
       
       // Notificar al componente padre para actualizar el feed
       if (onPostCreated) {
@@ -371,7 +377,7 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
                 required
               >
                 <option value="">{t.post.selectCommunity}</option>
-                {subforums.map((subforum) => (
+                {userCommunities.map((subforum: any) => (
                   <option key={subforum.id} value={subforum.id}>
                     r/{subforum.name}
                   </option>
@@ -511,29 +517,43 @@ export default function CreatePostBox({ defaultSubforumId, onPostCreated }: Crea
         {/* Botones de acción */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-200 gap-2">
           <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              onClick={handleImageUpload}
-              className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-primary-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
-            >
-              <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t.editor.imageUrl}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleVideoUpload}
-              className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-green-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
-            >
-              <Video className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t.editor.videoUrl}</span>
-            </button>
+            {settings.allowImagesInPosts && (
+              <button
+                type="button"
+                onClick={handleImageUpload}
+                className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-primary-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
+              >
+                <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t.editor.imageUrl}</span>
+              </button>
+            )}
+            {settings.allowVideosInPosts && (
+              <button
+                type="button"
+                onClick={handleVideoUpload}
+                className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-green-600 transition-colors px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-gray-50"
+              >
+                <Video className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t.editor.videoUrl}</span>
+              </button>
+            )}
           </div>
+
+          {/* CAPTCHA si está requerido */}
+          {captchaRequired && (content.trim() || displayContent.trim() || title.trim()) && (
+            <div className="w-full py-2">
+              <Recaptcha 
+                onVerify={(token) => setCaptchaToken(token)} 
+                onError={() => setError('Error al verificar CAPTCHA')} 
+              />
+            </div>
+          )}
 
           {/* Botón publicar - aparece cuando hay contenido */}
           {(content.trim() || displayContent.trim() || title.trim()) && (
             <motion.button
               type="submit"
-              disabled={loading || !content.trim() || !subforumId}
+              disabled={loading || !content.trim() || !subforumId || (captchaRequired && !captchaToken)}
               className="px-4 sm:px-6 py-1.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

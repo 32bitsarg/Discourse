@@ -2,24 +2,29 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import { Menu, X, LogIn, UserPlus, User, LogOut, ChevronDown, Settings } from 'lucide-react'
+import { Menu, X, LogIn, UserPlus, User, LogOut, ChevronDown, Settings, BookmarkCheck } from 'lucide-react'
 import Link from 'next/link'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
 import SearchBar from './SearchBar'
 import SiteNameClient from './SiteNameClient'
+import NotificationsPanel from './NotificationsPanel'
 import { useI18n } from '@/lib/i18n/context'
+import { useSettings } from '@/lib/hooks/useSettings'
+import { useUser, useIsAdmin } from '@/lib/hooks/useUser'
 
 export default function Header() {
   const { t } = useI18n()
+  const { settings } = useSettings()
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario y admin status
+  const { user, mutate: mutateUser } = useUser()
+  const { isAdmin } = useIsAdmin()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
-  const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
   const [avatarErrors, setAvatarErrors] = useState<{ [key: number]: boolean }>({})
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
 
   const navLinks = [
     { name: t.nav.home, href: '/feed' },
@@ -34,28 +39,12 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Resetear error de avatar cuando cambia el usuario
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-          // Resetear error de avatar cuando cambia el usuario
-          if (data.user.id) {
-            setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
-          }
-          
-          // Verificar si es admin
-          fetch('/api/admin/check')
-            .then(adminRes => adminRes.json())
-            .then(adminData => {
-              setIsAdmin(adminData.isAdmin || false)
-            })
-            .catch(() => setIsAdmin(false))
-        }
-      })
-      .catch(() => {})
-  }, [])
+    if (user?.id) {
+      setAvatarErrors(prev => ({ ...prev, [user.id]: false }))
+    }
+  }, [user?.id])
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -84,49 +73,68 @@ export default function Header() {
       throw new Error(error.message || 'Error al iniciar sesión')
     }
 
-    const data = await res.json()
-    if (data.user) {
-      setUser(data.user)
-      if (data.user.id) {
-        setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
-      }
-    }
+    // Revalidar usuario usando SWR
+    mutateUser()
   }
 
-  const handleRegister = async (username: string, email: string, password: string) => {
+  const handleRegister = async (username: string, email: string, password: string, birthdate?: string, captchaToken?: string) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, birthdate, captchaToken }),
     })
 
     if (!res.ok) {
       const error = await res.json()
+      // Si requiere verificación, lanzar error especial
+      if (error.requiresVerification) {
+        const verificationError = new Error(error.message || 'Registro exitoso. Verifica tu email.')
+        ;(verificationError as any).requiresVerification = true
+        throw verificationError
+      }
       throw new Error(error.message || 'Error al registrarse')
     }
 
     const data = await res.json()
-    if (data.user) {
-      setUser(data.user)
-      if (data.user.id) {
-        setAvatarErrors(prev => ({ ...prev, [data.user.id]: false }))
-      }
+    
+    // Si requiere verificación, no iniciar sesión automáticamente
+    if (data.requiresVerification) {
+      const verificationError = new Error(data.message || 'Registro exitoso. Verifica tu email.')
+      ;(verificationError as any).requiresVerification = true
+      throw verificationError
     }
+
+    // Revalidar usuario usando SWR
+    mutateUser()
   }
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
-    setUser(null)
+    // Revalidar usuario usando SWR (limpiará el caché)
+    mutateUser()
   }
 
   return (
     <>
+      {/* Banner/Header Image */}
+      {settings.headerBanner && (
+        <div className="fixed top-0 left-0 right-0 h-32 z-40 hidden lg:block">
+          <img 
+            src={settings.headerBanner} 
+            alt="Banner" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        </div>
+      )}
       <motion.header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 hidden lg:block ${
           isScrolled
             ? 'bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg'
             : 'bg-white'
-        }`}
+        } ${settings.headerBanner ? 'mt-32' : ''}`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
@@ -140,6 +148,16 @@ export default function Header() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                {settings.siteLogo && (
+                  <img 
+                    src={settings.siteLogo} 
+                    alt="Logo" 
+                    className="h-8 w-auto object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                )}
                 <SiteNameClient />
               </motion.div>
             </Link>
@@ -167,7 +185,16 @@ export default function Header() {
             {/* Auth Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
               {user ? (
-                <div className="relative user-menu-container">
+                <>
+                  <NotificationsPanel />
+                  <Link
+                    href="/saved"
+                    className="p-2 text-gray-600 hover:text-primary-600 transition-colors"
+                    title="Posts Guardados"
+                  >
+                    <BookmarkCheck className="w-5 h-5" />
+                  </Link>
+                  <div className="relative user-menu-container">
                   <motion.button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -209,6 +236,14 @@ export default function Header() {
                           <User className="w-4 h-4" />
                           <span className="text-sm">Mi Perfil</span>
                         </Link>
+                        <Link
+                          href="/saved"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <BookmarkCheck className="w-4 h-4" />
+                          <span className="text-sm">Posts Guardados</span>
+                        </Link>
                         {isAdmin && (
                           <Link
                             href="/dashboard"
@@ -233,7 +268,8 @@ export default function Header() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                  </div>
+                </>
               ) : (
                 <>
                   <motion.button

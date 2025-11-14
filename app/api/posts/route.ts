@@ -39,12 +39,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Optimizar query: solo traer campos necesarios
+    // Para el feed, no necesitamos el contenido completo (solo preview)
     let query = `
       SELECT 
         p.id,
         p.title,
         p.slug,
-        p.content,
+        SUBSTRING(p.content, 1, 500) as content_preview,
         p.upvotes,
         p.downvotes,
         p.comment_count,
@@ -80,6 +82,15 @@ export async function GET(request: NextRequest) {
         // Si no está logueado, solo mostrar públicas
         query += ' AND s.is_public = TRUE'
       }
+    }
+
+    // Excluir posts de comunidades pendientes de aprobación
+    query += ' AND (s.requires_approval = FALSE OR s.requires_approval IS NULL)'
+    
+    // Excluir posts ocultos del usuario (si está logueado)
+    if (userId) {
+      query += ' AND p.id NOT IN (SELECT post_id FROM hidden_posts WHERE user_id = ?)'
+      params.push(userId)
     }
 
     // Aplicar filtros y ordenamiento
@@ -141,7 +152,7 @@ export async function GET(request: NextRequest) {
           return {
             id: post.id,
             title: post.title,
-            content: post.content, // Contenido completo con imágenes
+            content: post.content_preview || post.content, // Preview del contenido (500 chars)
             upvotes: post.upvotes,
             downvotes: post.downvotes,
             comment_count: commentCount,
@@ -204,7 +215,7 @@ export async function GET(request: NextRequest) {
         const hasMore = (offset + limit) < totalCount
 
         const result = { 
-          posts: formattedPosts || [], // Respuesta completa con imágenes
+          posts: formattedPosts || [], // Contenido sin imágenes base64 (solo placeholders)
           pagination: {
             page,
             limit,
@@ -214,11 +225,15 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // No guardamos posts en cache porque contienen imágenes base64 grandes
-        // Esto asegura que los usuarios siempre vean las imágenes correctamente
-        // y no consumimos demasiado espacio en Redis
-
-        return NextResponse.json(result)
+        // Caché HTTP para reducir Fast Origin Transfer
+        // Los posts ahora no contienen imágenes base64, así que podemos cachear
+        return NextResponse.json(result, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+            'CDN-Cache-Control': 'public, s-maxage=300',
+            'Vercel-CDN-Cache-Control': 'public, s-maxage=300',
+          },
+        })
   } catch (error: any) {
     // Si las tablas no existen, devolver array vacío
     if (error?.code === 'ER_NO_SUCH_TABLE') {

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Share2, Twitter, X, Check } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useSocialConnections } from '@/lib/hooks/useSocialConnections'
 
 interface SharePostButtonProps {
   postId: number
@@ -25,18 +26,17 @@ export default function SharePostButton({ postId, postTitle, postUrl, onShareCom
   const [shareMessage, setShareMessage] = useState('')
   const [sharedPlatforms, setSharedPlatforms] = useState<Set<string>>(new Set())
 
-  const loadConnections = async () => {
-    try {
-      const res = await fetch('/api/social/connections')
-      const data = await res.json()
-      setConnections(data.connections?.filter((c: any) => c.is_active) || [])
-    } catch (error) {
+  // OPTIMIZACIÓN: Usar SWR para obtener conexiones
+  const { connections: connectionsData } = useSocialConnections()
+  
+  useEffect(() => {
+    if (connectionsData) {
+      setConnections(connectionsData.filter((c: any) => c.is_active))
     }
-  }
+  }, [connectionsData])
 
   const handleOpen = () => {
     setShowModal(true)
-    loadConnections()
   }
 
   const handleShare = async (platform: string) => {

@@ -59,18 +59,27 @@ export async function GET(request: NextRequest) {
       [user.id]
     ) as any[]
 
-    return NextResponse.json({
-      user: {
-        ...userData,
-        socialLinks: Array.isArray(socialLinks) ? socialLinks : [],
-        projects: Array.isArray(projects) ? projects : [],
-        stats: {
-          ...statsData,
-          followers: Array.isArray(followers) && followers.length > 0 ? (followers[0] as any).count : 0,
-          following: Array.isArray(following) && following.length > 0 ? (following[0] as any).count : 0,
+    return NextResponse.json(
+      {
+        user: {
+          ...userData,
+          socialLinks: Array.isArray(socialLinks) ? socialLinks : [],
+          projects: Array.isArray(projects) ? projects : [],
+          stats: {
+            ...statsData,
+            followers: Array.isArray(followers) && followers.length > 0 ? (followers[0] as any).count : 0,
+            following: Array.isArray(following) && following.length > 0 ? (following[0] as any).count : 0,
+          }
         }
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'CDN-Cache-Control': 'public, s-maxage=600',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+        },
       }
-    })
+    )
   } catch (error: any) {
     return NextResponse.json(
       { error: 'Internal server error' },

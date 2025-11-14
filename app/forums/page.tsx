@@ -1,47 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Users, MessageSquare, Lock, Globe, Plus, Search } from 'lucide-react'
 import CreateSubforumModal from '@/components/CreateSubforumModal'
 import { useI18n } from '@/lib/i18n/context'
+import { useSubforums } from '@/lib/hooks/useSubforums'
+import { useUser } from '@/lib/hooks/useUser'
 
 export default function ForumsPage() {
   const { t } = useI18n()
-  const [subforums, setSubforums] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<{ id: number; username: string } | null>(null)
+  const { subforums, isLoading, mutate } = useSubforums()
+  const { user } = useUser()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-
-  useEffect(() => {
-    // Verificar usuario
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-
-    // Cargar comunidades
-    loadSubforums()
-  }, [])
-
-  const loadSubforums = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/subforums')
-      const data = await res.json()
-      setSubforums(data.subforums || [])
-    } catch (error) {
-      setSubforums([])
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleCreateSubforum = async (data: { name: string; description: string; isPublic: boolean; requiresApproval: boolean }) => {
     if (!user) {
@@ -61,7 +34,8 @@ export default function ForumsPage() {
         throw new Error(error.message || 'Error al crear la comunidad')
       }
 
-      loadSubforums()
+      // Revalidar la lista de comunidades
+      mutate()
       setIsCreateModalOpen(false)
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al crear la comunidad')
@@ -69,7 +43,7 @@ export default function ForumsPage() {
   }
 
   // Filtrar comunidades por búsqueda
-  const filteredSubforums = subforums.filter(subforum =>
+  const filteredSubforums = subforums.filter((subforum: any) =>
     subforum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (subforum.description && subforum.description.toLowerCase().includes(searchQuery.toLowerCase()))
   )
@@ -121,7 +95,7 @@ export default function ForumsPage() {
         </motion.div>
 
         {/* Lista de Comunidades */}
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
@@ -147,7 +121,7 @@ export default function ForumsPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredSubforums.map((subforum) => (
+            {filteredSubforums.map((subforum: any) => (
               <motion.div
                 key={subforum.id}
                 className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"

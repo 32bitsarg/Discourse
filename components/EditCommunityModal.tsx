@@ -4,7 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Hash, FileText, Image, Upload } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
-import ImageCropper from './ImageCropper'
+import dynamic from 'next/dynamic'
+
+// Lazy load del cropper pesado
+const ImageCropper = dynamic(
+  () => import('./ImageCropper'),
+  { 
+    loading: () => <div className="animate-pulse bg-gray-100 h-64 rounded"></div>,
+    ssr: false 
+  }
+)
 
 interface EditCommunityModalProps {
   isOpen: boolean

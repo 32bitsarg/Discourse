@@ -5,6 +5,7 @@ import { Home, TrendingUp, Zap, Clock, Users, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/context'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useUser } from '@/lib/hooks/useUser'
 
 interface FilterTabsProps {
   onFilterChange?: (filter: string) => void
@@ -13,20 +14,10 @@ interface FilterTabsProps {
 export default function FilterTabs({ onFilterChange }: FilterTabsProps) {
   const { t } = useI18n()
   const isMobile = useIsMobile()
-  const [user, setUser] = useState<{ id: number } | null>(null)
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario
+  const { user } = useUser()
   const [activeFilter, setActiveFilter] = useState('hot')
   const [prevFilter, setPrevFilter] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-  }, [])
   
   // Cambiar a 'for-you' cuando el usuario se autentica
   useEffect(() => {

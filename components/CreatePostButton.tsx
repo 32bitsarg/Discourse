@@ -1,25 +1,15 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Edit3 } from 'lucide-react'
 import CreatePostModal from './CreatePostModal'
+import { useUser } from '@/lib/hooks/useUser'
 
 export default function CreatePostButton() {
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario
+  const { user } = useUser()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [user, setUser] = useState<{ id: number; username: string } | null>(null)
-
-  // Verificar si hay usuario logueado
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   const handleClick = () => {
     if (!user) {

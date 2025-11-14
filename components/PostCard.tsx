@@ -1,8 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, Edit, Trash2 } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, BookmarkCheck, EyeOff, Edit, Trash2, Flag } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PostContentRenderer from './PostContentRenderer'
@@ -12,6 +12,9 @@ import { useBehaviorTracking, useViewTracking } from '@/hooks/useBehaviorTrackin
 import SharePostButton from './SharePostButton'
 import AdminBadge from './AdminBadge'
 import { X } from 'lucide-react'
+import { useSettings } from '@/lib/hooks/useSettings'
+import { usePost } from '@/lib/hooks/usePosts'
+import { mutate } from 'swr'
 
 interface PostCardProps {
   id: string
@@ -54,6 +57,7 @@ export default function PostCard({
   editedAt = null,
   onDelete,
 }: PostCardProps) {
+  const { settings } = useSettings()
   const { t } = useI18n()
   const { trackBehavior } = useBehaviorTracking()
   const router = useRouter()
@@ -69,6 +73,24 @@ export default function PostCard({
   const [editTitle, setEditTitle] = useState(title)
   const [editContent, setEditContent] = useState(content)
   const [isEditing, setIsEditing] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportDescription, setReportDescription] = useState('')
+  const [isReporting, setIsReporting] = useState(false)
+  const { user } = useUser()
+  const [isSaved, setIsSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [hiding, setHiding] = useState(false)
+
+  // Verificar si el post está guardado
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/posts/${id}/save`)
+        .then(res => res.json())
+        .then(data => setIsSaved(data.saved || false))
+        .catch(() => {})
+    }
+  }, [user, id])
 
   useEffect(() => {
     setVote(userVote)
@@ -102,8 +124,8 @@ export default function PostCard({
     }
   }, [postIdNum, trackBehavior])
 
-  // Función para calcular tiempo transcurrido
-  const calculateTimeAgo = (date: string | Date): string => {
+  // OPTIMIZACIÓN: useCallback para evitar recrear función en cada render
+  const calculateTimeAgo = useCallback((date: string | Date): string => {
     const now = new Date()
     const postDate = new Date(date)
     const diff = now.getTime() - postDate.getTime()
@@ -115,11 +137,14 @@ export default function PostCard({
     if (minutes < 60) return `${t.post.ago} ${minutes} ${minutes > 1 ? t.common.minutes : t.common.minutes.slice(0, -1)}`
     if (hours < 24) return `${t.post.ago} ${hours} ${hours > 1 ? t.common.hours : t.common.hours.slice(0, -1)}`
     return `${t.post.ago} ${days} ${days > 1 ? t.common.days : t.common.days.slice(0, -1)}`
-  }
+  }, [t])
 
+  // OPTIMIZACIÓN: useMemo para calcular timeAgo inicial
+  const initialTimeAgo = useMemo(() => calculateTimeAgo(createdAt), [createdAt, calculateTimeAgo])
+  
   // Actualizar el tiempo dinámicamente
   useEffect(() => {
-    setTimeAgo(calculateTimeAgo(createdAt))
+    setTimeAgo(initialTimeAgo)
     
     // Para posts muy recientes (< 1 hora), actualizar cada 30 segundos
     // Para posts más antiguos, actualizar cada minuto
@@ -135,7 +160,7 @@ export default function PostCard({
     }, intervalTime)
 
     return () => clearInterval(interval)
-  }, [createdAt])
+  }, [createdAt, calculateTimeAgo, initialTimeAgo])
 
   const handleEdit = async () => {
     if (!editTitle.trim() || !editContent.trim()) {
@@ -221,17 +246,14 @@ export default function PostCard({
       // Actualizar el estado del voto
       setVote(data.voteType)
       
-      // Recargar el post para obtener el conteo actualizado
-      fetch(`/api/posts/${id}`)
-        .then(res => res.json())
-        .then(postData => {
-          if (postData.id) {
-            setVoteCount(postData.upvotes - postData.downvotes)
-            // Asegurar que el voto se mantenga sincronizado
-            setVote(postData.userVote || data.voteType)
-          }
-        })
-        .catch(() => {})
+      // OPTIMIZACIÓN: Revalidar usando SWR mutate en lugar de fetch manual
+      mutate(`/api/posts/${id}`).then((postData: any) => {
+        if (postData?.id) {
+          setVoteCount(postData.upvotes - postData.downvotes)
+          // Asegurar que el voto se mantenga sincronizado
+          setVote(postData.userVote || data.voteType)
+        }
+      }).catch(() => {})
     } catch (error) {
     }
   }
@@ -350,53 +372,118 @@ export default function PostCard({
                   }
                 }}
               />
-              <button 
-                onClick={() => {
-                  if (!isNaN(postIdNum)) {
-                    trackBehavior({
-                      postId: postIdNum,
-                      actionType: 'save',
-                    })
-                  }
-                }}
-                className="flex items-center gap-1 text-gray-600 hover:text-yellow-600 transition-colors text-[10px] sm:text-sm"
-              >
-                <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">{t.post.save}</span>
-              </button>
+              {user && (
+                <>
+                  <button 
+                    onClick={async () => {
+                      if (saving) return
+                      setSaving(true)
+                      try {
+                        const res = await fetch(`/api/posts/${id}/save`, { method: 'POST' })
+                        const data = await res.json()
+                        setIsSaved(data.saved)
+                        if (!isNaN(postIdNum)) {
+                          trackBehavior({
+                            postId: postIdNum,
+                            actionType: 'save',
+                          })
+                        }
+                      } catch (error) {
+                        alert('Error al guardar el post')
+                      } finally {
+                        setSaving(false)
+                      }
+                    }}
+                    disabled={saving}
+                    className={`flex items-center gap-1 transition-colors text-[10px] sm:text-sm ${
+                      isSaved 
+                        ? 'text-primary-600 hover:text-primary-700' 
+                        : 'text-gray-600 hover:text-yellow-600'
+                    } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={isSaved ? 'Desguardar' : 'Guardar'}
+                  >
+                    {isSaved ? (
+                      <BookmarkCheck className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
+                    ) : (
+                      <Bookmark className="w-3 h-3 sm:w-4 sm:h-4" />
+                    )}
+                    <span className="hidden sm:inline">{isSaved ? 'Guardado' : t.post.save}</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (hiding) return
+                      setHiding(true)
+                      try {
+                        const res = await fetch(`/api/posts/${id}/hide`, { method: 'POST' })
+                        const data = await res.json()
+                        if (data.hidden && onDelete) {
+                          onDelete(id)
+                        }
+                      } catch (error) {
+                        alert('Error al ocultar el post')
+                      } finally {
+                        setHiding(false)
+                      }
+                    }}
+                    disabled={hiding}
+                    className="flex items-center gap-1 text-gray-600 hover:text-red-600 transition-colors text-[10px] sm:text-sm"
+                    title="Ocultar"
+                  >
+                    <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </button>
+                </>
+              )}
             </div>
-            {(canEdit || canDelete) && (
-              <div className="flex items-center gap-2">
-                {canEdit && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setShowEditModal(true)
-                    }}
-                    className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
-                    title={t.post.edit}
-                  >
-                    <Edit className="w-3 h-3" />
-                    <span className="hidden sm:inline">{t.post.edit}</span>
-                  </button>
-                )}
-                {canDelete && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setShowDeleteModal(true)
-                    }}
-                    className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
-                    title={t.post.delete}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span className="hidden sm:inline">{t.post.delete}</span>
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {(canEdit || canDelete) && (
+                <>
+                  {canEdit && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setShowEditModal(true)
+                      }}
+                      className="text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                      title={t.post.edit}
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span className="hidden sm:inline">{t.post.edit}</span>
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setShowDeleteModal(true)
+                      }}
+                      className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                      title={t.post.delete}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">{t.post.delete}</span>
+                    </button>
+                  )}
+                </>
+              )}
+              {user && author !== user.username && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowReportModal(true)
+                    setReportReason('')
+                    setReportDescription('')
+                  }}
+                  className="text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
+                  title="Reportar post"
+                >
+                  <Flag className="w-3 h-3" />
+                  <span className="hidden sm:inline">Reportar</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -415,24 +502,28 @@ export default function PostCard({
           >
             <ThumbsUp className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${vote === 'up' ? 'fill-current' : ''}`} />
           </motion.button>
-          <span className={`text-[10px] sm:text-sm font-bold py-0.5 sm:py-1.5 leading-tight ${
-            vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-700'
-          }`}>
-            {voteCount}
-          </span>
-          <motion.button
-            onClick={() => handleVote('down')}
-            className={`p-1 sm:p-2 rounded-lg transition-all ${
-              vote === 'down' 
-                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                : 'text-gray-500 hover:bg-gray-100'
-            }`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="No me gusta"
-          >
-            <ThumbsDown className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
-          </motion.button>
+          {settings.showVoteCounts && (
+            <span className={`text-[10px] sm:text-sm font-bold py-0.5 sm:py-1.5 leading-tight ${
+              vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-700'
+            }`}>
+              {voteCount}
+            </span>
+          )}
+          {settings.allowDownvotes && (
+            <motion.button
+              onClick={() => handleVote('down')}
+              className={`p-1 sm:p-2 rounded-lg transition-all ${
+                vote === 'down' 
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              title="No me gusta"
+            >
+              <ThumbsDown className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${vote === 'down' ? 'fill-current' : ''}`} />
+            </motion.button>
+          )}
         </div>
       </div>
 
@@ -530,6 +621,116 @@ export default function PostCard({
           </motion.div>
         </div>
       )}
+
+      {/* Modal de reporte */}
+      <AnimatePresence>
+        {showReportModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setShowReportModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Reportar Post</h2>
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Razón del reporte *
+                    </label>
+                    <select
+                      value={reportReason}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Selecciona una razón</option>
+                      <option value="Spam">Spam</option>
+                      <option value="Contenido inapropiado">Contenido inapropiado</option>
+                      <option value="Acoso">Acoso</option>
+                      <option value="Información falsa">Información falsa</option>
+                      <option value="Violación de derechos">Violación de derechos</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descripción (opcional)
+                    </label>
+                    <textarea
+                      value={reportDescription}
+                      onChange={(e) => setReportDescription(e.target.value)}
+                      placeholder="Proporciona más detalles sobre el reporte..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                    disabled={isReporting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!reportReason.trim() || isReporting) return
+                      setIsReporting(true)
+                      try {
+                        const res = await fetch('/api/reports/create', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            postId: postIdNum,
+                            reason: reportReason,
+                            description: reportDescription.trim() || null,
+                          }),
+                        })
+
+                        if (!res.ok) {
+                          const error = await res.json()
+                          throw new Error(error.message || 'Error al reportar')
+                        }
+
+                        alert('Reporte enviado exitosamente. Será revisado por los moderadores.')
+                        setShowReportModal(false)
+                        setReportReason('')
+                        setReportDescription('')
+                      } catch (error) {
+                        alert(error instanceof Error ? error.message : 'Error al reportar')
+                      } finally {
+                        setIsReporting(false)
+                      }
+                    }}
+                    disabled={!reportReason.trim() || isReporting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isReporting ? 'Enviando...' : 'Enviar Reporte'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.article>
   )
 }

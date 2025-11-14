@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       `SELECT 
         p.id,
         p.title,
-        p.content,
+        SUBSTRING(p.content, 1, 500) as content_preview,
         p.upvotes,
         p.downvotes,
         p.comment_count,
@@ -73,11 +73,18 @@ export async function GET(request: NextRequest) {
       ? (total[0] as any).count 
       : 0
 
+    // Caché HTTP para feed following
     return NextResponse.json({
       posts: Array.isArray(posts) ? posts : [],
       hasMore: offset + limit < totalCount,
       page,
       total: totalCount
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=300',
+      },
     })
   } catch (error: any) {
     return NextResponse.json(

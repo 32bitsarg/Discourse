@@ -5,12 +5,25 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ArrowLeft, Users, MessageSquare, Lock, Globe, Edit } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import PostFeed, { PostFeedRef } from '@/components/PostFeed'
 import CreatePostBox from '@/components/CreatePostBox'
 import JoinCommunityButton from '@/components/JoinCommunityButton'
 import CommunityRequestsPanel from '@/components/CommunityRequestsPanel'
-import EditCommunityModal from '@/components/EditCommunityModal'
 import { useI18n } from '@/lib/i18n/context'
+import { useSubforumBySlug } from '@/lib/hooks/useSubforums'
+import { useUser, useIsAdmin } from '@/lib/hooks/useUser'
+import useSWR from 'swr'
+import { fetcher } from '@/lib/hooks/useSWRConfig'
+
+// Lazy load del modal pesado
+const EditCommunityModal = dynamic(
+  () => import('@/components/EditCommunityModal'),
+  { 
+    loading: () => null,
+    ssr: false 
+  }
+)
 
 export default function CommunityPage() {
   const { t } = useI18n()
@@ -18,50 +31,48 @@ export default function CommunityPage() {
   const router = useRouter()
   const slug = params.slug as string
 
-  const [community, setCommunity] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  // OPTIMIZACIÓN: Usar SWR para obtener datos
+  const { subforum, isLoading: subforumLoading, mutate: mutateSubforum } = useSubforumBySlug(slug)
+  const { user: currentUser } = useUser()
+  const { isAdmin } = useIsAdmin()
+  
   const [userMembership, setUserMembership] = useState<{ isMember: boolean; role?: string } | null>(null)
-  const [currentUser, setCurrentUser] = useState<{ id: number; username: string } | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const postFeedRef = useRef<PostFeedRef>(null)
-
+  
+  // Obtener estado de membresía si hay usuario y comunidad
+  const { data: membershipData } = useSWR(
+    subforum && currentUser ? `/api/subforums/${subforum.id}/members/status` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 300000, // 5 minutos
+    }
+  )
+  
   useEffect(() => {
-    if (!slug) return
+    if (membershipData) {
+      setUserMembership(membershipData)
+    }
+  }, [membershipData])
+  
+  // Preparar comunidad con imágenes
+  const community = subforum ? {
+    ...subforum,
+    image_url: subforum.image_url || null,
+    banner_url: subforum.banner_url || null,
+  } : null
+  
+  const isPending = subforum?.requires_approval === true || subforum?.requires_approval === 1
+  const loading = subforumLoading
 
-    setLoading(true)
-    Promise.all([
-      fetch('/api/subforums?t=' + Date.now()).then(res => res.json()),
-      fetch('/api/auth/me').then(res => res.json()).catch(() => ({ user: null }))
-    ])
-      .then(([subforumsData, authData]) => {
-        const found = subforumsData.subforums?.find((s: any) => s.slug === slug)
-        if (found) {
-          // Asegurar que image_url y banner_url estén presentes
-          const communityWithImages = {
-            ...found,
-            image_url: found.image_url || null,
-            banner_url: found.banner_url || null,
-          }
-          setCommunity(communityWithImages)
-          
-          // Verificar membresía del usuario
-          if (authData.user) {
-            setCurrentUser(authData.user)
-            fetch(`/api/subforums/${found.id}/members/status`)
-              .then(res => res.json())
-              .then(membershipData => {
-                setUserMembership(membershipData)
-              })
-              .catch(() => {})
-          }
-        }
-      })
-      .catch(err => {
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [slug])
+  // Verificar si el usuario puede ver la comunidad pendiente
+  const canViewPending = subforum && isPending && currentUser && (
+    isAdmin || currentUser.id === subforum.creator_id
+  )
+  
+  // Determinar si mostrar la comunidad o mensaje de pendiente
+  const shouldShowCommunity = subforum && (!isPending || canViewPending)
 
   if (loading) {
     return (
@@ -72,7 +83,26 @@ export default function CommunityPage() {
     )
   }
 
-  if (!community) {
+  if (!shouldShowCommunity) {
+    // Si está pendiente, mostrar mensaje específico
+    if (isPending && subforum) {
+      return (
+        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+          <p className="text-gray-500 text-lg mb-2">Esta comunidad está pendiente de aprobación</p>
+          <p className="text-gray-400 text-sm mb-4">
+            Solo los administradores y el creador pueden ver comunidades pendientes.
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-4 text-primary-600 hover:text-primary-700"
+          >
+            {t.community.backToHome}
+          </button>
+        </div>
+      )
+    }
+    
+    // Comunidad no encontrada
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">{t.community.notFound}</p>
@@ -88,6 +118,21 @@ export default function CommunityPage() {
 
   return (
       <div className="space-y-4">
+        {/* Banner de comunidad pendiente (solo visible para admins y creadores) */}
+        {isPending && (isAdmin || (currentUser && currentUser.id === community.creator_id)) && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-yellow-600" />
+              <div>
+                <p className="text-yellow-800 font-medium">Esta comunidad está pendiente de aprobación</p>
+                <p className="text-yellow-600 text-sm mt-1">
+                  Solo los administradores y el creador pueden ver esta comunidad hasta que sea aprobada.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Botón volver */}
         <Link href="/">
           <motion.div
@@ -250,25 +295,12 @@ export default function CommunityPage() {
                   name_changed_at: community.name_changed_at,
                 }}
                 onSave={() => {
-                  // Recargar la comunidad con cache invalidado
-                  fetch('/api/subforums?t=' + Date.now())
-                    .then(res => res.json())
-                    .then(data => {
-                      const found = data.subforums?.find((s: any) => s.slug === slug)
-                      if (found) {
-                        const communityWithImages = {
-                          ...found,
-                          image_url: found.image_url && found.image_url.trim() !== '' ? found.image_url : null,
-                          banner_url: found.banner_url && found.banner_url.trim() !== '' ? found.banner_url : null,
-                        }
-                        setCommunity(communityWithImages)
-                        // Forzar recarga de la página si el slug cambió
-                        if (found.slug !== slug) {
-                          router.push(`/r/${found.slug}`)
-                        }
-                      }
-                    })
-                    .catch(() => {})
+                  // Revalidar la comunidad usando SWR
+                  mutateSubforum()
+                  // Si el slug cambió, redirigir
+                  if (subforum && community && community.slug !== slug) {
+                    router.push(`/r/${community.slug}`)
+                  }
                 }}
               />
             )}

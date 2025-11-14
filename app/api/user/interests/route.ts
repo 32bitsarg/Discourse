@@ -16,9 +16,18 @@ export async function GET(request: NextRequest) {
       [user.id]
     )
 
-    return NextResponse.json({
-      interests: Array.isArray(interests) ? interests : []
-    })
+    return NextResponse.json(
+      {
+        interests: Array.isArray(interests) ? interests : []
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'CDN-Cache-Control': 'public, s-maxage=600',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+        },
+      }
+    )
   } catch (error: any) {
     return NextResponse.json(
       { error: 'Internal server error' },

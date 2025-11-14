@@ -2,25 +2,40 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Settings, Save, Loader2, CheckCircle, XCircle, Globe, Shield, Palette,
-  Users, FileText, ThumbsUp, Mail, Search, Lock, ChevronDown, ChevronUp, Home
+  Users, FileText, ThumbsUp, Mail, Search, Lock, ChevronDown, ChevronUp, Home, Check, X, Flag, Trash2, Eye, AlertTriangle
 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
+import { useUser, useIsAdmin } from '@/lib/hooks/useUser'
+import { useSettings } from '@/lib/hooks/useSettings'
 import DashboardSidebar from '@/components/DashboardSidebar'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario y admin status
+  const { user, isLoading: userLoading } = useUser()
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin()
+  const { settings: settingsData, loading: settingsLoading } = useSettings()
   const [saving, setSaving] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('general')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pendingCommunities, setPendingCommunities] = useState<any[]>([])
+  const [loadingCommunities, setLoadingCommunities] = useState(false)
+  const [reports, setReports] = useState<any[]>([])
+  const [loadingReports, setLoadingReports] = useState(false)
+  const [reportStatus, setReportStatus] = useState<'pending' | 'reviewed' | 'resolved' | 'dismissed'>('pending')
+  const [statusCounts, setStatusCounts] = useState<any>({})
+  const [moderationHistory, setModerationHistory] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
   
+  const loading = userLoading || adminLoading || settingsLoading
+  
+  // Estado local para settings (se llena desde SWR)
   const [settings, setSettings] = useState({
     // General
     siteName: 'Discourse',
@@ -66,54 +81,31 @@ export default function DashboardPage() {
     captchaOnPosts: false,
   })
 
+  // Verificar autenticación y permisos usando SWR
   useEffect(() => {
-    checkAuth()
-    loadSettings()
-  }, [])
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      
-      if (!res.ok || !data.user) {
+    if (!loading) {
+      if (!user) {
         router.push('/feed')
         return
       }
       
-      setUser(data.user)
-      
-      // Verificar si es admin
-      const adminRes = await fetch('/api/admin/check')
-      const adminData = await adminRes.json()
-      setIsAdmin(adminData.isAdmin || false)
-      
-      if (!adminData.isAdmin) {
+      if (!isAdmin) {
         setError('No tienes permisos para acceder al dashboard')
         setTimeout(() => {
           router.push('/feed')
         }, 2000)
         return
       }
-    } catch (err) {
-      router.push('/feed')
-    } finally {
-      setLoading(false)
     }
-  }
+  }, [user, isAdmin, loading, router])
 
-  const loadSettings = async () => {
-    try {
-      const res = await fetch('/api/settings')
-      if (!res.ok) {
-        throw new Error('Error cargando configuración')
-      }
-      
-      const data = await res.json()
-      const settingsMap = data.settings.reduce((acc: any, setting: any) => {
+  // Convertir settings de SWR al formato esperado
+  useEffect(() => {
+    if (settingsData && !settingsLoading) {
+      const settingsMap = settingsData.settings?.reduce((acc: any, setting: any) => {
         acc[setting.key_name] = setting.value
         return acc
-      }, {})
+      }, {}) || {}
       
       setSettings({
         siteName: settingsMap.site_name || 'Discourse',
@@ -163,6 +155,114 @@ export default function DashboardPage() {
       body: JSON.stringify({ key, value, description }),
     })
     return res.ok
+  }
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadPendingCommunities()
+      loadReports()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin])
+
+  useEffect(() => {
+    if (isAdmin && activeSection === 'moderation') {
+      loadReports()
+      loadModerationHistory()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, reportStatus])
+
+  const loadModerationHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const res = await fetch('/api/moderation/history?limit=50')
+      if (res.ok) {
+        const data = await res.json()
+        setModerationHistory(data.history || [])
+      }
+    } catch (error) {
+      console.error('Error cargando historial:', error)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const loadPendingCommunities = async () => {
+    if (!isAdmin) return
+    setLoadingCommunities(true)
+    try {
+      const res = await fetch('/api/subforums/pending')
+      if (res.ok) {
+        const data = await res.json()
+        setPendingCommunities(data.communities || [])
+      }
+    } catch (error) {
+      console.error('Error cargando comunidades pendientes:', error)
+    } finally {
+      setLoadingCommunities(false)
+    }
+  }
+
+  const loadReports = async () => {
+    if (!isAdmin) return
+    setLoadingReports(true)
+    try {
+      const res = await fetch(`/api/reports?status=${reportStatus}`)
+      if (res.ok) {
+        const data = await res.json()
+        setReports(data.reports || [])
+        setStatusCounts(data.statusCounts || {})
+      }
+    } catch (error) {
+      console.error('Error cargando reportes:', error)
+    } finally {
+      setLoadingReports(false)
+    }
+  }
+
+  const handleCommunityAction = async (communityId: number, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch('/api/subforums/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ communityId, action }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        setError(error.message || 'Error al gestionar la comunidad')
+        return
+      }
+
+      setSuccess(action === 'approve' ? 'Comunidad aprobada exitosamente' : 'Comunidad rechazada')
+      loadPendingCommunities()
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (error) {
+      setError('Error al gestionar la comunidad')
+    }
+  }
+
+  const handleReportAction = async (reportId: number, action: 'delete' | 'hide' | 'dismiss' | 'warn', actionTaken?: string) => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, actionTaken }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        setError(error.message || 'Error al procesar la acción')
+        return
+      }
+
+      setSuccess('Acción aplicada exitosamente')
+      loadReports()
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (error) {
+      setError('Error al procesar la acción')
+    }
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -771,6 +871,335 @@ export default function DashboardPage() {
               <p className="mt-1 text-sm text-gray-500">
                 ID de seguimiento de Google Analytics (ej: G-XXXXXXXXXX)
               </p>
+            </div>
+          </div>
+        )
+
+      case 'communities':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Comunidades Pendientes</h2>
+              <p className="text-gray-600">Gestiona las solicitudes de nuevas comunidades</p>
+            </div>
+
+            {loadingCommunities ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+              </div>
+            ) : pendingCommunities.length === 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                <Home className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No hay comunidades pendientes de aprobación</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingCommunities.map((community: any) => (
+                  <div key={community.id} className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          {community.image_url && (
+                            <img
+                              src={community.image_url}
+                              alt={community.name}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          )}
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{community.name}</h3>
+                            <p className="text-sm text-gray-500">Creado por u/{community.creator_username}</p>
+                          </div>
+                        </div>
+                        <p className="text-gray-700 mb-4">{community.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span>{community.member_count} miembros</span>
+                          <span>•</span>
+                          <span>{community.is_public ? 'Pública' : 'Privada'}</span>
+                          <span>•</span>
+                          <span>Creada {new Date(community.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <button
+                          onClick={() => handleCommunityAction(community.id, 'approve')}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                        >
+                          <Check className="w-4 h-4" />
+                          Aprobar
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de rechazar esta comunidad? Esta acción no se puede deshacer.')) {
+                              handleCommunityAction(community.id, 'reject')
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                        >
+                          <X className="w-4 h-4" />
+                          Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+
+      case 'moderation':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Panel de Moderación</h2>
+              <p className="text-gray-600">Gestiona los reportes de contenido</p>
+            </div>
+
+            {/* Filtros de estado */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setReportStatus('pending')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  reportStatus === 'pending'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Pendientes ({statusCounts.pending || 0})
+              </button>
+              <button
+                onClick={() => setReportStatus('reviewed')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  reportStatus === 'reviewed'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Revisados ({statusCounts.reviewed || 0})
+              </button>
+              <button
+                onClick={() => setReportStatus('resolved')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  reportStatus === 'resolved'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Resueltos ({statusCounts.resolved || 0})
+              </button>
+              <button
+                onClick={() => setReportStatus('dismissed')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  reportStatus === 'dismissed'
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Descartados ({statusCounts.dismissed || 0})
+              </button>
+            </div>
+
+            {loadingReports ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                <Flag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No hay reportes {reportStatus === 'pending' ? 'pendientes' : `con estado "${reportStatus}"`}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reports.map((report: any) => (
+                  <div key={report.id} className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Flag className={`w-5 h-5 ${
+                            reportStatus === 'pending' ? 'text-red-600' :
+                            reportStatus === 'resolved' ? 'text-green-600' :
+                            reportStatus === 'dismissed' ? 'text-gray-600' : 'text-yellow-600'
+                          }`} />
+                          <div>
+                            <p className="text-sm text-gray-500">
+                              Reportado por <span className="font-semibold">u/{report.reporter?.username || 'Usuario desconocido'}</span>
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {new Date(report.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mb-3">
+                          <span className="inline-block px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
+                            {report.reason}
+                          </span>
+                        </div>
+                        {report.description && (
+                          <p className="text-sm text-gray-700 mb-3">{report.description}</p>
+                        )}
+                        {report.post && (
+                          <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                            <p className="text-xs text-gray-500 mb-1">Post reportado:</p>
+                            <p className="text-sm font-semibold text-gray-900">{report.post.title}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Por u/{report.post.author?.username || 'Usuario desconocido'}
+                            </p>
+                            <Link
+                              href={report.post.slug ? `/r/${report.post.slug}` : `/post/${report.post.id}`}
+                              className="text-xs text-indigo-600 hover:underline mt-2 inline-block"
+                            >
+                              Ver post →
+                            </Link>
+                          </div>
+                        )}
+                        {report.comment && (
+                          <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                            <p className="text-xs text-gray-500 mb-1">Comentario reportado:</p>
+                            <p className="text-sm text-gray-700">{report.comment.content ? (report.comment.content.substring(0, 200) + (report.comment.content.length > 200 ? '...' : '')) : `Comentario ID: ${report.comment.id}`}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Por u/{report.comment.author?.username || 'Usuario desconocido'}
+                            </p>
+                            {report.post && (
+                              <Link
+                                href={`/post/${report.post.id}#comment-${report.comment.id}`}
+                                className="text-xs text-indigo-600 hover:underline mt-2 inline-block"
+                              >
+                                Ver comentario →
+                              </Link>
+                            )}
+                          </div>
+                        )}
+                        {report.reviewer && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Revisado por u/{report.reviewer.username || 'Admin'} el {report.reviewedAt ? new Date(report.reviewedAt).toLocaleString() : 'N/A'}
+                          </p>
+                        )}
+                        {report.actionTaken && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Acción: {report.actionTaken}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {reportStatus === 'pending' && (
+                      <div className="flex items-center gap-2 flex-wrap pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Estás seguro de eliminar este contenido? Esta acción no se puede deshacer.')) {
+                              handleReportAction(report.id, 'delete')
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Eliminar
+                        </button>
+                        <button
+                          onClick={() => handleReportAction(report.id, 'hide')}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 text-sm"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Ocultar
+                        </button>
+                        <button
+                          onClick={() => {
+                            const actionTaken = prompt('Razón de la advertencia (opcional):')
+                            handleReportAction(report.id, 'warn', actionTaken || undefined)
+                          }}
+                          className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2 text-sm"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          Advertir
+                        </button>
+                        {report.post?.author?.id && (
+                          <button
+                            onClick={async () => {
+                              if (confirm(`¿Estás seguro de banear al usuario u/${report.post?.author?.username}?`)) {
+                                const reason = prompt('Razón del ban (opcional):')
+                                const duration = prompt('Duración del ban en días (dejar vacío para permanente):')
+                                try {
+                                  const expiresAt = duration ? new Date(Date.now() + parseInt(duration) * 24 * 60 * 60 * 1000) : undefined
+                                  const res = await fetch(`/api/users/${report.post.author.id}/ban`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ action: 'ban', reason, expiresAt: expiresAt?.toISOString() }),
+                                  })
+                                  if (res.ok) {
+                                    setSuccess('Usuario baneado exitosamente')
+                                    handleReportAction(report.id, 'delete', `Usuario baneado: ${reason || 'Sin razón especificada'}`)
+                                  } else {
+                                    const error = await res.json()
+                                    setError(error.message || 'Error al banear usuario')
+                                  }
+                                } catch (error) {
+                                  setError('Error al banear usuario')
+                                }
+                              }
+                            }}
+                            className="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors flex items-center gap-2 text-sm"
+                          >
+                            <X className="w-4 h-4" />
+                            Banear Usuario
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleReportAction(report.id, 'dismiss')}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm"
+                        >
+                          <X className="w-4 h-4" />
+                          Descartar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Historial de Moderación */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Historial de Moderación</h3>
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                </div>
+              ) : moderationHistory.length === 0 ? (
+                <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+                  <p>No hay historial de moderación</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {moderationHistory.map((item: any) => (
+                    <div key={item.id} className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              item.action === 'delete' ? 'bg-red-100 text-red-800' :
+                              item.action === 'ban' ? 'bg-red-200 text-red-900' :
+                              item.action === 'warn' ? 'bg-yellow-100 text-yellow-800' :
+                              item.action === 'hide' ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {item.action.toUpperCase()}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              {item.target_type}: {item.target_id}
+                            </span>
+                          </div>
+                          {item.reason && (
+                            <p className="text-sm text-gray-700 mb-1">{item.reason}</p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            Por u/{item.moderator_username || 'Admin'} • {new Date(item.created_at).toLocaleString('es-ES')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )

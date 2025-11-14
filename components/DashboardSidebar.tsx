@@ -15,6 +15,7 @@ import {
   Lock,
   Home,
   ChevronRight,
+  Flag,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -33,6 +34,8 @@ const sidebarItems: SidebarItem[] = [
   { id: 'email', label: 'Email', icon: Mail, section: 'email' },
   { id: 'seo', label: 'SEO', icon: Search, section: 'seo' },
   { id: 'security', label: 'Seguridad', icon: Lock, section: 'security' },
+  { id: 'communities', label: 'Comunidades', icon: Home, section: 'communities' },
+  { id: 'moderation', label: 'Moderación', icon: Flag, section: 'moderation' },
 ]
 
 interface DashboardSidebarProps {

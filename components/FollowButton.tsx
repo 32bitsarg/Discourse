@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { UserPlus, UserMinus } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useFollowStatus } from '@/lib/hooks/useUser'
 
 interface FollowButtonProps {
   username: string
@@ -11,25 +12,9 @@ interface FollowButtonProps {
 
 export default function FollowButton({ username, onFollowChange }: FollowButtonProps) {
   const { t } = useI18n()
-  const [following, setFollowing] = useState(false)
-  const [loading, setLoading] = useState(true)
+  // OPTIMIZACIÓN: Usar SWR para obtener estado de follow
+  const { following, isLoading: loading, mutate } = useFollowStatus(username)
   const [updating, setUpdating] = useState(false)
-
-  useEffect(() => {
-    // Verificar estado de follow
-    fetch(`/api/user/${username}/follow`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.following !== undefined) {
-          setFollowing(data.following)
-        }
-      })
-      .catch(() => {
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [username])
 
   const handleFollow = async () => {
     if (updating) return
@@ -42,7 +27,8 @@ export default function FollowButton({ username, onFollowChange }: FollowButtonP
       const data = await res.json()
       
       if (data.success !== undefined) {
-        setFollowing(data.following)
+        // Revalidar estado usando SWR
+        mutate()
         if (onFollowChange) {
           onFollowChange(data.following)
         }

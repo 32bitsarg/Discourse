@@ -10,7 +10,18 @@ import FollowButton from '@/components/FollowButton'
 import EditProfileModal from '@/components/EditProfileModal'
 import AdminBadge from '@/components/AdminBadge'
 import PostContentRenderer from '@/components/PostContentRenderer'
-import RichTextEditor from '@/components/RichTextEditor'
+import SkeletonUserProfile from '@/components/SkeletonUserProfile'
+import dynamic from 'next/dynamic'
+import { useUserProfile, useUser } from '@/lib/hooks/useUser'
+
+// Lazy load del editor pesado
+const RichTextEditor = dynamic(
+  () => import('@/components/RichTextEditor'),
+  { 
+    loading: () => <div className="animate-pulse bg-gray-100 h-32 rounded"></div>,
+    ssr: false 
+  }
+)
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 const socialIcons: Record<string, any> = {
@@ -27,10 +38,6 @@ export default function UserProfilePage() {
   const username = params.username as string
   const isMobile = useIsMobile()
 
-  const [user, setUser] = useState<any>(null)
-  const [posts, setPosts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<{ username: string; id: number } | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingPostId, setEditingPostId] = useState<number | null>(null)
   const [deletingPostId, setDeletingPostId] = useState<number | null>(null)
@@ -39,54 +46,16 @@ export default function UserProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const loadProfile = useCallback(() => {
-    if (!username) return
-    setLoading(true)
-    fetch(`/api/user/${username}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-          setPosts(data.posts || [])
-        }
-      })
-      .catch(err => {
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [username])
-
-  useEffect(() => {
-    // Verificar usuario actual
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setCurrentUser(data.user)
-        }
-      })
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    // Cargar perfil del usuario
-    if (username) {
-      loadProfile()
-    }
-  }, [username, loadProfile])
+  // OPTIMIZACIÓN: Usar SWR para caché automática
+  const { user, posts, isLoading: loading, mutate } = useUserProfile(username)
+  const { user: currentUser } = useUser()
 
   // Los hooks deben estar antes de cualquier return condicional
   const isOwnProfile = useMemo(() => currentUser?.username === username, [currentUser?.username, username])
   const themeColor = useMemo(() => user?.theme_color || '#6366f1', [user?.theme_color])
 
   if (loading) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-      </div>
-    )
+    return <SkeletonUserProfile />
   }
 
   if (!user) {

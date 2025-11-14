@@ -20,7 +20,7 @@ if (typeof setInterval !== 'undefined') {
 }
 
 // Función helper para ejecutar comandos Redis vía Upstash REST API
-async function executeRedisCommand(command: string[]): Promise<any> {
+export async function executeRedisCommand(command: string[]): Promise<any> {
   if (!UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
     return null
   }

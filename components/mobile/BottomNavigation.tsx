@@ -4,8 +4,9 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Home, Users, User, LogIn } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useI18n } from '@/lib/i18n/context'
+import { useUser } from '@/lib/hooks/useUser'
 import LoginModal from '../LoginModal'
 import RegisterModal from '../RegisterModal'
 
@@ -20,7 +21,8 @@ interface NavItem {
 export default function BottomNavigation() {
   const { t } = useI18n()
   const pathname = usePathname()
-  const [user, setUser] = useState<{ id: number; username: string; avatar_url?: string | null } | null>(null)
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario
+  const { user, mutate: mutateUser } = useUser()
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
 
@@ -31,18 +33,6 @@ export default function BottomNavigation() {
       ? { name: t.auth.profile, href: '/user', icon: User }
       : { name: t.auth.login, href: '#', icon: LogIn, isLogin: true },
   ]
-
-  // Verificar usuario para mostrar perfil correcto
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   const handleLogin = async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {
@@ -56,25 +46,38 @@ export default function BottomNavigation() {
       throw new Error(error.message || 'Error al iniciar sesión')
     }
 
-    const data = await res.json()
-    setUser(data.user)
+    // Revalidar usuario usando SWR
+    mutateUser()
     setIsLoginOpen(false)
   }
 
-  const handleRegister = async (username: string, email: string, password: string) => {
+  const handleRegister = async (username: string, email: string, password: string, birthdate?: string, captchaToken?: string) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, birthdate, captchaToken }),
     })
 
     if (!res.ok) {
       const error = await res.json()
+      if (error.requiresVerification) {
+        const verificationError = new Error(error.message || 'Registro exitoso. Verifica tu email.')
+        ;(verificationError as any).requiresVerification = true
+        throw verificationError
+      }
       throw new Error(error.message || 'Error al registrarse')
     }
 
     const data = await res.json()
-    setUser(data.user)
+    
+    if (data.requiresVerification) {
+      const verificationError = new Error(data.message || 'Registro exitoso. Verifica tu email.')
+      ;(verificationError as any).requiresVerification = true
+      throw verificationError
+    }
+
+    // Revalidar usuario usando SWR
+    mutateUser()
     setIsRegisterOpen(false)
   }
 

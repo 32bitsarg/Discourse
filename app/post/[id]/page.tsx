@@ -5,13 +5,23 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Bookmark, ArrowLeft, Edit, Trash2, X } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import CommentsSection from '@/components/CommentsSection'
 import PostContentRenderer from '@/components/PostContentRenderer'
-import RichTextEditor from '@/components/RichTextEditor'
 import { useI18n } from '@/lib/i18n/context'
 import { useViewTracking, useBehaviorTracking } from '@/hooks/useBehaviorTracking'
 import SharePostButton from '@/components/SharePostButton'
 import AdminBadge from '@/components/AdminBadge'
+import { usePost } from '@/lib/hooks/usePosts'
+
+// Lazy load del editor pesado
+const RichTextEditor = dynamic(
+  () => import('@/components/RichTextEditor'),
+  { 
+    loading: () => <div className="animate-pulse bg-gray-100 h-32 rounded"></div>,
+    ssr: false 
+  }
+)
 
 export default function PostPage() {
   const { t } = useI18n()
@@ -19,8 +29,9 @@ export default function PostPage() {
   const router = useRouter()
   const postId = params.id as string
 
-  const [post, setPost] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  // OPTIMIZACIÓN: Usar SWR para obtener el post
+  const { post: postData, isLoading, mutate } = usePost(postId)
+  
   const [vote, setVote] = useState<'up' | 'down' | null>(null)
   const [voteCount, setVoteCount] = useState(0)
   const [timeAgo, setTimeAgo] = useState(t.common.seconds)
@@ -37,6 +48,23 @@ export default function PostPage() {
   
   // Trackear visualización del post completo
   useViewTracking(postIdNum)
+  
+  // Sincronizar estado cuando el post cambia
+  useEffect(() => {
+    if (postData) {
+      // Si el post tiene slug, redirigir a la URL amigable
+      if (postData.slug && postData.subforum_slug && !isRedirecting) {
+        setIsRedirecting(true)
+        router.replace(`/r/${postData.subforum_slug}/${postData.slug}`)
+        return
+      }
+      // Si no tiene slug, mostrar el post normalmente
+      setVoteCount(postData.upvotes - postData.downvotes)
+      setVote(postData.userVote || null)
+      setEditTitle(postData.title)
+      setEditContent(postData.content)
+    }
+  }, [postData, router, isRedirecting])
 
   // Función para calcular tiempo transcurrido
   const calculateTimeAgo = (date: string | Date): string => {
@@ -55,13 +83,13 @@ export default function PostPage() {
 
   // Actualizar el tiempo dinámicamente
   useEffect(() => {
-    if (!post?.created_at) return
+    if (!postData?.created_at) return
     
-    setTimeAgo(calculateTimeAgo(post.created_at))
+    setTimeAgo(calculateTimeAgo(postData.created_at))
     
     // Para posts muy recientes (< 1 hora), actualizar cada 30 segundos
     // Para posts más antiguos, actualizar cada minuto
-    const postDate = new Date(post.created_at)
+    const postDate = new Date(postData.created_at)
     const now = new Date()
     const diff = now.getTime() - postDate.getTime()
     const hours = diff / (1000 * 60 * 60)
@@ -69,45 +97,11 @@ export default function PostPage() {
     const intervalTime = hours < 1 ? 30000 : 60000 // 30 segundos si < 1 hora, 1 minuto si >= 1 hora
     
     const interval = setInterval(() => {
-      setTimeAgo(calculateTimeAgo(post.created_at))
+      setTimeAgo(calculateTimeAgo(postData.created_at))
     }, intervalTime)
 
     return () => clearInterval(interval)
-  }, [post?.created_at])
-
-  useEffect(() => {
-    if (!postId || isRedirecting) return
-
-    setLoading(true)
-    fetch(`/api/posts/${postId}`)
-      .then(async res => {
-        if (!res.ok) {
-          setLoading(false)
-          return
-        }
-        const data = await res.json()
-        if (data.message || !data.id) {
-          setLoading(false)
-          return
-        }
-        // Si el post tiene slug, redirigir a la URL amigable
-        if (data.slug && data.subforum_slug) {
-          setIsRedirecting(true)
-          router.replace(`/r/${data.subforum_slug}/${data.slug}`)
-          return
-        }
-        // Si no tiene slug, mostrar el post normalmente
-        setPost(data)
-        setVoteCount(data.upvotes - data.downvotes)
-        setVote(data.userVote || null)
-        setEditTitle(data.title)
-        setEditContent(data.content)
-        setLoading(false)
-      })
-      .catch(err => {
-        setLoading(false)
-      })
-  }, [postId, router, isRedirecting])
+  }, [postData?.created_at])
 
   const handleEdit = async () => {
     if (!editTitle.trim() || !editContent.trim()) {
@@ -129,14 +123,8 @@ export default function PostPage() {
       }
 
       setShowEditModal(false)
-      // Recargar el post
-      const res2 = await fetch(`/api/posts/${postId}`)
-      const data = await res2.json()
-      if (data.id) {
-        setPost(data)
-        setEditTitle(data.title)
-        setEditContent(data.content)
-      }
+      // Revalidar el post usando SWR
+      mutate()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al editar el post')
     } finally {
@@ -195,20 +183,13 @@ export default function PostPage() {
       // Actualizar el estado del voto inmediatamente
       setVote(data.voteType)
       
-      // Recargar el post para obtener datos actualizados
-      const postRes = await fetch(`/api/posts/${postId}`)
-      const postData = await postRes.json()
-      if (postData.id) {
-        setPost(postData)
-        setVoteCount(postData.upvotes - postData.downvotes)
-        // Asegurar que el voto se mantenga sincronizado
-        setVote(postData.userVote || data.voteType)
-      }
+      // Revalidar el post usando SWR
+      mutate()
     } catch (error) {
     }
   }
 
-  if (loading) {
+  if (isLoading || isRedirecting) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 animate-pulse">
         <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
@@ -218,7 +199,7 @@ export default function PostPage() {
     )
   }
 
-  if (!post) {
+  if (!postData) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">{t.common.error}</p>
@@ -291,29 +272,29 @@ export default function PostPage() {
               {/* Header */}
               <div className="flex items-center gap-1 sm:gap-2 mb-1.5 sm:mb-4 flex-wrap">
                 <Link
-                  href={`/r/${post.subforum_slug}`}
+                  href={`/r/${postData.subforum_slug}`}
                   className="text-xs font-semibold text-primary-600 hover:text-primary-700 truncate"
                 >
-                  r/{post.subforum_name}
+                  r/{postData.subforum_name}
                 </Link>
                 <span className="text-gray-600 hidden sm:inline">•</span>
                 <span className="text-xs text-gray-500 hidden sm:inline">{t.post.postedBy}</span>
-                <Link href={`/user/${post.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate flex items-center gap-1">
+                <Link href={`/user/${postData.author_username}`} className="text-xs font-semibold text-gray-700 hover:text-gray-900 truncate flex items-center gap-1">
                   <span className="hidden sm:inline">u/</span>
-                  <span>{post.author_username}</span>
-                  <AdminBadge username={post.author_username} />
+                  <span>{postData.author_username}</span>
+                  <AdminBadge username={postData.author_username} />
                 </Link>
                 <span className="text-gray-400 hidden sm:inline">•</span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">{timeAgo}</span>
-                {post.edited_at && (
+                {postData.edited_at && (
                   <>
                     <span className="text-gray-600 hidden sm:inline">•</span>
                     <span className="text-xs text-gray-500 italic">
-                      {t.post.edited} {new Date(post.edited_at).toLocaleDateString()}
+                      {t.post.edited} {new Date(postData.edited_at).toLocaleDateString()}
                     </span>
                   </>
                 )}
-                {post.is_hot && (
+                {postData.is_hot && (
                   <>
                     <span className="text-gray-600 hidden sm:inline">•</span>
                     <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold whitespace-nowrap">
@@ -321,7 +302,7 @@ export default function PostPage() {
                     </span>
                   </>
                 )}
-                {post.canEdit && (
+                {postData.canEdit && (
                   <>
                     <span className="text-gray-600 hidden sm:inline">•</span>
                     <div className="flex items-center gap-2">
@@ -348,24 +329,24 @@ export default function PostPage() {
 
               {/* Title */}
               <h1 className="text-base sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">
-                {post.title}
+                {postData.title}
               </h1>
 
               {/* Content */}
               <div className="prose prose-sm sm:prose-base max-w-none mb-3 sm:mb-6 text-sm sm:text-base">
-                <PostContentRenderer content={post.content} />
+                <PostContentRenderer content={postData.content} />
               </div>
 
               {/* Actions */}
               <div className="flex items-center gap-1.5 sm:gap-4 pt-2 sm:pt-4 border-t border-gray-200 flex-wrap">
                 <button className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition-colors text-[10px] sm:text-sm">
                   <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{post.comment_count} {t.post.comments}</span>
-                  <span className="sm:hidden">{post.comment_count}</span>
+                  <span className="hidden sm:inline">{postData.comment_count} {t.post.comments}</span>
+                  <span className="sm:hidden">{postData.comment_count}</span>
                 </button>
                 <SharePostButton
                   postId={postIdNum || 0}
-                  postTitle={post?.title || ''}
+                  postTitle={postData?.title || ''}
                   postUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/post/${postId}`}
                   onShareComplete={() => {
                     if (postIdNum) {

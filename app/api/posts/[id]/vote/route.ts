@@ -2,18 +2,50 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import pool from '@/lib/db'
 import { invalidateCache } from '@/lib/redis'
+import {
+  areDownvotesAllowed,
+  getMinKarmaToVote,
+} from '@/lib/settings-validation'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit'
+import { createNotification } from '@/lib/notifications'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verificar rate limit
+    const rateLimit = await checkRateLimit(request, 'vote')
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        createRateLimitResponse(rateLimit.remaining, rateLimit.resetAt, rateLimit.limit),
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimit.resetAt.toString(),
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          }
+        }
+      )
+    }
+
     const user = await getCurrentUser()
 
     if (!user) {
       return NextResponse.json(
         { message: 'Debes iniciar sesión para votar' },
         { status: 401 }
+      )
+    }
+
+    // Verificar si el usuario está baneado
+    const banned = await isUserBanned(user.id)
+    if (banned) {
+      return NextResponse.json(
+        { message: 'Tu cuenta ha sido suspendida. No puedes votar.' },
+        { status: 403 }
       )
     }
 
@@ -26,6 +58,26 @@ export async function POST(
         { message: 'Datos inválidos' },
         { status: 400 }
       )
+    }
+
+    // Validar karma mínimo para votar
+    const minKarma = await getMinKarmaToVote()
+    if (user.karma < minKarma) {
+      return NextResponse.json(
+        { message: `Necesitas al menos ${minKarma} karma para votar` },
+        { status: 403 }
+      )
+    }
+
+    // Validar si downvotes están permitidos
+    if (voteType === 'down') {
+      const downvotesAllowed = await areDownvotesAllowed()
+      if (!downvotesAllowed) {
+        return NextResponse.json(
+          { message: 'Los downvotes están deshabilitados' },
+          { status: 403 }
+        )
+      }
     }
 
     // Verificar si ya existe un voto
@@ -86,9 +138,27 @@ export async function POST(
         [user.id, postId, voteType]
       )
 
+      // Obtener información del post para notificaciones
+      const [posts] = await pool.execute(
+        'SELECT author_id, title FROM posts WHERE id = ?',
+        [postId]
+      ) as any[]
+      const post = posts[0]
+
       // Actualizar contadores en el post
       if (voteType === 'up') {
         await pool.execute('UPDATE posts SET upvotes = upvotes + 1 WHERE id = ?', [postId])
+        
+        // Notificar al autor del post (solo si es upvote y no es el mismo usuario)
+        if (post && post.author_id !== user.id) {
+          await createNotification({
+            userId: post.author_id,
+            type: 'upvote',
+            content: `${user.username} votó positivamente tu post "${post.title}"`,
+            relatedPostId: postId,
+            relatedUserId: user.id,
+          })
+        }
       } else {
         await pool.execute('UPDATE posts SET downvotes = downvotes + 1 WHERE id = ?', [postId])
       }

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { UserCheck, UserX, Clock, Users } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useCommunityRequests } from '@/lib/hooks/useSubforums'
 
 interface CommunityRequestsPanelProps {
   subforumId: number
@@ -12,26 +12,8 @@ interface CommunityRequestsPanelProps {
 
 export default function CommunityRequestsPanel({ subforumId, userRole }: CommunityRequestsPanelProps) {
   const { t } = useI18n()
-  const [requests, setRequests] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadRequests()
-  }, [subforumId])
-
-  const loadRequests = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/subforums/${subforumId}/requests`)
-      if (res.ok) {
-        const data = await res.json()
-        setRequests(data.requests || [])
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false)
-    }
-  }
+  // OPTIMIZACIÓN: Usar SWR para obtener solicitudes
+  const { requests, isLoading: loading, mutate } = useCommunityRequests(subforumId)
 
   const handleRequest = async (userId: number, action: 'approve' | 'reject') => {
     try {
@@ -47,8 +29,8 @@ export default function CommunityRequestsPanel({ subforumId, userRole }: Communi
         return
       }
 
-      // Recargar solicitudes
-      loadRequests()
+      // Revalidar solicitudes usando SWR
+      mutate()
     } catch (error) {
       alert(t.common.error)
     }

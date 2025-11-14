@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
+  email_verified BOOLEAN DEFAULT FALSE,
   password_hash VARCHAR(255) NOT NULL,
   avatar_url VARCHAR(255),
   bio TEXT,
@@ -25,7 +26,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_username (username),
-  INDEX idx_email (email)
+  INDEX idx_email (email),
+  INDEX idx_email_verified (email_verified)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Categories (main forums) - Opcional, no se usa actualmente
@@ -385,6 +387,44 @@ INSERT INTO settings (key_name, value, description) VALUES
 ('captcha_on_registration', 'false', 'CAPTCHA en registro'),
 ('captcha_on_posts', 'false', 'CAPTCHA en posts')
 ON DUPLICATE KEY UPDATE value=value;
+
+-- Email verification tokens
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user (user_id),
+  INDEX idx_token (token),
+  INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Reports (sistema de reportes)
+CREATE TABLE IF NOT EXISTS reports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  post_id INT,
+  comment_id INT,
+  reason VARCHAR(255) NOT NULL,
+  description TEXT,
+  status ENUM('pending', 'reviewed', 'resolved', 'dismissed') DEFAULT 'pending',
+  reviewed_by INT,
+  reviewed_at TIMESTAMP NULL,
+  action_taken VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_user (user_id),
+  INDEX idx_post (post_id),
+  INDEX idx_comment (comment_id),
+  INDEX idx_status (status),
+  INDEX idx_created (created_at),
+  CHECK ((post_id IS NOT NULL AND comment_id IS NULL) OR (post_id IS NULL AND comment_id IS NOT NULL))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================
 -- FIN DEL ESQUEMA

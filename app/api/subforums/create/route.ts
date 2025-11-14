@@ -7,9 +7,27 @@ import {
   isCommunityApprovalRequired,
   getMinKarmaForCommunity,
 } from '@/lib/settings-validation'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar rate limit
+    const rateLimit = await checkRateLimit(request, 'create_community')
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        createRateLimitResponse(rateLimit.remaining, rateLimit.resetAt, rateLimit.limit),
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimit.resetAt.toString(),
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          }
+        }
+      )
+    }
+
     const user = await getCurrentUser()
 
     if (!user) {

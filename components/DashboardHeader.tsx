@@ -1,29 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Settings, LogOut, Home, Users } from 'lucide-react'
 import SiteNameClient from './SiteNameClient'
+import { useSettings } from '@/lib/hooks/useSettings'
+import { useUser } from '@/lib/hooks/useUser'
 
 export default function DashboardHeader() {
-  const [user, setUser] = useState<{ username: string; id: number; avatar_url?: string | null } | null>(null)
+  const { settings } = useSettings()
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario
+  const { user, mutate: mutateUser } = useUser()
   const [avatarError, setAvatarError] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-  }, [])
 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
+      // Revalidar usuario usando SWR (limpiará el caché)
+      mutateUser()
       window.location.href = '/feed'
     } catch (error) {
       console.error('Error al cerrar sesión:', error)
@@ -41,6 +36,16 @@ export default function DashboardHeader() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
+              {settings.siteLogo && (
+                <img 
+                  src={settings.siteLogo} 
+                  alt="Logo" 
+                  className="h-8 w-auto object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              )}
               <SiteNameClient />
             </motion.div>
           </Link>

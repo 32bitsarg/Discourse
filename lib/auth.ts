@@ -51,7 +51,7 @@ export async function createUser(username: string, email: string, password: stri
 
 export async function getUserByEmail(email: string) {
   const [rows] = await pool.execute(
-    'SELECT id, username, email, password_hash, avatar_url, karma FROM users WHERE email = ?',
+    'SELECT id, username, email, email_verified, password_hash, avatar_url, karma FROM users WHERE email = ?',
     [email]
   ) as any[]
 
@@ -60,7 +60,7 @@ export async function getUserByEmail(email: string) {
 
 export async function getUserById(id: number): Promise<User | null> {
   const [rows] = await pool.execute(
-    'SELECT id, username, email, avatar_url, karma FROM users WHERE id = ?',
+    'SELECT id, username, email, email_verified, avatar_url, karma FROM users WHERE id = ?',
     [id]
   ) as any[]
 

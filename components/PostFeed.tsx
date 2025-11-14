@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import PostCard from './PostCard'
+import SkeletonPostCard from './SkeletonPostCard'
 import { useI18n } from '@/lib/i18n/context'
+import { usePosts, useForYouFeed, useFollowingFeed } from '@/lib/hooks/usePosts'
 
 interface PostFeedProps {
   filter?: string
@@ -16,243 +18,146 @@ export interface PostFeedRef {
 
 const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subforumId }, ref) => {
   const { t } = useI18n()
-  const [posts, setPosts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const lastUpdateRef = useRef<number>(0)
+  const [allPosts, setAllPosts] = useState<any[]>([])
   const observerTarget = useRef<HTMLDivElement>(null)
-
-  const removePost = useCallback((postId: string) => {
-    setPosts(prev => prev.filter(p => p.id.toString() !== postId))
-  }, [])
-
-  const loadPosts = useCallback(async (showLoading = false, pageNum = 1, append = false) => {
-    if (showLoading && !append) {
-      setLoading(true)
-    }
-    if (append) {
-      setLoadingMore(true)
-    }
-    
-    let url: string
-    if (filter === 'following') {
-      url = `/api/feed/following?page=${pageNum}&limit=10`
-    } else if (filter === 'for-you') {
-      url = `/api/feed/for-you?page=${pageNum}&limit=10`
-    } else {
-      url = subforumId 
-        ? `/api/posts?filter=${filter}&subforum_id=${subforumId}&page=${pageNum}&limit=10`
-        : `/api/posts?filter=${filter}&page=${pageNum}&limit=10`
-    }
-    
-    try {
-      const res = await fetch(url)
-      
-      if (!res.ok) {
-        // Si hay error, intentar con feed público
-        if (filter === 'for-you' || filter === 'following') {
-          const fallbackUrl = `/api/posts?filter=all&page=${pageNum}&limit=10`
-          const fallbackRes = await fetch(fallbackUrl)
-          const fallbackData = await fallbackRes.json()
-          if (fallbackData.posts) {
-            if (append) {
-              setPosts(prev => {
-                const existingIds = new Set(prev.map(p => p.id))
-                const newPosts = fallbackData.posts.filter((p: any) => !existingIds.has(p.id))
-                return [...prev, ...newPosts]
-              })
-            } else {
-              setPosts(fallbackData.posts || [])
-            }
-            const newHasMore = fallbackData.pagination?.hasMore ?? fallbackData.hasMore ?? false
-            setHasMore(newHasMore)
-            setPage(pageNum)
-            lastUpdateRef.current = Date.now()
-          }
-          return
-        }
-        throw new Error(`HTTP error! status: ${res.status}`)
-      }
-      
-      const data = await res.json()
-      
-      if (data.posts) {
-        if (append) {
-          setPosts(prev => {
-            const existingIds = new Set(prev.map(p => p.id))
-            const newPosts = data.posts.filter((p: any) => !existingIds.has(p.id))
-            return [...prev, ...newPosts]
-          })
-        } else {
-          setPosts(data.posts || [])
-        }
-        const newHasMore = data.pagination?.hasMore ?? data.hasMore ?? false
-        setHasMore(newHasMore)
-        setPage(pageNum)
-        lastUpdateRef.current = Date.now()
+  
+  // OPTIMIZACIÓN: Usar SWR para caché automática y revalidación
+  const { posts: postsData, isLoading, mutate } = usePosts({ filter, subforumId, page, limit: 10 })
+  const { posts: forYouPosts, isLoading: forYouLoading, mutate: mutateForYou } = useForYouFeed(page, 10)
+  const { posts: followingPosts, isLoading: followingLoading, mutate: mutateFollowing } = useFollowingFeed(page, 10)
+  
+  // Determinar qué datos usar según el filtro
+  const currentPosts = filter === 'for-you' ? forYouPosts : filter === 'following' ? followingPosts : postsData
+  const loading = filter === 'for-you' ? forYouLoading : filter === 'following' ? followingLoading : isLoading
+  const mutateFn = filter === 'for-you' ? mutateForYou : filter === 'following' ? mutateFollowing : mutate
+  
+  // Acumular posts para infinite scroll
+  useEffect(() => {
+    if (currentPosts && currentPosts.length > 0) {
+      if (page === 1) {
+        setAllPosts(currentPosts)
       } else {
-        // Si no hay posts en la respuesta, establecer array vacío
-        if (!append) {
-          setPosts([])
-        }
-        setHasMore(false)
+        setAllPosts(prev => {
+          const existingIds = new Set(prev.map(p => p.id))
+          const newPosts = currentPosts.filter((p: any) => !existingIds.has(p.id))
+          return [...prev, ...newPosts]
+        })
       }
-    } catch (error) {
-      // En caso de error, establecer posts vacío si no es append
-      if (!append) {
-        setPosts([])
-      }
-      setHasMore(false)
-    } finally {
-      if (showLoading && !append) {
-        setLoading(false)
-      }
-      if (append) {
-        setLoadingMore(false)
-      }
+    } else if (page === 1) {
+      setAllPosts([])
     }
+  }, [currentPosts, page])
+
+  // Reset cuando cambia el filtro o subforumId
+  useEffect(() => {
+    setPage(1)
+    setAllPosts([])
   }, [filter, subforumId])
 
+  const removePost = useCallback((postId: string) => {
+    setAllPosts(prev => prev.filter(p => p.id.toString() !== postId))
+  }, [])
+
   const loadMore = useCallback(() => {
-    if (loadingMore || !hasMore) {
+    if (loading || !currentPosts || currentPosts.length === 0) {
       return
     }
-    
-    setPage(currentPage => {
-      const nextPage = currentPage + 1
-      loadPosts(false, nextPage, true)
-      return nextPage
-    })
-  }, [loadingMore, hasMore, loadPosts])
+    setPage(prev => prev + 1)
+  }, [loading, currentPosts])
 
-  // Exponer método refresh para que el componente padre pueda actualizar el feed
+  // Exponer método refresh
   useImperativeHandle(ref, () => ({
     refresh: () => {
       setPage(1)
-      setHasMore(true)
-      loadPosts(false, 1, false)
+      setAllPosts([])
+      mutateFn()
     },
     removePost: removePost
-  }), [loadPosts, removePost])
+  }), [mutateFn, removePost])
 
+  // Infinite scroll con Intersection Observer
   useEffect(() => {
-    if (!hasMore) {
+    const currentTarget = observerTarget.current
+    if (!currentTarget || loading) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry.isIntersecting && currentPosts && currentPosts.length > 0) {
+          loadMore()
+        }
+      },
+      { 
+        threshold: 0.1,
+        rootMargin: '200px'
+      }
+    )
+
+    observer.observe(currentTarget)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [loading, currentPosts, loadMore])
+
+  // OPTIMIZACIÓN: Polling reducido - solo cuando la página está visible y cada 2 minutos
+  useEffect(() => {
+    if (filter === 'for-you' || filter === 'following') {
+      // No hacer polling para feeds personalizados - SWR maneja la revalidación
       return
     }
 
-    let observer: IntersectionObserver | null = null
-
-    const timeoutId = setTimeout(() => {
-      const currentTarget = observerTarget.current
-      if (!currentTarget) {
-        return
-      }
-
-      observer = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0]
-          if (entry.isIntersecting && hasMore && !loadingMore) {
-            loadMore()
-          }
-        },
-        { 
-          threshold: 0.01,
-          rootMargin: '300px'
-        }
-      )
-
-      observer.observe(currentTarget)
-    }, 100)
-
-    return () => {
-      clearTimeout(timeoutId)
-      if (observer) {
-        observer.disconnect()
-      }
-    }
-  }, [hasMore, loadingMore, loadMore, posts.length])
-
-  useEffect(() => {
-    setPage(1)
-    setHasMore(true)
-    loadPosts(true, 1, false)
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        setPage(1)
-        setHasMore(true)
-        loadPosts(false, 1, false)
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current)
-        }
-        intervalRef.current = setInterval(() => {
-          if (Date.now() - lastUpdateRef.current > 20000) {
-            setPage(1)
-            setHasMore(true)
-            loadPosts(false, 1, false)
-          }
-        }, 30000)
-      } else {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current)
-          intervalRef.current = null
-        }
+        // Revalidar cuando la página vuelve a ser visible
+        mutateFn()
       }
     }
 
-    if (document.visibilityState === 'visible') {
-      intervalRef.current = setInterval(() => {
-        if (Date.now() - lastUpdateRef.current > 20000) {
-          setPage(1)
-          setHasMore(true)
-          loadPosts(false, 1, false)
-        }
-      }, 30000)
-    }
+    // Polling optimizado: solo cada 2 minutos cuando está visible
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        mutateFn()
+      }
+    }, 120000) // 2 minutos en lugar de 30 segundos
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
+      clearInterval(intervalId)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [filter, subforumId])
+  }, [filter, mutateFn])
 
-  if (loading) {
+  if (loading && allPosts.length === 0) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-          </div>
+          <SkeletonPostCard key={i} />
         ))}
       </div>
     )
   }
 
-  if (posts.length === 0) {
+  if (allPosts.length === 0 && !loading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-500 text-lg">No hay posts aún. ¡Sé el primero en crear uno!</p>
+        <p className="text-gray-500 text-lg">{t.post.noPosts || 'No hay posts aún. ¡Sé el primero en crear uno!'}</p>
       </div>
     )
   }
 
+  const hasMore = currentPosts && currentPosts.length === 10
+
   return (
     <div className="space-y-2 sm:space-y-4">
-      {posts.map((post, index) => (
+      {allPosts.map((post, index) => (
         <PostCard
           key={`post-${post.id}-${index}`}
           id={post.id.toString()}
           title={post.title}
-          content={post.content}
+          content={post.content || post.content_preview || ''}
           author={post.author_username}
           forum={post.subforum_slug}
           subforum={post.subforum_slug}
@@ -276,26 +181,22 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
         <div 
           ref={observerTarget} 
           className="py-8 min-h-[100px] flex items-center justify-center"
-          style={{ minHeight: '100px' }}
         >
-          {loadingMore ? (
+          {loading ? (
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               <p className="text-sm text-gray-500 mt-2">Cargando más posts...</p>
             </div>
           ) : (
-            <div className="text-center opacity-0 pointer-events-none">
-              {/* Elemento invisible para trigger del observer */}
-              <div className="h-1 w-full"></div>
-            </div>
+            <div className="text-center opacity-0 pointer-events-none h-1 w-full"></div>
           )}
         </div>
       )}
       
-      {!hasMore && posts.length > 0 && (
+      {!hasMore && allPosts.length > 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">😢</div>
-          <p className="text-gray-500 text-lg font-medium">{t.post.noMorePosts}</p>
+          <p className="text-gray-500 text-lg font-medium">{t.post.noMorePosts || 'No hay más posts'}</p>
         </div>
       )}
     </div>
@@ -305,4 +206,3 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
 PostFeed.displayName = 'PostFeed'
 
 export default PostFeed
-

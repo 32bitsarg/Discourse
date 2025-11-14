@@ -58,7 +58,7 @@ export async function GET(
         SELECT 
           p.id,
           p.title,
-          p.content,
+          SUBSTRING(p.content, 1, 200) as content_preview,
           p.upvotes,
           p.downvotes,
           p.comment_count,
@@ -70,7 +70,7 @@ export async function GET(
         LEFT JOIN subforums s ON p.subforum_id = s.id
         WHERE p.author_id = ?
         ORDER BY p.created_at DESC
-        LIMIT 50
+        LIMIT 20
       `, [user.id]) as Promise<any[]>
     ])
     
@@ -103,6 +103,7 @@ export async function GET(
       }
     })
 
+    // Caché HTTP para perfiles de usuario
     return NextResponse.json({
       user: {
         ...user,
@@ -112,6 +113,12 @@ export async function GET(
         following: user.following_count || 0,
       },
       posts: formattedPosts,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=600',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+      },
     })
   } catch (error) {
     return NextResponse.json(

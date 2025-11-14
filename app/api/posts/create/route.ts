@@ -9,10 +9,38 @@ import {
   areImagesAllowedInPosts,
   areVideosAllowedInPosts,
   areExternalLinksAllowed,
+  isCaptchaRequiredOnPosts,
 } from '@/lib/settings-validation'
+import { sendPostNotificationEmail } from '@/lib/email'
+import { getSetting } from '@/lib/settings'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit'
+import { verifyRecaptcha } from '@/lib/captcha'
+import { isUserBanned } from '@/lib/moderation'
+import {
+  extractBase64Images,
+  replaceBase64WithPlaceholders,
+  compressImage,
+} from '@/lib/image-compression'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar rate limit
+    const rateLimit = await checkRateLimit(request, 'create_post')
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        createRateLimitResponse(rateLimit.remaining, rateLimit.resetAt, rateLimit.limit),
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimit.resetAt.toString(),
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          }
+        }
+      )
+    }
+
     const user = await getCurrentUser()
 
     if (!user) {
@@ -22,7 +50,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { title, content, subforumId } = await request.json()
+    const { title, content, subforumId, captchaToken } = await request.json()
+
+    // Verificar CAPTCHA si está habilitado
+    const captchaRequired = await isCaptchaRequiredOnPosts()
+    if (captchaRequired) {
+      if (!captchaToken) {
+        return NextResponse.json(
+          { message: 'CAPTCHA requerido' },
+          { status: 400 }
+        )
+      }
+
+      const captchaValid = await verifyRecaptcha(captchaToken)
+      if (!captchaValid) {
+        return NextResponse.json(
+          { message: 'CAPTCHA inválido. Por favor intenta de nuevo.' },
+          { status: 400 }
+        )
+      }
+    }
 
     if (!content || !subforumId) {
       return NextResponse.json(
@@ -112,17 +159,96 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Crear el post con slug
+    // Extraer, comprimir y guardar imágenes separadamente
+    const extractedImages = extractBase64Images(content)
+    let processedContent = content
+    const imageIds: number[] = []
+
+    if (extractedImages.length > 0 && imagesAllowed) {
+      // Procesar cada imagen: comprimir y guardar
+      for (let i = 0; i < extractedImages.length; i++) {
+        const image = extractedImages[i]
+        try {
+          // Comprimir imagen con máxima optimización
+          const compressed = await compressImage(image.base64, {
+            maxWidth: 1920,
+            maxHeight: 1920,
+            quality: 85,
+            format: 'webp', // WebP ofrece mejor compresión
+          })
+
+          // Guardar imagen comprimida en la base de datos (post_id se actualizará después)
+          const [imageResult] = await pool.execute(
+            'INSERT INTO post_images (post_id, image_data, mime_type, width, height, file_size, original_filename, display_order) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              compressed.buffer,
+              compressed.mimeType,
+              compressed.width,
+              compressed.height,
+              compressed.fileSize,
+              image.alt || `image-${i + 1}`,
+              i,
+            ]
+          ) as any
+
+          imageIds.push(imageResult.insertId)
+        } catch (error) {
+          console.error(`Error comprimiendo imagen ${i + 1}:`, error)
+          // Si falla la compresión, mantener la imagen original (fallback)
+        }
+      }
+
+      // Reemplazar imágenes base64 con placeholders
+      if (imageIds.length > 0) {
+        processedContent = replaceBase64WithPlaceholders(content, imageIds)
+      }
+    }
+
+    // Crear el post con contenido procesado (sin imágenes base64)
     const [result] = await pool.execute(
       'INSERT INTO posts (subforum_id, author_id, title, slug, content) VALUES (?, ?, ?, ?, ?)',
-      [subforumId, user.id, finalTitle, uniqueSlug, content]
+      [subforumId, user.id, finalTitle, uniqueSlug, processedContent]
     ) as any
+
+    // Actualizar post_id en las imágenes guardadas
+    if (imageIds.length > 0) {
+      const placeholders = imageIds.map(() => '?').join(',')
+      await pool.execute(
+        `UPDATE post_images SET post_id = ? WHERE id IN (${placeholders})`,
+        [result.insertId, ...imageIds]
+      )
+    }
 
     // Actualizar contador de posts en el subforum
     await pool.execute(
       'UPDATE subforums SET post_count = post_count + 1 WHERE id = ?',
       [subforumId]
     )
+
+    // Enviar notificaciones de nuevo post si está habilitado
+    const sendPostNotifications = await getSetting('send_post_notifications')
+    if (sendPostNotifications === 'true') {
+      // Obtener miembros de la comunidad que quieren recibir notificaciones
+      const [members] = await pool.execute(
+        'SELECT DISTINCT u.email, u.username FROM subforum_members sm JOIN users u ON sm.user_id = u.id WHERE sm.subforum_id = ? AND sm.status = ? AND u.id != ?',
+        [subforumId, 'approved', user.id]
+      ) as any[]
+
+      const postUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/r/${subforum.slug}/${uniqueSlug}`
+      
+      // Enviar emails en background
+      members.forEach((member: any) => {
+        sendPostNotificationEmail(
+          member.email,
+          member.username,
+          finalTitle,
+          postUrl,
+          user.username
+        ).catch(error => {
+          console.error(`Error enviando notificación a ${member.email}:`, error)
+        })
+      })
+    }
 
         // Invalidar cache específico: stats y subforums (keys conocidas)
         // Nota: No invalidamos posts porque el TTL corto (45-60s) se encarga

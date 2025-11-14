@@ -31,10 +31,17 @@ export async function GET(
       return NextResponse.json({ isMember: false, status: null })
     }
 
+    // Caché HTTP (5 min) - el estado de membresía no cambia frecuentemente
     return NextResponse.json({
       isMember: members[0].status === 'approved',
       status: members[0].status,
       role: members[0].role,
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'private, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'private, s-maxage=300',
+      },
     })
   } catch (error) {
     return NextResponse.json({ isMember: false, status: null })

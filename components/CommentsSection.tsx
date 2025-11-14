@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { MessageCircle, Send, ThumbsUp, ThumbsDown, Edit, Trash2, X } from 'lucide-react'
+import { MessageCircle, Send, ThumbsUp, ThumbsDown, Edit, Trash2, X, Reply, Flag } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useSettings } from '@/lib/hooks/useSettings'
 import { useBehaviorTracking } from '@/hooks/useBehaviorTracking'
+import { useComments } from '@/lib/hooks/useComments'
+import { useUser } from '@/lib/hooks/useUser'
+import SkeletonComment from './SkeletonComment'
 
 interface Comment {
   id: number
@@ -18,6 +22,7 @@ interface Comment {
   edited_at?: string
   canEdit?: boolean
   canDelete?: boolean
+  userVote?: 'up' | 'down' | null
   replies?: Comment[]
 }
 
@@ -28,55 +33,12 @@ interface CommentsSectionProps {
 export default function CommentsSection({ postId }: CommentsSectionProps) {
   const { t } = useI18n()
   const { trackBehavior } = useBehaviorTracking()
-  const [comments, setComments] = useState<Comment[]>([])
-  const [loading, setLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [user, setUser] = useState<{ id: number; username: string } | null>(null)
-
-  useEffect(() => {
-    if (!postId || postId <= 0) {
-      return
-    }
-
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-
-    // Cargar comentarios
-    loadComments()
-  }, [postId])
-
-  const loadComments = async () => {
-    if (!postId || postId <= 0) {
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/posts/${postId}/comments`)
-      if (!res.ok) {
-        setComments([])
-        return
-      }
-      const data = await res.json()
-      if (data.comments && Array.isArray(data.comments)) {
-        setComments(data.comments)
-      } else {
-        setComments([])
-      }
-    } catch (error) {
-      setComments([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  
+  // OPTIMIZACIÓN: Usar SWR para caché automática
+  const { comments, isLoading: loading, mutate } = useComments(postId)
+  const { user } = useUser()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,7 +67,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         metadata: { commentLength: commentText.length },
       })
       
-      loadComments() // Recargar comentarios
+      mutate() // OPTIMIZACIÓN: Revalidar con SWR
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Error al crear el comentario')
     } finally {
@@ -114,11 +76,20 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   }
 
   const CommentItem = ({ comment, depth = 0 }: { comment: Comment; depth?: number }) => {
-    const [vote, setVote] = useState<'up' | 'down' | null>(null)
-    const voteCount = comment.upvotes - comment.downvotes
+    const { settings } = useSettings()
+    const [vote, setVote] = useState<'up' | 'down' | null>(comment.userVote || null)
+    const [voteCount, setVoteCount] = useState(comment.upvotes - comment.downvotes)
+    const [isVoting, setIsVoting] = useState(false)
     const [timeAgo, setTimeAgo] = useState('hace unos segundos')
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [showReplyForm, setShowReplyForm] = useState(false)
+    const [showReportModal, setShowReportModal] = useState(false)
+    const [replyContent, setReplyContent] = useState('')
+    const [reportReason, setReportReason] = useState('')
+    const [reportDescription, setReportDescription] = useState('')
+    const [isReplying, setIsReplying] = useState(false)
+    const [isReporting, setIsReporting] = useState(false)
     const [editContent, setEditContent] = useState(comment.content)
     const [isEditing, setIsEditing] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -126,6 +97,12 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
     useEffect(() => {
       setEditContent(comment.content)
     }, [comment.content])
+
+    // Actualizar voteCount y vote cuando cambie el comentario
+    useEffect(() => {
+      setVoteCount(comment.upvotes - comment.downvotes)
+      setVote(comment.userVote || null)
+    }, [comment.upvotes, comment.downvotes, comment.userVote])
 
     // Función para calcular tiempo transcurrido
     const calculateTimeAgo = (date: string | Date): string => {
@@ -184,7 +161,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         }
 
         setShowEditModal(false)
-        loadComments() // Recargar comentarios
+        mutate() // OPTIMIZACIÓN: Revalidar con SWR
       } catch (error) {
         alert(error instanceof Error ? error.message : 'Error al editar el comentario')
       } finally {
@@ -205,7 +182,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         }
 
         setShowDeleteModal(false)
-        loadComments() // Recargar comentarios
+        mutate() // OPTIMIZACIÓN: Revalidar con SWR
       } catch (error) {
         alert(error instanceof Error ? error.message : 'Error al eliminar el comentario')
         setIsDeleting(false)
@@ -222,32 +199,86 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
           {/* Vote buttons */}
           <div className="flex flex-col items-center pt-0.5 sm:pt-1 gap-0.5 sm:gap-1">
             <button
-              onClick={() => setVote(vote === 'up' ? null : 'up')}
+              onClick={async () => {
+                if (isVoting) return
+                const newVote = vote === 'up' ? null : 'up'
+                setIsVoting(true)
+                try {
+                  const res = await fetch(`/api/comments/${comment.id}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voteType: newVote || 'up' }),
+                  })
+                  if (res.ok) {
+                    const data = await res.json()
+                    setVote(data.voteType)
+                    // OPTIMIZACIÓN: Revalidar usando SWR mutate en lugar de loadComments
+                    mutate()
+                  } else {
+                    const error = await res.json()
+                    alert(error.message || 'Error al votar')
+                  }
+                } catch (error) {
+                  alert('Error al votar')
+                } finally {
+                  setIsVoting(false)
+                }
+              }}
+              disabled={isVoting}
               className={`p-1 sm:p-1.5 rounded-lg transition-all ${
                 vote === 'up' 
                   ? 'bg-green-100 text-green-600 hover:bg-green-200' 
                   : 'text-gray-400 hover:bg-gray-100'
-              }`}
+              } ${isVoting ? 'opacity-50 cursor-not-allowed' : ''}`}
               title="Me gusta"
             >
               <ThumbsUp className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${vote === 'up' ? 'fill-current' : ''}`} />
             </button>
-            <span className={`text-[10px] sm:text-xs font-semibold py-0.5 leading-tight ${
-              vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-600'
-            }`}>
-              {voteCount}
-            </span>
-            <button
-              onClick={() => setVote(vote === 'down' ? null : 'down')}
-              className={`p-1 sm:p-1.5 rounded-lg transition-all ${
-                vote === 'down' 
-                  ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                  : 'text-gray-400 hover:bg-gray-100'
-              }`}
-              title="No me gusta"
-            >
-              <ThumbsDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${vote === 'down' ? 'fill-current' : ''}`} />
-            </button>
+            {settings.showVoteCounts && (
+              <span className={`text-[10px] sm:text-xs font-semibold py-0.5 leading-tight ${
+                vote === 'up' ? 'text-green-600' : vote === 'down' ? 'text-red-600' : 'text-gray-600'
+              }`}>
+                {voteCount}
+              </span>
+            )}
+            {settings.allowDownvotes && (
+              <button
+                onClick={async () => {
+                  if (isVoting) return
+                  const newVote = vote === 'down' ? null : 'down'
+                  setIsVoting(true)
+                  try {
+                    const res = await fetch(`/api/comments/${comment.id}/vote`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ voteType: newVote || 'down' }),
+                    })
+                    if (res.ok) {
+                    const data = await res.json()
+                    setVote(data.voteType)
+                    // OPTIMIZACIÓN: Revalidar usando SWR mutate en lugar de loadComments
+                    mutate()
+                  } else {
+                      const error = await res.json()
+                      alert(error.message || 'Error al votar')
+                    }
+                  } catch (error) {
+                    alert('Error al votar')
+                  } finally {
+                    setIsVoting(false)
+                  }
+                }}
+                disabled={isVoting}
+                className={`p-1 sm:p-1.5 rounded-lg transition-all ${
+                  vote === 'down' 
+                    ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                    : 'text-gray-400 hover:bg-gray-100'
+                } ${isVoting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="No me gusta"
+              >
+                <ThumbsDown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${vote === 'down' ? 'fill-current' : ''}`} />
+              </button>
+            )}
           </div>
 
           {/* Content */}
@@ -292,10 +323,190 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
               )}
             </div>
             <p className="text-xs sm:text-sm text-gray-700 mb-1 sm:mb-2 break-words">{comment.content}</p>
-            {depth < 3 && (
-              <button className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-700">
-                Responder
-              </button>
+            
+            {/* Acciones: Responder y Reportar */}
+            <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2">
+              {depth < 5 && user && (
+                <button
+                  onClick={() => {
+                    setShowReplyForm(!showReplyForm)
+                    setReplyContent('')
+                  }}
+                  className="text-[10px] sm:text-xs text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1"
+                >
+                  <Reply className="w-3 h-3" />
+                  Responder
+                </button>
+              )}
+              {user && comment.author_id !== user.id && (
+                <button
+                  onClick={() => {
+                    setShowReportModal(true)
+                    setReportReason('')
+                    setReportDescription('')
+                  }}
+                  className="text-[10px] sm:text-xs text-gray-500 hover:text-red-600 transition-colors flex items-center gap-1"
+                >
+                  <Flag className="w-3 h-3" />
+                  Reportar
+                </button>
+              )}
+            </div>
+
+            {/* Formulario de respuesta */}
+            {showReplyForm && user && (
+              <div className="mt-2 sm:mt-3 pl-2 sm:pl-4 border-l-2 border-gray-200">
+                <textarea
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder={`Responder a u/${comment.author_username}...`}
+                  className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none mb-2"
+                  rows={3}
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!replyContent.trim() || isReplying) return
+                      setIsReplying(true)
+                      try {
+                        const res = await fetch(`/api/posts/${postId}/comments`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ 
+                            content: replyContent.trim(),
+                            parentId: comment.id,
+                          }),
+                        })
+
+                        if (!res.ok) {
+                          const error = await res.json()
+                          throw new Error(error.message || 'Error al responder')
+                        }
+
+                        setReplyContent('')
+                        setShowReplyForm(false)
+                        mutate() // OPTIMIZACIÓN: Revalidar usando SWR mutate
+                      } catch (error) {
+                        alert(error instanceof Error ? error.message : 'Error al responder')
+                      } finally {
+                        setIsReplying(false)
+                      }
+                    }}
+                    disabled={!replyContent.trim() || isReplying}
+                    className="px-3 py-1.5 bg-primary-600 text-white text-xs rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    <Send className="w-3 h-3" />
+                    {isReplying ? 'Enviando...' : 'Responder'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowReplyForm(false)
+                      setReplyContent('')
+                    }}
+                    className="px-3 py-1.5 text-gray-600 text-xs rounded-lg hover:bg-gray-100"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modal de reporte */}
+            {showReportModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">Reportar Comentario</h2>
+                    <button
+                      onClick={() => setShowReportModal(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Razón del reporte *
+                      </label>
+                      <select
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">Selecciona una razón</option>
+                        <option value="Spam">Spam</option>
+                        <option value="Contenido inapropiado">Contenido inapropiado</option>
+                        <option value="Acoso">Acoso</option>
+                        <option value="Información falsa">Información falsa</option>
+                        <option value="Violación de derechos">Violación de derechos</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Descripción (opcional)
+                      </label>
+                      <textarea
+                        value={reportDescription}
+                        onChange={(e) => setReportDescription(e.target.value)}
+                        placeholder="Proporciona más detalles sobre el reporte..."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-3 mt-6">
+                    <button
+                      onClick={() => setShowReportModal(false)}
+                      className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                      disabled={isReporting}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!reportReason.trim() || isReporting) return
+                        setIsReporting(true)
+                        try {
+                          const res = await fetch('/api/reports/create', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              commentId: comment.id,
+                              reason: reportReason,
+                              description: reportDescription.trim() || null,
+                            }),
+                          })
+
+                          if (!res.ok) {
+                            const error = await res.json()
+                            throw new Error(error.message || 'Error al reportar')
+                          }
+
+                          alert('Reporte enviado exitosamente. Será revisado por los moderadores.')
+                          setShowReportModal(false)
+                          setReportReason('')
+                          setReportDescription('')
+                        } catch (error) {
+                          alert(error instanceof Error ? error.message : 'Error al reportar')
+                        } finally {
+                          setIsReporting(false)
+                        }
+                      }}
+                      disabled={!reportReason.trim() || isReporting}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isReporting ? 'Enviando...' : 'Enviar Reporte'}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
             )}
 
             {/* Modal de edición de comentario */}
@@ -375,7 +586,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
         {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-1 sm:mt-2 space-y-1 sm:space-y-2">
+          <div className={`mt-1 sm:mt-2 space-y-1 sm:space-y-2 ${depth < 4 ? 'pl-2 sm:pl-4 border-l-2 border-gray-200' : ''}`}>
             {comment.replies.map((reply) => (
               <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
             ))}
@@ -438,11 +649,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       {loading ? (
         <div className="space-y-2 sm:space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-              <div className="h-3 sm:h-4 bg-gray-200 rounded w-full mb-1"></div>
-              <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4"></div>
-            </div>
+            <SkeletonComment key={i} />
           ))}
         </div>
       ) : comments.length === 0 ? (

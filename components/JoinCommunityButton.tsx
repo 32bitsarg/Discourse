@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { UserPlus, UserMinus, CheckCircle, Clock } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useMembershipStatus } from '@/lib/hooks/useSubforums'
 
 interface JoinCommunityButtonProps {
   subforumId: number
@@ -17,30 +18,9 @@ export default function JoinCommunityButton({
   requiresApproval 
 }: JoinCommunityButtonProps) {
   const { t } = useI18n()
-  const [membershipStatus, setMembershipStatus] = useState<{
-    isMember: boolean
-    status: 'pending' | 'approved' | 'rejected' | null
-  }>({ isMember: false, status: null })
-  const [loading, setLoading] = useState(true)
+  // OPTIMIZACIÓN: Usar SWR para obtener estado de membresía
+  const { isMember, status, isLoading: loading, mutate } = useMembershipStatus(subforumId)
   const [joining, setJoining] = useState(false)
-
-  useEffect(() => {
-    loadMembershipStatus()
-  }, [subforumId])
-
-  const loadMembershipStatus = async () => {
-    try {
-      const res = await fetch(`/api/subforums/${subforumId}/members/status`)
-      const data = await res.json()
-      setMembershipStatus({
-        isMember: data.isMember || false,
-        status: data.status || null,
-      })
-    } catch (error) {
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleJoin = async () => {
     setJoining(true)
@@ -56,8 +36,8 @@ export default function JoinCommunityButton({
         return
       }
 
-      // Recargar estado
-      await loadMembershipStatus()
+      // Revalidar estado usando SWR
+      mutate()
 
       if (data.status === 'pending') {
         alert('Solicitud enviada. Esperando aprobación del moderador.')
@@ -86,8 +66,8 @@ export default function JoinCommunityButton({
         return
       }
 
-      // Recargar estado
-      await loadMembershipStatus()
+      // Revalidar estado usando SWR
+      mutate()
     } catch (error) {
       alert('Error al salir de la comunidad')
     } finally {
@@ -101,7 +81,7 @@ export default function JoinCommunityButton({
     )
   }
 
-  if (membershipStatus.isMember) {
+  if (isMember) {
     return (
       <motion.button
         onClick={handleLeave}
@@ -116,7 +96,7 @@ export default function JoinCommunityButton({
     )
   }
 
-  if (membershipStatus.status === 'pending') {
+  if (status === 'pending') {
     return (
       <div className="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg flex items-center gap-2 text-sm font-medium border border-yellow-200">
         <Clock className="w-4 h-4" />

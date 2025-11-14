@@ -4,18 +4,17 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EditProfileModal from '@/components/EditProfileModal'
 import { useI18n } from '@/lib/i18n/context'
+import { useCurrentUserProfile } from '@/lib/hooks/useUser'
 
 function ProfileSettingsContent() {
   const { t, language } = useI18n()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  // OPTIMIZACIÓN: Usar SWR para obtener perfil
+  const { user, isLoading: loading, mutate } = useCurrentUserProfile()
   const [showEditModal, setShowEditModal] = useState(false)
 
   useEffect(() => {
-    loadUser()
-    
     // Verificar si hay mensajes de éxito/error
     const connected = searchParams.get('connected')
     const error = searchParams.get('error')
@@ -39,19 +38,6 @@ function ProfileSettingsContent() {
       router.replace('/user/profile')
     }
   }, [searchParams, router, language])
-
-  const loadUser = async () => {
-    try {
-      const res = await fetch('/api/user/profile')
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data)
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -89,8 +75,7 @@ function ProfileSettingsContent() {
           onClose={() => setShowEditModal(false)}
           onSave={() => {
             setShowEditModal(false)
-            loadUser()
-            window.location.reload()
+            mutate() // Revalidar perfil usando SWR
           }}
         />
       )}

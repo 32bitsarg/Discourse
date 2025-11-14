@@ -102,10 +102,14 @@ export async function GET(
       userVote, // Voto del usuario actual
     }
 
-    // NO guardar en cache - posts individuales no se cachean para ahorrar comandos
-    // El contenido completo con imágenes es muy grande y se carga rápido desde MySQL
-
-    return NextResponse.json(result)
+    // Caché HTTP para posts individuales (ahora sin imágenes base64)
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=600',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+      },
+    })
   } catch (error) {
     return NextResponse.json(
       { message: 'Error al obtener el post' },

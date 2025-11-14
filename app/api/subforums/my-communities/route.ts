@@ -54,7 +54,14 @@ export async function GET(request: NextRequest) {
     // Cache por 5 minutos
     await setCache(cacheKey, result, 300)
 
-    return NextResponse.json(result)
+    // Caché HTTP para my-communities
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=600',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+      },
+    })
   } catch (error: any) {
     return NextResponse.json({ subforums: [] })
   }

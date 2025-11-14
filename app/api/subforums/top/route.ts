@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener top 5 comunidades más activas
-    // Cálculo de actividad: miembros + posts del último día
+    // OPTIMIZACIÓN: Usar JOINs en lugar de subqueries para mejor rendimiento
     const [subforums] = await pool.execute(`
       SELECT
         s.id,
@@ -31,33 +31,35 @@ export async function GET(request: NextRequest) {
         s.name_changed_at,
         s.creator_id,
         u.username as creator_username,
-        -- Posts del último día
-        (SELECT COUNT(*) 
-         FROM posts p 
-         WHERE p.subforum_id = s.id 
-         AND p.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-        ) as posts_today,
-        -- Score de actividad: miembros + posts del día
-        (s.member_count + 
-         (SELECT COUNT(*) 
-          FROM posts p 
-          WHERE p.subforum_id = s.id 
-          AND p.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
-         )
-        ) as activity_score
+        COALESCE(posts_today.count, 0) as posts_today,
+        (s.member_count + COALESCE(posts_today.count, 0)) as activity_score
       FROM subforums s
       LEFT JOIN users u ON s.creator_id = u.id
-      WHERE s.is_public = TRUE
+      LEFT JOIN (
+        SELECT subforum_id, COUNT(*) as count
+        FROM posts
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+        GROUP BY subforum_id
+      ) posts_today ON s.id = posts_today.subforum_id
+      WHERE s.is_public = TRUE 
+        AND (s.requires_approval = FALSE OR s.requires_approval IS NULL)
       ORDER BY activity_score DESC, s.member_count DESC, s.post_count DESC
       LIMIT 5
     `) as any[]
 
     const result = { subforums: subforums || [] }
 
-    // Guardar en cache
+    // Guardar en cache Redis
     await setCache(CACHE_KEY, result, CACHE_TTL)
 
-    return NextResponse.json(result)
+    // Caché HTTP adicional
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=600',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+      },
+    })
   } catch (error: any) {
     return NextResponse.json({ subforums: [] })
   }

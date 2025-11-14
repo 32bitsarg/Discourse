@@ -20,23 +20,19 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit, defaultSubf
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // OPTIMIZACIÓN: Usar SWR para obtener comunidades
+  const { subforums: userCommunities } = useMyCommunities()
+  
   useEffect(() => {
     if (isOpen) {
-      // Cargar solo comunidades del usuario
-      fetch('/api/subforums/my-communities')
-        .then(res => res.json())
-        .then(data => {
-          const userCommunities = data.subforums || []
-          setSubforums(userCommunities)
-          if (defaultSubforumId) {
-            setSubforumId(defaultSubforumId)
-          } else if (userCommunities.length > 0) {
-            setSubforumId(userCommunities[0].id)
-          }
-        })
-        .catch(() => {})
+      setSubforums(userCommunities)
+      if (defaultSubforumId) {
+        setSubforumId(defaultSubforumId)
+      } else if (userCommunities.length > 0) {
+        setSubforumId(userCommunities[0].id)
+      }
     }
-  }, [isOpen, defaultSubforumId])
+  }, [isOpen, defaultSubforumId, userCommunities])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

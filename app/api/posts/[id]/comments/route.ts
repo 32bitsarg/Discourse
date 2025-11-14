@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import pool from '@/lib/db'
 import { invalidateCache } from '@/lib/redis'
+import {
+  getMaxCommentLength,
+  containsBannedWords,
+  getMinKarmaToComment,
+  areExternalLinksAllowed,
+} from '@/lib/settings-validation'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/rate-limit'
+import { loadAllCommentsOptimized } from '@/lib/optimized-comments-loader'
+import { createNotification } from '@/lib/notifications'
+import { isUserBanned } from '@/lib/moderation'
 
 export async function GET(
   request: NextRequest,
@@ -22,61 +32,19 @@ export async function GET(
     const currentUser = await getCurrentUser()
     const currentUserId = currentUser?.id || null
 
-    // Obtener comentarios (solo comentarios principales, sin replies por ahora)
-    const [comments] = await pool.execute(`
-      SELECT 
-        c.id,
-        c.content,
-        c.upvotes,
-        c.downvotes,
-        c.created_at,
-        c.edited_at,
-        c.author_id,
-        u.username as author_username
-      FROM comments c
-      LEFT JOIN users u ON c.author_id = u.id
-      WHERE c.post_id = ? AND (c.parent_id IS NULL OR c.parent_id = 0)
-      ORDER BY c.created_at DESC
-    `, [postId]) as any[]
+    // Cargar TODOS los comentarios de forma optimizada (una sola query)
+    const formattedComments = await loadAllCommentsOptimized(postId, currentUserId, 5)
 
-
-    // Formatear fechas
-    const formattedComments = (comments || []).map((comment: any) => {
-      const now = new Date()
-      const createdAt = new Date(comment.created_at)
-      const diff = now.getTime() - createdAt.getTime()
-      const minutes = Math.floor(diff / 60000)
-      const hours = Math.floor(minutes / 60)
-      const days = Math.floor(hours / 24)
-
-      let timeAgo = 'hace unos segundos'
-      if (minutes >= 1 && minutes < 60) {
-        timeAgo = `hace ${minutes} minuto${minutes > 1 ? 's' : ''}`
-      } else if (hours >= 1 && hours < 24) {
-        timeAgo = `hace ${hours} hora${hours > 1 ? 's' : ''}`
-      } else if (days >= 1) {
-        timeAgo = `hace ${days} día${days > 1 ? 's' : ''}`
-      }
-
-      return {
-        id: comment.id,
-        content: comment.content,
-        author_username: comment.author_username || 'Usuario desconocido',
-        author_id: comment.author_id,
-        upvotes: comment.upvotes || 0,
-        downvotes: comment.downvotes || 0,
-        created_at: comment.created_at,
-        edited_at: comment.edited_at,
-        timeAgo,
-        canEdit: currentUserId === comment.author_id,
-        canDelete: currentUserId === comment.author_id,
-        replies: [], // Por ahora sin replies
-      }
-    })
-
-
-    return NextResponse.json({ comments: formattedComments })
+          // Caché HTTP para comentarios (ahora sin imágenes base64)
+          return NextResponse.json({ comments: formattedComments }, {
+            headers: {
+              'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+              'CDN-Cache-Control': 'public, s-maxage=120',
+              'Vercel-CDN-Cache-Control': 'public, s-maxage=120',
+            },
+          })
   } catch (error) {
+    console.error('Error al obtener comentarios:', error)
     return NextResponse.json(
       { message: 'Error al obtener los comentarios' },
       { status: 500 }
@@ -89,12 +57,38 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verificar rate limit
+    const rateLimit = await checkRateLimit(request, 'create_comment')
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        createRateLimitResponse(rateLimit.remaining, rateLimit.resetAt, rateLimit.limit),
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimit.resetAt.toString(),
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'X-RateLimit-Reset': rateLimit.resetAt.toString(),
+          }
+        }
+      )
+    }
+
     const user = await getCurrentUser()
 
     if (!user) {
       return NextResponse.json(
         { message: 'Debes iniciar sesión para comentar' },
         { status: 401 }
+      )
+    }
+
+    // Verificar si el usuario está baneado
+    const banned = await isUserBanned(user.id)
+    if (banned) {
+      return NextResponse.json(
+        { message: 'Tu cuenta ha sido suspendida. No puedes comentar.' },
+        { status: 403 }
       )
     }
 
@@ -137,6 +131,18 @@ export async function POST(
       )
     }
 
+    // Validar enlaces externos
+    const linksAllowed = await areExternalLinksAllowed()
+    if (!linksAllowed) {
+      const urlRegex = /(https?:\/\/[^\s]+)/g
+      if (urlRegex.test(content)) {
+        return NextResponse.json(
+          { message: 'Los enlaces externos no están permitidos en los comentarios' },
+          { status: 400 }
+        )
+      }
+    }
+
     if (isNaN(postId)) {
       return NextResponse.json(
         { message: 'ID de post inválido' },
@@ -153,6 +159,13 @@ export async function POST(
       )
     }
 
+    // Obtener información del post para notificaciones
+    const [posts] = await pool.execute(
+      'SELECT author_id, title FROM posts WHERE id = ?',
+      [postId]
+    ) as any[]
+    const post = posts[0]
+
     // Crear comentario
     const [result] = await pool.execute(
       'INSERT INTO comments (post_id, author_id, content, parent_id) VALUES (?, ?, ?, ?)',
@@ -164,6 +177,37 @@ export async function POST(
       'UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?',
       [postId]
     )
+
+    // Crear notificaciones
+    if (parentId) {
+      // Es una respuesta a un comentario - notificar al autor del comentario padre
+      const [parentComments] = await pool.execute(
+        'SELECT author_id FROM comments WHERE id = ?',
+        [parentId]
+      ) as any[]
+      if (parentComments.length > 0 && parentComments[0].author_id !== user.id) {
+        await createNotification({
+          userId: parentComments[0].author_id,
+          type: 'comment_reply',
+          content: `${user.username} respondió a tu comentario`,
+          relatedPostId: postId,
+          relatedCommentId: result.insertId,
+          relatedUserId: user.id,
+        })
+      }
+    } else {
+      // Es un comentario nuevo - notificar al autor del post (si no es el mismo usuario)
+      if (post && post.author_id !== user.id) {
+        await createNotification({
+          userId: post.author_id,
+          type: 'reply',
+          content: `${user.username} comentó en tu post "${post.title}"`,
+          relatedPostId: postId,
+          relatedCommentId: result.insertId,
+          relatedUserId: user.id,
+        })
+      }
+    }
 
     // Invalidar cache
     await invalidateCache(`post:${postId}`)

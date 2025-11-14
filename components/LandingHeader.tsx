@@ -7,15 +7,19 @@ import { LogIn, UserPlus, Menu, X } from 'lucide-react'
 import LoginModal from './LoginModal'
 import RegisterModal from './RegisterModal'
 import SiteNameClient from './SiteNameClient'
+import { useSettings } from '@/lib/hooks/useSettings'
+import { useUser } from '@/lib/hooks/useUser'
 import { useI18n } from '@/lib/i18n/context'
 
 export default function LandingHeader() {
   const { t } = useI18n()
+  const { settings } = useSettings()
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario
+  const { user, mutate: mutateUser } = useUser()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
-  const [user, setUser] = useState<{ username: string; id: number } | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,17 +27,6 @@ export default function LandingHeader() {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
   }, [])
 
   const handleLogin = async (email: string, password: string) => {
@@ -48,26 +41,39 @@ export default function LandingHeader() {
       throw new Error(error.message || 'Error al iniciar sesión')
     }
 
-    const data = await res.json()
-    setUser(data.user)
+    // Revalidar usuario usando SWR
+    mutateUser()
     setIsLoginOpen(false)
     window.location.href = '/feed'
   }
 
-  const handleRegister = async (username: string, email: string, password: string) => {
+  const handleRegister = async (username: string, email: string, password: string, birthdate?: string, captchaToken?: string) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, birthdate, captchaToken }),
     })
 
     if (!res.ok) {
       const error = await res.json()
+      if (error.requiresVerification) {
+        const verificationError = new Error(error.message || 'Registro exitoso. Verifica tu email.')
+        ;(verificationError as any).requiresVerification = true
+        throw verificationError
+      }
       throw new Error(error.message || 'Error al registrarse')
     }
 
     const data = await res.json()
-    setUser(data.user)
+    
+    if (data.requiresVerification) {
+      const verificationError = new Error(data.message || 'Registro exitoso. Verifica tu email.')
+      ;(verificationError as any).requiresVerification = true
+      throw verificationError
+    }
+
+    // Revalidar usuario usando SWR
+    mutateUser()
     setIsRegisterOpen(false)
     window.location.href = '/feed'
   }
@@ -90,6 +96,16 @@ export default function LandingHeader() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
+                {settings.siteLogo && (
+                  <img 
+                    src={settings.siteLogo} 
+                    alt="Logo" 
+                    className="h-8 w-auto object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                )}
                 <SiteNameClient />
               </motion.div>
             </Link>

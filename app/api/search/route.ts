@@ -69,7 +69,14 @@ export async function GET(request: NextRequest) {
       })),
     ]
 
-    return NextResponse.json({ results })
+    // Caché HTTP para búsquedas (corto porque los resultados cambian)
+    return NextResponse.json({ results }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'CDN-Cache-Control': 'public, s-maxage=60',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=60',
+      },
+    })
   } catch (error) {
     return NextResponse.json(
       { message: 'Error al realizar la búsqueda' },

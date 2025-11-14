@@ -4,56 +4,31 @@ import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { Home, TrendingUp, Zap, Star, Plus, Shield, Crown } from 'lucide-react'
 import Link from 'next/link'
-import CreateSubforumModal from './CreateSubforumModal'
+import dynamic from 'next/dynamic'
 import { useI18n } from '@/lib/i18n/context'
+import { useSidebarData } from '@/lib/hooks/useSidebarData'
+
+// Lazy load del modal pesado
+const CreateSubforumModal = dynamic(
+  () => import('./CreateSubforumModal'),
+  { 
+    loading: () => null,
+    ssr: false 
+  }
+)
 
 export default function Sidebar() {
   const { t } = useI18n()
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [user, setUser] = useState<{ id: number; username: string } | null>(null)
-  const [stats, setStats] = useState({ members: 0, postsToday: 0, subforums: 0 })
-  const [communities, setCommunities] = useState<any[]>([])
-  const [myCommunities, setMyCommunities] = useState<any[]>([])
-
-  useEffect(() => {
-    // Verificar si hay usuario logueado
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-
-    // Obtener estadísticas
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(() => {})
-
-    // Obtener top 5 comunidades más activas
-    fetch('/api/subforums/top')
-      .then(res => res.json())
-      .then(data => setCommunities(data.subforums || []))
-      .catch(() => {})
-
-    // Obtener mis comunidades si hay usuario logueado
-    if (user) {
-      fetch('/api/subforums/my-communities')
-        .then(res => res.json())
-        .then(data => {
-          // También necesitamos obtener image_url y banner_url
-          const communitiesWithImages = (data.subforums || []).map((comm: any) => ({
-            ...comm,
-            image_url: comm.image_url || null,
-            banner_url: comm.banner_url || null,
-          }))
-          setMyCommunities(communitiesWithImages)
-        })
-        .catch(() => {})
-    }
-  }, [user])
+  
+  // OPTIMIZACIÓN: Usar SWR para caché automática y revalidación
+  const { user: swrUser, stats: swrStats, topCommunities, myCommunities: swrMyCommunities } = useSidebarData()
+  
+  // Mantener estado local para compatibilidad
+  const user = swrUser
+  const stats = swrStats
+  const communities = topCommunities
+  const myCommunities = swrMyCommunities
 
   const handleCreateSubforum = async (data: { name: string; description: string; isPublic: boolean; requiresApproval: boolean; image_url?: string; banner_url?: string }) => {
     if (!user) {

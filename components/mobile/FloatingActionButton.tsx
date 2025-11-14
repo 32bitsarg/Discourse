@@ -5,23 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X } from 'lucide-react'
 import CreatePostBox from '../CreatePostBox'
 import { useI18n } from '@/lib/i18n/context'
+import { useUser } from '@/lib/hooks/useUser'
 
 export default function FloatingActionButton() {
   const { t } = useI18n()
+  // OPTIMIZACIÓN: Usar SWR para obtener usuario
+  const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState<{ id: number; username: string } | null>(null)
 
   useEffect(() => {
-    // Verificar usuario
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
-      })
-      .catch(() => {})
-
     // Escuchar evento para abrir desde bottom nav
     const handleOpenCreatePost = () => {
       if (user) {

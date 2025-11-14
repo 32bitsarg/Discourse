@@ -58,11 +58,18 @@ export async function GET(request: NextRequest) {
         zipUrl: `https://github.com/${githubRepo}/archive/refs/tags/${latestTag.name}.zip`,
         tarballUrl: `https://github.com/${githubRepo}/archive/refs/tags/${latestTag.name}.tar.gz`,
         available: true,
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+          'CDN-Cache-Control': 'public, s-maxage=7200',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=7200',
+        },
       })
     }
 
     const release = await response.json()
 
+    // Caché HTTP agresivo para releases de GitHub (cambian raramente)
     return NextResponse.json({
       tag: release.tag_name,
       version: release.tag_name.replace(/^v/, ''), // Remover 'v' si existe
@@ -74,6 +81,12 @@ export async function GET(request: NextRequest) {
       tarballUrl: `https://github.com/${githubRepo}/archive/refs/tags/${release.tag_name}.tar.gz`,
       htmlUrl: release.html_url,
       available: true,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        'CDN-Cache-Control': 'public, s-maxage=7200',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=7200',
+      },
     })
   } catch (error: any) {
     console.error('Error obteniendo release de GitHub:', error)

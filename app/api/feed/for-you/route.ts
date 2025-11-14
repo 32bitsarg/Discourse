@@ -17,27 +17,27 @@ export async function GET(request: NextRequest) {
       const connection = await getConnection()
       
       const [posts] = await connection.execute(
-        `SELECT 
-          p.id,
-          p.title,
-          p.content,
-          p.upvotes,
-          p.downvotes,
-          p.comment_count,
-          p.is_hot,
-          p.created_at,
-          p.subforum_id,
-          u.id as author_id,
-          u.username as author_username,
-          u.avatar_url as author_avatar,
-          s.name as subforum_name,
-          s.slug as subforum_slug
-        FROM posts p
-        INNER JOIN users u ON p.author_id = u.id
-        INNER JOIN subforums s ON p.subforum_id = s.id
-        WHERE s.is_public = TRUE
-        ORDER BY p.created_at DESC
-        LIMIT ? OFFSET ?`,
+      `SELECT 
+        p.id,
+        p.title,
+        SUBSTRING(p.content, 1, 500) as content_preview,
+        p.upvotes,
+        p.downvotes,
+        p.comment_count,
+        p.is_hot,
+        p.created_at,
+        p.subforum_id,
+        u.id as author_id,
+        u.username as author_username,
+        u.avatar_url as author_avatar,
+        s.name as subforum_name,
+        s.slug as subforum_slug
+      FROM posts p
+      INNER JOIN users u ON p.author_id = u.id
+      INNER JOIN subforums s ON p.subforum_id = s.id
+      WHERE s.is_public = TRUE
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?`,
         [limit, offset]
       )
 
@@ -50,11 +50,18 @@ export async function GET(request: NextRequest) {
         ? (total[0] as any).count
         : 0
 
+      // Caché HTTP para feed for-you
       return NextResponse.json({
         posts: Array.isArray(posts) ? posts : [],
         hasMore: offset + limit < totalCount,
         page,
         total: totalCount
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'CDN-Cache-Control': 'public, s-maxage=300',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=300',
+        },
       })
     }
 
@@ -109,11 +116,12 @@ export async function GET(request: NextRequest) {
     // - Comportamiento reciente (40%)
 
     // Simplificar la query para evitar problemas de sintaxis compleja
+    // OPTIMIZACIÓN: Usar preview de contenido
     let query = `
       SELECT 
         p.id,
         p.title,
-        p.content,
+        SUBSTRING(p.content, 1, 500) as content_preview,
         p.upvotes,
         p.downvotes,
         p.comment_count,
@@ -147,12 +155,19 @@ export async function GET(request: NextRequest) {
       ? (total[0] as any).count
       : 0
 
-    return NextResponse.json({
-      posts: Array.isArray(posts) ? posts : [],
-      hasMore: offset + limit < totalCount,
-      page,
-      total: totalCount
-    })
+      // Caché HTTP para feed for-you (usuario logueado)
+      return NextResponse.json({
+        posts: Array.isArray(posts) ? posts : [],
+        hasMore: offset + limit < totalCount,
+        page,
+        total: totalCount
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'CDN-Cache-Control': 'public, s-maxage=300',
+          'Vercel-CDN-Cache-Control': 'public, s-maxage=300',
+        },
+      })
   } catch (error: any) {
     return NextResponse.json(
       { error: 'Internal server error' },

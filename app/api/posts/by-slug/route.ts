@@ -87,7 +87,14 @@ export async function GET(request: NextRequest) {
       userVote,
     }
 
-    return NextResponse.json(result)
+    // Caché HTTP para posts por slug
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=600',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=600',
+      },
+    })
   } catch (error) {
     return NextResponse.json(
       { message: 'Error al obtener el post' },

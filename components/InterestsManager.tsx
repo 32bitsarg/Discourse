@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useUserInterests } from '@/lib/hooks/useUserInterests'
 
 interface InterestsManagerProps {
   onSave?: (interests: Array<{ category: string; weight: number }>) => void
@@ -71,18 +72,14 @@ export default function InterestsManager({ onSave, initialInterests = [] }: Inte
   )
   const [loading, setLoading] = useState(false)
 
+  // OPTIMIZACIÓN: Usar SWR para obtener intereses
+  const { interests, mutate } = useUserInterests()
+  
   useEffect(() => {
-    // Cargar intereses actuales del usuario
-    fetch('/api/user/interests')
-      .then(res => res.json())
-      .then(data => {
-        if (data.interests && Array.isArray(data.interests)) {
-          setSelectedInterests(new Set(data.interests.map((i: any) => i.category)))
-        }
-      })
-      .catch(() => {
-      })
-  }, [])
+    if (interests && Array.isArray(interests)) {
+      setSelectedInterests(new Set(interests.map((i: any) => i.category)))
+    }
+  }, [interests])
 
   const toggleInterest = (category: string) => {
     const newSelected = new Set(selectedInterests)
@@ -109,9 +106,12 @@ export default function InterestsManager({ onSave, initialInterests = [] }: Inte
       })
 
       if (res.ok) {
+        // Revalidar intereses usando SWR
+        mutate()
         if (onSave) {
           onSave(interests)
         }
+        alert(t.user.interestsSaved)
       } else {
         alert(t.common.error)
       }

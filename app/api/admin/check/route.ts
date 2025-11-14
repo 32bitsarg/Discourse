@@ -23,15 +23,34 @@ export async function GET(request: NextRequest) {
       // Si es numérico, comparar con ID
       const numId = parseInt(identifier)
       if (!isNaN(numId) && numId === user.id) {
-        return NextResponse.json({ isAdmin: true })
+        return NextResponse.json({ isAdmin: true }, {
+          headers: {
+            'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+            'CDN-Cache-Control': 'private, s-maxage=30',
+            'Vercel-CDN-Cache-Control': 'private, s-maxage=30',
+          },
+        })
       }
       // Si no es numérico o no coincide, comparar con username
       if (identifier.toLowerCase() === user.username.toLowerCase()) {
-        return NextResponse.json({ isAdmin: true })
+        return NextResponse.json({ isAdmin: true }, {
+          headers: {
+            'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+            'CDN-Cache-Control': 'private, s-maxage=30',
+            'Vercel-CDN-Cache-Control': 'private, s-maxage=30',
+          },
+        })
       }
     }
     
-    return NextResponse.json({ isAdmin: false })
+    // Caché HTTP corto (30s) - el estado de admin no cambia frecuentemente
+    return NextResponse.json({ isAdmin: false }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+        'CDN-Cache-Control': 'private, s-maxage=30',
+        'Vercel-CDN-Cache-Control': 'private, s-maxage=30',
+      },
+    })
   } catch (error: any) {
     console.error('Error verificando admin:', error)
     return NextResponse.json({ isAdmin: false }, { status: 500 })

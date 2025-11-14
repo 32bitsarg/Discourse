@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Twitter, X, Check } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/context'
+import { useSocialConnections } from '@/lib/hooks/useSocialConnections'
 
 interface PlatformConnection {
   id: number
@@ -23,20 +24,19 @@ export default function PlatformConnections() {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState<string | null>(null)
 
+  // OPTIMIZACIÓN: Usar SWR para obtener conexiones
+  const { connections: connectionsData, isLoading: connectionsLoading, mutate } = useSocialConnections()
+  
   useEffect(() => {
-    loadConnections()
-  }, [])
-
-  const loadConnections = async () => {
-    try {
-      const res = await fetch('/api/social/connections')
-      const data = await res.json()
-      setConnections(data.connections || [])
-    } catch (error) {
-    } finally {
+    if (connectionsData) {
+      setConnections(connectionsData)
       setLoading(false)
     }
-  }
+  }, [connectionsData])
+  
+  useEffect(() => {
+    setLoading(connectionsLoading)
+  }, [connectionsLoading])
 
   const handleConnect = async (platformId: string) => {
     setConnecting(platformId)
@@ -60,7 +60,8 @@ export default function PlatformConnections() {
       })
 
       if (res.ok) {
-        await loadConnections()
+        // Revalidar conexiones usando SWR
+        mutate()
         alert(language === 'es' ? 'Plataforma desconectada' : 'Platform disconnected')
       }
     } catch (error) {

@@ -33,24 +33,27 @@ export default function PostContentRenderer({ content }: PostContentRendererProp
     html = html.replace(/`([^`]+?)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
     
     // Imágenes Markdown - PROCESAR ANTES que los enlaces para evitar conflictos
-    // Manejar base64 que puede tener saltos de línea
-    // Usar regex más robusto que capture URLs base64 completas incluso con saltos de línea
+    // Ahora soporta: base64 (legacy), URLs externas, y placeholders /api/images/[id]
     const imagePlaceholders: string[] = []
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gs, (match, alt, src) => {
-      // Limpiar saltos de línea y espacios en URLs base64
+      // Limpiar saltos de línea y espacios
       let cleanSrc = src.replace(/\s+/g, '').trim()
       
       if (cleanSrc.startsWith('data:image/')) {
-        // Base64 image - asegurar que esté completa y tenga el formato correcto
-        if (cleanSrc.length > 100 && cleanSrc.includes('base64,')) { // Base64 mínimo razonable
-          // Escapar comillas dobles para evitar problemas en HTML
+        // Base64 image (legacy - para posts antiguos)
+        if (cleanSrc.length > 100 && cleanSrc.includes('base64,')) {
           const escapedSrc = cleanSrc.replace(/"/g, '&quot;')
           const placeholder = `__IMAGE_PLACEHOLDER_${imagePlaceholders.length}__`
           imagePlaceholders.push(`<div class="my-4"><img src="${escapedSrc}" alt="${(alt || 'Imagen').replace(/"/g, '&quot;')}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: 600px; object-fit: contain;" /></div>`)
           return placeholder
         }
+      } else if (cleanSrc.startsWith('/api/images/')) {
+        // Imagen optimizada desde nuestro endpoint
+        const placeholder = `__IMAGE_PLACEHOLDER_${imagePlaceholders.length}__`
+        imagePlaceholders.push(`<div class="my-4"><img src="${cleanSrc.replace(/"/g, '&quot;')}" alt="${(alt || 'Imagen').replace(/"/g, '&quot;')}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: 600px; object-fit: contain;" /></div>`)
+        return placeholder
       } else if (cleanSrc && !cleanSrc.startsWith('<') && !cleanSrc.startsWith('data:')) {
-        // URL image (no HTML, no base64)
+        // URL image externa (no HTML, no base64)
         const placeholder = `__IMAGE_PLACEHOLDER_${imagePlaceholders.length}__`
         imagePlaceholders.push(`<div class="my-4"><img src="${cleanSrc.replace(/"/g, '&quot;')}" alt="${(alt || 'Imagen').replace(/"/g, '&quot;')}" class="w-full h-auto rounded-lg shadow-sm object-contain" loading="lazy" onerror="this.style.display='none'" style="max-height: 600px; object-fit: contain;" /></div>`)
         return placeholder

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/context'
+import { useSearch } from '@/lib/hooks/useSearch'
 
 interface SearchResult {
   type: 'community' | 'user' | 'post'
@@ -22,11 +23,12 @@ export default function SearchBar() {
   const { t } = useI18n()
   const router = useRouter()
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  // OPTIMIZACIÓN: Usar SWR para búsquedas con debounce
+  const { results, isLoading } = useSearch(query, 2)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,32 +46,12 @@ export default function SearchBar() {
     }
   }, [isOpen])
 
+  // Abrir dropdown cuando hay resultados
   useEffect(() => {
-    if (query.trim().length >= 2) {
-      const debounceTimer = setTimeout(() => {
-        performSearch(query.trim())
-      }, 300)
-
-      return () => clearTimeout(debounceTimer)
-    } else {
-      setResults([])
-      setIsLoading(false)
-    }
-  }, [query])
-
-  const performSearch = async (searchQuery: string) => {
-    setIsLoading(true)
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
-      const data = await res.json()
-      setResults(data.results || [])
+    if (results.length > 0 || query.length >= 2) {
       setIsOpen(true)
-    } catch (error) {
-      setResults([])
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [results, query])
 
   const handleResultClick = (result: SearchResult) => {
     setIsOpen(false)

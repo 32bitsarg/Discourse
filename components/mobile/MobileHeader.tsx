@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import SiteNameClient from '../SiteNameClient'
+import { useSettings } from '@/lib/hooks/useSettings'
 
 export default function MobileHeader() {
   return (
@@ -16,6 +17,16 @@ export default function MobileHeader() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
+              {settings.siteLogo && (
+                <img 
+                  src={settings.siteLogo} 
+                  alt="Logo" 
+                  className="h-6 w-auto object-contain mr-2"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              )}
               <span className="text-lg font-black">
                 <SiteNameClient />
               </span>

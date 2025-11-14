@@ -14,20 +14,31 @@ export async function GET(request: NextRequest) {
     }
 
     // Si no hay cache, obtener de la BD
-    const [userCount] = await pool.execute('SELECT COUNT(*) as count FROM users') as any[]
-    const [postCount] = await pool.execute('SELECT COUNT(*) as count FROM posts WHERE DATE(created_at) = CURDATE()') as any[]
-    const [subforumCount] = await pool.execute('SELECT COUNT(*) as count FROM subforums') as any[]
+    // OPTIMIZACIÓN: Una sola query en lugar de 3
+    const [result] = await pool.execute(`
+      SELECT 
+        (SELECT COUNT(*) FROM users) as members,
+        (SELECT COUNT(*) FROM posts WHERE DATE(created_at) = CURDATE()) as postsToday,
+        (SELECT COUNT(*) FROM subforums) as subforums
+    `) as any[]
 
     const stats = {
-      members: userCount[0]?.count || 0,
-      postsToday: postCount[0]?.count || 0,
-      subforums: subforumCount[0]?.count || 0,
+      members: result[0]?.members || 0,
+      postsToday: result[0]?.postsToday || 0,
+      subforums: result[0]?.subforums || 0,
     }
 
-    // Guardar en cache
+    // Guardar en cache Redis
     await setCache(CACHE_KEY, stats, CACHE_TTL)
 
-    return NextResponse.json(stats)
+    // Caché HTTP para stats
+    return NextResponse.json(stats, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'CDN-Cache-Control': 'public, s-maxage=60',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=60',
+      },
+    })
   } catch (error: any) {
     // Si las tablas no existen, devolver valores por defecto
     if (error?.code === 'ER_NO_SUCH_TABLE') {
