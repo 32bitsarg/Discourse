@@ -40,10 +40,9 @@ export default function InstallPage() {
       
       if (data.installed && data.hasAdmin) {
         setIsInstalled(true)
-        // Redirigir a landing page (modo producción)
-        setTimeout(() => {
-          router.push('/landing')
-        }, 2000)
+        // Redirigir inmediatamente a landing page (modo producción)
+        // Sin esperar, para evitar que el usuario vea la página de install
+        router.push('/landing')
       }
     } catch (err) {
       console.error('Error checking installation:', err)
