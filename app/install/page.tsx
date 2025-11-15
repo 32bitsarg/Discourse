@@ -40,9 +40,9 @@ export default function InstallPage() {
       
       if (data.installed && data.hasAdmin) {
         setIsInstalled(true)
-        // Redirigir al feed después de 2 segundos
+        // Redirigir a landing page (modo producción)
         setTimeout(() => {
-          router.push('/feed')
+          router.push('/landing')
         }, 2000)
       }
     } catch (err) {

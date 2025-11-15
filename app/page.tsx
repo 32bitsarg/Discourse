@@ -21,7 +21,7 @@ export default async function Home() {
       redirect('/install')
     }
     
-    // Si está instalado, redirigir a la landing page
+    // Si está instalado, redirigir a la landing page (modo producción)
     redirect('/landing')
   } catch (error) {
     // Si hay un error crítico, redirigir al instalador
