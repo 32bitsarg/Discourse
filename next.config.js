@@ -1,9 +1,10 @@
 // Detectar el entorno de despliegue
 const isVercel = process.env.VERCEL === '1'
 const isCloudflare = process.env.CF_PAGES === '1' || process.env.CF_PAGES_BRANCH
+const isNetlify = process.env.NETLIFY === 'true'
 
-const withPWA = (isVercel || isCloudflare)
-  ? (config) => config // No aplicar PWA en Vercel o Cloudflare
+const withPWA = (isVercel || isCloudflare || isNetlify)
+  ? (config) => config // No aplicar PWA en Vercel, Cloudflare o Netlify
   : require('next-pwa')({
       dest: 'public',
       register: true,

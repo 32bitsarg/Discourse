@@ -25,8 +25,12 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       metaKeywords: settingsMap.meta_keywords || '',
       googleAnalyticsId: settingsMap.google_analytics_id || '',
     }
-  } catch (error) {
-    console.error('Error obteniendo settings:', error)
+  } catch (error: any) {
+    // Si hay error (tabla no existe, BD no disponible, etc), retornar valores por defecto
+    // No loguear el error completo en producción para evitar exponer información sensible
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error obteniendo settings:', error)
+    }
     return {
       siteName: 'Discourse',
       siteDescription: 'Plataforma de foros y comunidades',

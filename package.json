@@ -43,6 +43,7 @@
     "@capacitor/android": "^7.4.4",
     "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^7.4.4",
+    "@netlify/plugin-nextjs": "^5.14.5",
     "@types/bcryptjs": "^3.0.0",
     "@types/minimatch": "^6.0.0",
     "@types/node": "^20.11.0",
