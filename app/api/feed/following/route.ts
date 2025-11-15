@@ -7,7 +7,17 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      // Si no hay usuario, retornar feed vacío en lugar de error
+      return NextResponse.json({
+        posts: [],
+        hasMore: false,
+        page: 1,
+        total: 0
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      })
     }
 
     const { searchParams } = new URL(request.url)

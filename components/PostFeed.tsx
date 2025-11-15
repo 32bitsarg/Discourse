@@ -38,10 +38,20 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const prevPageRef = useRef(1)
   
   useEffect(() => {
+    // Validar que currentPosts sea un array válido
+    if (!Array.isArray(currentPosts)) {
+      console.warn('[PostFeed] currentPosts no es un array:', currentPosts, 'Tipo:', typeof currentPosts)
+      if (page === 1 && !loading) {
+        setAllPosts([])
+        prevCurrentPostsRef.current = []
+      }
+      return
+    }
+    
     // Solo actualizar si realmente cambió algo (comparar por longitud y primer ID)
-    const currentPostsLength = currentPosts?.length || 0
+    const currentPostsLength = currentPosts.length
     const prevPostsLength = prevCurrentPostsRef.current.length
-    const firstPostId = currentPosts?.[0]?.id
+    const firstPostId = currentPosts[0]?.id
     const prevFirstPostId = prevCurrentPostsRef.current[0]?.id
     
     const postsChanged = currentPostsLength !== prevPostsLength || firstPostId !== prevFirstPostId
@@ -51,7 +61,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
       return // No hacer nada si no cambió nada
     }
     
-    if (currentPosts && currentPosts.length > 0) {
+    if (currentPosts.length > 0) {
       if (page === 1) {
         setAllPosts(currentPosts)
         prevCurrentPostsRef.current = currentPosts
@@ -200,14 +210,28 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   }, [filter, currentPosts?.length, allPosts.length, loading])
 
   if (allPosts.length === 0 && !loading) {
+    // Log para debugging en producción también
+    console.log('[PostFeed] No hay posts:', {
+      filter,
+      currentPostsLength: currentPosts?.length || 0,
+      currentPostsIsArray: Array.isArray(currentPosts),
+      currentPostsType: typeof currentPosts,
+      currentPosts: currentPosts,
+      postsDataLength: postsData?.length || 0,
+      forYouPostsLength: forYouPosts?.length || 0,
+      followingPostsLength: followingPosts?.length || 0,
+      loading,
+      isLoading,
+      forYouLoading,
+      followingLoading,
+    })
+    
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">No hay posts aún. ¡Sé el primero en crear uno!</p>
-        {process.env.NODE_ENV === 'development' && (
-          <p className="text-xs text-gray-400 mt-2">
-            Filter: {filter} | Posts: {currentPosts?.length || 0} | Loading: {loading ? 'true' : 'false'}
-          </p>
-        )}
+        <p className="text-xs text-gray-400 mt-2">
+          Filter: {filter} | Posts recibidos: {currentPosts?.length || 0} | Loading: {loading ? 'true' : 'false'} | Tipo: {Array.isArray(currentPosts) ? 'Array' : typeof currentPosts}
+        </p>
       </div>
     )
   }

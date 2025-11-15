@@ -7,14 +7,8 @@ import { getSetting, updateSetting, getAllSettings } from '@/lib/settings'
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json(
-        { message: 'No autorizado' },
-        { status: 401 }
-      )
-    }
-
+    // Los settings públicos no requieren autenticación
+    // Solo la actualización (PUT) requiere autenticación
     const searchParams = request.nextUrl.searchParams
     const key = searchParams.get('key')
 
@@ -47,9 +41,15 @@ export async function GET(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Error obteniendo settings:', error)
+    // Retornar settings vacíos en lugar de error para no romper la app
     return NextResponse.json(
-      { message: 'Error al obtener configuración' },
-      { status: 500 }
+      { settings: [] },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
     )
   }
 }
