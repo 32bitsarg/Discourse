@@ -33,21 +33,44 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const mutateFn = filter === 'for-you' ? mutateForYou : filter === 'following' ? mutateFollowing : mutate
   
   // Acumular posts para infinite scroll
+  // Usar useRef para evitar actualizaciones innecesarias que causan loops
+  const prevCurrentPostsRef = useRef<any[]>([])
+  const prevPageRef = useRef(1)
+  
   useEffect(() => {
+    // Solo actualizar si realmente cambió algo (comparar por longitud y primer ID)
+    const currentPostsLength = currentPosts?.length || 0
+    const prevPostsLength = prevCurrentPostsRef.current.length
+    const firstPostId = currentPosts?.[0]?.id
+    const prevFirstPostId = prevCurrentPostsRef.current[0]?.id
+    
+    const postsChanged = currentPostsLength !== prevPostsLength || firstPostId !== prevFirstPostId
+    const pageChanged = page !== prevPageRef.current
+    
+    if (!postsChanged && !pageChanged && currentPostsLength > 0) {
+      return // No hacer nada si no cambió nada
+    }
+    
     if (currentPosts && currentPosts.length > 0) {
       if (page === 1) {
         setAllPosts(currentPosts)
+        prevCurrentPostsRef.current = currentPosts
       } else {
         setAllPosts(prev => {
           const existingIds = new Set(prev.map(p => p.id))
           const newPosts = currentPosts.filter((p: any) => !existingIds.has(p.id))
-          return [...prev, ...newPosts]
+          const updated = [...prev, ...newPosts]
+          prevCurrentPostsRef.current = updated
+          return updated
         })
       }
     } else if (page === 1 && !loading) {
       // Solo limpiar si no está cargando para evitar parpadeos
       setAllPosts([])
+      prevCurrentPostsRef.current = []
     }
+    
+    prevPageRef.current = page
   }, [currentPosts, page, loading])
 
   // Reset cuando cambia el filtro o subforumId
@@ -141,37 +164,40 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
     )
   }
 
-  // Debug: Log detallado para ver qué está pasando
+  // Debug: Log detallado solo cuando cambia el filtro o cuando hay cambios significativos
+  // Usar useRef para evitar logs excesivos
+  const prevFilterRef = useRef(filter)
+  const prevPostsLengthRef = useRef(0)
+  
   useEffect(() => {
-    console.log('[PostFeed] Estado actual:', {
-      filter,
-      currentPosts: currentPosts?.length || 0,
-      allPosts: allPosts.length,
-      loading,
-      isLoading,
-      forYouLoading,
-      followingLoading,
-      hasCurrentPosts: !!currentPosts,
-      currentPostsIsArray: Array.isArray(currentPosts),
-      firstPost: currentPosts?.[0] || null,
-      postsDataLength: postsData?.length || 0,
-      forYouPostsLength: forYouPosts?.length || 0,
-      followingPostsLength: followingPosts?.length || 0,
-    })
+    // Solo loguear si cambió el filtro o si cambió significativamente el número de posts
+    const postsLength = currentPosts?.length || 0
+    const shouldLog = prevFilterRef.current !== filter || 
+                     Math.abs(postsLength - prevPostsLengthRef.current) > 0
     
-    // Log detallado del primer post si existe
-    if (currentPosts && currentPosts.length > 0) {
-      console.log('[PostFeed] Primer post estructura:', {
-        id: currentPosts[0].id,
-        title: currentPosts[0].title,
-        author_username: currentPosts[0].author_username,
-        subforum_slug: currentPosts[0].subforum_slug,
-        slug: currentPosts[0].slug,
-        hasAllRequired: !!(currentPosts[0].id && currentPosts[0].title && currentPosts[0].author_username),
-        fullPost: currentPosts[0],
+    if (shouldLog && process.env.NODE_ENV === 'development') {
+      console.log('[PostFeed] Estado actual:', {
+        filter,
+        currentPostsLength: postsLength,
+        allPostsLength: allPosts.length,
+        loading,
       })
+      
+      // Log detallado del primer post solo si existe y es la primera vez
+      if (currentPosts && currentPosts.length > 0 && prevPostsLengthRef.current === 0) {
+        console.log('[PostFeed] Primer post estructura:', {
+          id: currentPosts[0].id,
+          title: currentPosts[0].title,
+          author_username: currentPosts[0].author_username,
+          subforum_slug: currentPosts[0].subforum_slug,
+          slug: currentPosts[0].slug,
+        })
+      }
+      
+      prevFilterRef.current = filter
+      prevPostsLengthRef.current = postsLength
     }
-  }, [filter, currentPosts, allPosts, loading, isLoading, forYouLoading, followingLoading, postsData, forYouPosts, followingPosts])
+  }, [filter, currentPosts?.length, allPosts.length, loading])
 
   if (allPosts.length === 0 && !loading) {
     return (
