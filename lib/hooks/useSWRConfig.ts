@@ -78,16 +78,24 @@ export const fetcher = async (url: string) => {
     
     return data
   } catch (error: any) {
-    // Log error en producción también para debugging
-    console.error(`[SWR Fetcher Error] ${url}:`, {
+    // Log error con más detalles
+    const errorDetails = {
       message: error?.message || 'Error desconocido',
       status: error?.status,
-    })
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
+    }
+    
+    console.error(`[SWR Fetcher Error] ${url}:`, errorDetails)
     
     // Retornar estructura por defecto en lugar de lanzar error
     // Esto evita que SWR rompa el componente
     if (url.includes('/api/posts') || url.includes('/api/feed')) {
       return { posts: [], hasMore: false, page: 1, total: 0 }
+    }
+    
+    // Para otras APIs, también retornar estructura por defecto si es posible
+    if (url.includes('/api/settings')) {
+      return { settings: [] }
     }
     
     throw error
