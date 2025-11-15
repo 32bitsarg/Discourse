@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
           return {
             id: post.id,
             title: post.title,
+            slug: post.slug || post.id.toString(), // Slug del post o ID como fallback
             content: post.content_preview || post.content, // Preview del contenido (500 chars)
             upvotes: post.upvotes,
             downvotes: post.downvotes,

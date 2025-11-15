@@ -141,7 +141,7 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
     )
   }
 
-  // Debug: Log para ver qué está pasando (también en producción para debug)
+  // Debug: Log detallado para ver qué está pasando
   useEffect(() => {
     console.log('[PostFeed] Estado actual:', {
       filter,
@@ -152,9 +152,26 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
       forYouLoading,
       followingLoading,
       hasCurrentPosts: !!currentPosts,
-      currentPostsData: currentPosts?.slice(0, 2), // Primeros 2 posts para debug
+      currentPostsIsArray: Array.isArray(currentPosts),
+      firstPost: currentPosts?.[0] || null,
+      postsDataLength: postsData?.length || 0,
+      forYouPostsLength: forYouPosts?.length || 0,
+      followingPostsLength: followingPosts?.length || 0,
     })
-  }, [filter, currentPosts, allPosts, loading, isLoading, forYouLoading, followingLoading])
+    
+    // Log detallado del primer post si existe
+    if (currentPosts && currentPosts.length > 0) {
+      console.log('[PostFeed] Primer post estructura:', {
+        id: currentPosts[0].id,
+        title: currentPosts[0].title,
+        author_username: currentPosts[0].author_username,
+        subforum_slug: currentPosts[0].subforum_slug,
+        slug: currentPosts[0].slug,
+        hasAllRequired: !!(currentPosts[0].id && currentPosts[0].title && currentPosts[0].author_username),
+        fullPost: currentPosts[0],
+      })
+    }
+  }, [filter, currentPosts, allPosts, loading, isLoading, forYouLoading, followingLoading, postsData, forYouPosts, followingPosts])
 
   if (allPosts.length === 0 && !loading) {
     return (
@@ -171,31 +188,66 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
 
   const hasMore = currentPosts && currentPosts.length === 10
 
+  // Validar que los posts tengan la estructura correcta antes de renderizar
+  // Hacer la validación más permisiva para no filtrar posts válidos
+  const validPosts = allPosts.filter((post: any) => {
+    if (!post || !post.id) {
+      console.warn('[PostFeed] Post inválido (sin id):', post)
+      return false
+    }
+    if (!post.title) {
+      console.warn('[PostFeed] Post sin título:', post.id)
+    }
+    if (!post.author_username) {
+      console.warn('[PostFeed] Post sin author_username:', post.id)
+    }
+    // Solo requerir id, los demás campos pueden tener valores por defecto
+    return true
+  })
+  
+  // Log si hay posts filtrados
+  if (allPosts.length > 0 && validPosts.length !== allPosts.length) {
+    console.warn(`[PostFeed] Se filtraron ${allPosts.length - validPosts.length} posts inválidos de ${allPosts.length} totales`)
+  }
+
   return (
     <div className="space-y-2 sm:space-y-4">
-      {allPosts.map((post, index) => (
-        <PostCard
-          key={`post-${post.id}-${index}`}
-          id={post.id.toString()}
-          title={post.title}
-          content={post.content || post.content_preview || ''}
-          author={post.author_username}
-          forum={post.subforum_slug}
-          subforum={post.subforum_slug}
-          postSlug={post.slug}
-          upvotes={post.upvotes - post.downvotes}
-          comments={post.comment_count}
-          createdAt={post.created_at}
-          isHot={post.is_hot}
-          isNew={post.isNew}
-          isFromMemberCommunity={post.isFromMemberCommunity || false}
-          userVote={post.userVote || null}
-          canEdit={post.canEdit || false}
-          canDelete={post.canDelete || false}
-          editedAt={post.edited_at || null}
-          onDelete={removePost}
-        />
-      ))}
+      {validPosts.length === 0 && !loading && allPosts.length > 0 ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">
+            Hay {allPosts.length} post(s) pero no se pueden mostrar. Revisa la consola para más detalles.
+          </p>
+        </div>
+      ) : (
+        validPosts.map((post: any, index: number) => {
+          // Generar slug si no existe
+          const postSlug = post.slug || post.id.toString()
+          
+          return (
+            <PostCard
+              key={`post-${post.id}-${index}`}
+              id={post.id.toString()}
+              title={post.title || 'Sin título'}
+              content={post.content || post.content_preview || ''}
+              author={post.author_username || 'Usuario desconocido'}
+              forum={post.subforum_slug || ''}
+              subforum={post.subforum_slug || ''}
+              postSlug={postSlug}
+              upvotes={(post.upvotes || 0) - (post.downvotes || 0)}
+              comments={post.comment_count || 0}
+              createdAt={post.created_at || new Date().toISOString()}
+              isHot={post.is_hot || false}
+              isNew={post.isNew || false}
+              isFromMemberCommunity={post.isFromMemberCommunity || false}
+              userVote={post.userVote || null}
+              canEdit={post.canEdit || false}
+              canDelete={post.canDelete || false}
+              editedAt={post.edited_at || null}
+              onDelete={removePost}
+            />
+          )
+        })
+      )}
       
       {/* Elemento observador para infinite scroll */}
       {hasMore && (
