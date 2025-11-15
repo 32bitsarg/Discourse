@@ -1,9 +1,12 @@
 [build]
   command = "npm run build"
-  # NO configures publish directory - el plugin lo maneja automáticamente
+  # El plugin de Next.js maneja el publish directory automáticamente
+  # NO configures publish directory en la UI de Netlify
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+  # El plugin configura automáticamente el publish directory
+  # No necesitas configurarlo manualmente
 
 [build.environment]
   NODE_VERSION = "22"
