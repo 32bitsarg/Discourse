@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       `SELECT 
         p.id,
         p.title,
+        p.slug,
         SUBSTRING(p.content, 1, 500) as content_preview,
         p.upvotes,
         p.downvotes,

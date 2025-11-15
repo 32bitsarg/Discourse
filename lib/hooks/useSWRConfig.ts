@@ -30,14 +30,43 @@ export const fetcher = async (url: string) => {
   try {
     const res = await fetch(url)
     if (!res.ok) {
-      const error = new Error('An error occurred while fetching the data.')
+      // Intentar obtener el mensaje de error
+      let errorMessage = 'Error desconocido'
+      try {
+        const errorData = await res.json()
+        errorMessage = errorData.message || errorData.error || 'Error desconocido'
+      } catch {
+        errorMessage = `Error ${res.status}: ${res.statusText}`
+      }
+      
+      const error = new Error(errorMessage)
       // @ts-ignore
-      error.info = await res.json().catch(() => ({ message: 'Error desconocido' }))
+      error.info = { message: errorMessage }
       // @ts-ignore
       error.status = res.status
+      
+      // Log error en producción también para debugging
+      console.error(`[SWR Error] ${url}:`, {
+        status: res.status,
+        message: errorMessage,
+      })
+      
       throw error
     }
     const data = await res.json()
+    
+    // Validar que la respuesta tenga la estructura esperada
+    if (url.includes('/api/posts') || url.includes('/api/feed')) {
+      if (!data || typeof data !== 'object') {
+        console.error(`[SWR] Respuesta inválida de ${url}:`, data)
+        return { posts: [], hasMore: false, page: 1, total: 0 }
+      }
+      // Asegurar que posts sea un array
+      if (!Array.isArray(data.posts)) {
+        console.error(`[SWR] Posts no es un array en ${url}:`, data)
+        return { ...data, posts: [], hasMore: false }
+      }
+    }
     
     // Debug en desarrollo
     if (process.env.NODE_ENV === 'development' && url.includes('/api/posts')) {
@@ -48,11 +77,19 @@ export const fetcher = async (url: string) => {
     }
     
     return data
-  } catch (error) {
-    // Log error en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-      console.error(`[SWR Error] ${url}:`, error)
+  } catch (error: any) {
+    // Log error en producción también para debugging
+    console.error(`[SWR Fetcher Error] ${url}:`, {
+      message: error?.message || 'Error desconocido',
+      status: error?.status,
+    })
+    
+    // Retornar estructura por defecto en lugar de lanzar error
+    // Esto evita que SWR rompa el componente
+    if (url.includes('/api/posts') || url.includes('/api/feed')) {
+      return { posts: [], hasMore: false, page: 1, total: 0 }
     }
+    
     throw error
   }
 }
