@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react'
 import PostCard from './PostCard'
 import SkeletonPostCard from './SkeletonPostCard'
 import { useI18n } from '@/lib/i18n/context'
@@ -28,56 +28,104 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const { posts: followingPosts, isLoading: followingLoading, mutate: mutateFollowing } = useFollowingFeed(page, 10)
   
   // Determinar qué datos usar según el filtro
-  const currentPosts = filter === 'for-you' ? forYouPosts : filter === 'following' ? followingPosts : postsData
+  // Usar useMemo para evitar recrear el array en cada render
+  const currentPosts = useMemo(() => {
+    if (filter === 'for-you') return forYouPosts || []
+    if (filter === 'following') return followingPosts || []
+    return postsData || []
+  }, [filter, forYouPosts, followingPosts, postsData])
+  
   const loading = filter === 'for-you' ? forYouLoading : filter === 'following' ? followingLoading : isLoading
   const mutateFn = filter === 'for-you' ? mutateForYou : filter === 'following' ? mutateFollowing : mutate
   
   // Acumular posts para infinite scroll
-  // Usar useRef para evitar actualizaciones innecesarias que causan loops
-  const prevCurrentPostsRef = useRef<any[]>([])
+  // Usar useRef para evitar loops infinitos
   const prevPageRef = useRef(1)
+  const prevPostsIdsRef = useRef('')
+  const isProcessingRef = useRef(false)
   
   useEffect(() => {
-    // Solo actualizar si realmente cambió algo (comparar por longitud y primer ID)
-    const currentPostsLength = currentPosts?.length || 0
-    const prevPostsLength = prevCurrentPostsRef.current.length
-    const firstPostId = currentPosts?.[0]?.id
-    const prevFirstPostId = prevCurrentPostsRef.current[0]?.id
-    
-    const postsChanged = currentPostsLength !== prevPostsLength || firstPostId !== prevFirstPostId
-    const pageChanged = page !== prevPageRef.current
-    
-    if (!postsChanged && !pageChanged && currentPostsLength > 0) {
-      return // No hacer nada si no cambió nada
+    // Prevenir procesamiento simultáneo
+    if (isProcessingRef.current) {
+      return
     }
     
-    if (currentPosts && currentPosts.length > 0) {
-      if (page === 1) {
-        setAllPosts(currentPosts)
-        prevCurrentPostsRef.current = currentPosts
-      } else {
-        setAllPosts(prev => {
-          const existingIds = new Set(prev.map(p => p.id))
-          const newPosts = currentPosts.filter((p: any) => !existingIds.has(p.id))
-          const updated = [...prev, ...newPosts]
-          prevCurrentPostsRef.current = updated
-          return updated
-        })
+    try {
+      isProcessingRef.current = true
+      
+      // Validar que currentPosts sea un array
+      if (!Array.isArray(currentPosts)) {
+        console.warn('[PostFeed] currentPosts no es un array:', currentPosts)
+        if (page === 1 && !loading) {
+          setAllPosts([])
+          prevPostsIdsRef.current = ''
+        }
+        return
       }
-    } else if (page === 1 && !loading) {
-      // Solo limpiar si no está cargando para evitar parpadeos
-      setAllPosts([])
-      prevCurrentPostsRef.current = []
+      
+      // Calcular IDs de posts actuales
+      const currentPostsIds = currentPosts.map((p: any) => p?.id).filter(Boolean).join(',')
+      
+      // Solo actualizar si realmente cambió algo (comparar por IDs)
+      const postsChanged = currentPostsIds !== prevPostsIdsRef.current
+      const pageChanged = page !== prevPageRef.current
+      
+      if (!postsChanged && !pageChanged && currentPosts.length > 0) {
+        return // No hacer nada si no cambió nada
+      }
+      
+      if (currentPosts.length > 0) {
+        // Validar que los posts tengan estructura válida
+        const validPosts = currentPosts.filter((p: any) => p && p.id)
+        
+        if (validPosts.length === 0) {
+          console.warn('[PostFeed] Todos los posts son inválidos:', currentPosts)
+          if (page === 1 && !loading) {
+            setAllPosts([])
+            prevPostsIdsRef.current = ''
+          }
+          return
+        }
+        
+        if (page === 1) {
+          setAllPosts(validPosts)
+          prevPostsIdsRef.current = currentPostsIds
+        } else {
+          setAllPosts(prev => {
+            const existingIds = new Set(prev.map(p => p.id))
+            const newPosts = validPosts.filter((p: any) => !existingIds.has(p.id))
+            return [...prev, ...newPosts]
+          })
+          prevPostsIdsRef.current = currentPostsIds
+        }
+      } else if (page === 1 && !loading) {
+        // Solo limpiar si no está cargando para evitar parpadeos
+        setAllPosts([])
+        prevPostsIdsRef.current = ''
+      }
+      
+      prevPageRef.current = page
+    } catch (error: any) {
+      console.error('[PostFeed] Error en useEffect de acumulación de posts:', error)
+      // En caso de error, intentar resetear el estado
+      if (page === 1) {
+        setAllPosts([])
+        prevPostsIdsRef.current = ''
+      }
+    } finally {
+      isProcessingRef.current = false
     }
-    
-    prevPageRef.current = page
   }, [currentPosts, page, loading])
 
   // Reset cuando cambia el filtro o subforumId
   useEffect(() => {
     setPage(1)
     setAllPosts([])
-  }, [filter, subforumId])
+    prevPostsIdsRef.current = ''
+    prevPageRef.current = 1
+    // Forzar revalidación de los datos cuando cambia el filtro
+    mutateFn()
+  }, [filter, subforumId, mutateFn])
 
   const removePost = useCallback((postId: string) => {
     setAllPosts(prev => prev.filter(p => p.id.toString() !== postId))
@@ -200,14 +248,28 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   }, [filter, currentPosts?.length, allPosts.length, loading])
 
   if (allPosts.length === 0 && !loading) {
+    // Log para debugging en producción también
+    console.log('[PostFeed] No hay posts:', {
+      filter,
+      currentPostsLength: currentPosts?.length || 0,
+      currentPostsIsArray: Array.isArray(currentPosts),
+      currentPostsType: typeof currentPosts,
+      currentPosts: currentPosts,
+      postsDataLength: postsData?.length || 0,
+      forYouPostsLength: forYouPosts?.length || 0,
+      followingPostsLength: followingPosts?.length || 0,
+      loading,
+      isLoading,
+      forYouLoading,
+      followingLoading,
+    })
+    
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <p className="text-gray-500 text-lg">No hay posts aún. ¡Sé el primero en crear uno!</p>
-        {process.env.NODE_ENV === 'development' && (
-          <p className="text-xs text-gray-400 mt-2">
-            Filter: {filter} | Posts: {currentPosts?.length || 0} | Loading: {loading ? 'true' : 'false'}
-          </p>
-        )}
+        <p className="text-xs text-gray-400 mt-2">
+          Filter: {filter} | Posts recibidos: {currentPosts?.length || 0} | Loading: {loading ? 'true' : 'false'} | Tipo: {Array.isArray(currentPosts) ? 'Array' : typeof currentPosts}
+        </p>
       </div>
     )
   }

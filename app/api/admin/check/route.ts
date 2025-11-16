@@ -8,7 +8,15 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json({ isAdmin: false }, { status: 401 })
+      // Retornar 200 con isAdmin: false en lugar de 401 para evitar errores en SWR
+      return NextResponse.json({ isAdmin: false }, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60',
+          'CDN-Cache-Control': 'private, s-maxage=30',
+          'Vercel-CDN-Cache-Control': 'private, s-maxage=30',
+        },
+      })
     }
 
     const adminIds = process.env.NEXT_PUBLIC_ADMINS
