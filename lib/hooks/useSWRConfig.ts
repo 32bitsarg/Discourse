@@ -78,14 +78,15 @@ export const fetcher = async (url: string) => {
     
     return data
   } catch (error: any) {
-    // Log error con más detalles
-    const errorDetails = {
-      message: error?.message || 'Error desconocido',
-      status: error?.status,
-      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
-    }
+    // Log error con más detalles - serializar el error correctamente
+    const errorMessage = error?.message || String(error) || 'Error desconocido'
+    const errorStatus = error?.status || 'N/A'
     
-    console.error(`[SWR Fetcher Error] ${url}:`, errorDetails)
+    console.error(`[SWR Fetcher Error] ${url}:`, {
+      message: errorMessage,
+      status: errorStatus,
+      errorType: error?.constructor?.name || typeof error,
+    })
     
     // Retornar estructura por defecto en lugar de lanzar error
     // Esto evita que SWR rompa el componente
@@ -98,7 +99,13 @@ export const fetcher = async (url: string) => {
       return { settings: [] }
     }
     
-    throw error
+    if (url.includes('/api/admin/check')) {
+      return { isAdmin: false }
+    }
+    
+    // Para otros errores, retornar estructura vacía en lugar de lanzar
+    // Esto previene que el ErrorBoundary capture errores de SWR
+    return null
   }
 }
 

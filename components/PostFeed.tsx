@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react'
 import PostCard from './PostCard'
 import SkeletonPostCard from './SkeletonPostCard'
 import { useI18n } from '@/lib/i18n/context'
@@ -28,60 +28,54 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const { posts: followingPosts, isLoading: followingLoading, mutate: mutateFollowing } = useFollowingFeed(page, 10)
   
   // Determinar qué datos usar según el filtro
-  const currentPosts = filter === 'for-you' ? forYouPosts : filter === 'following' ? followingPosts : postsData
+  // Usar useMemo para evitar recrear el array en cada render
+  const currentPosts = useMemo(() => {
+    if (filter === 'for-you') return forYouPosts || []
+    if (filter === 'following') return followingPosts || []
+    return postsData || []
+  }, [filter, forYouPosts, followingPosts, postsData])
+  
   const loading = filter === 'for-you' ? forYouLoading : filter === 'following' ? followingLoading : isLoading
   const mutateFn = filter === 'for-you' ? mutateForYou : filter === 'following' ? mutateFollowing : mutate
   
   // Acumular posts para infinite scroll
-  // Usar useRef para evitar actualizaciones innecesarias que causan loops
-  const prevCurrentPostsRef = useRef<any[]>([])
+  // Comparar posts por IDs en lugar de referencia para evitar loops infinitos
   const prevPageRef = useRef(1)
+  const currentPostsIds = useMemo(() => {
+    return currentPosts.map((p: any) => p?.id).filter(Boolean).join(',')
+  }, [currentPosts])
+  
+  const prevPostsIdsRef = useRef('')
   
   useEffect(() => {
-    // Validar que currentPosts sea un array válido
-    if (!Array.isArray(currentPosts)) {
-      console.warn('[PostFeed] currentPosts no es un array:', currentPosts, 'Tipo:', typeof currentPosts)
-      if (page === 1 && !loading) {
-        setAllPosts([])
-        prevCurrentPostsRef.current = []
-      }
-      return
-    }
-    
-    // Solo actualizar si realmente cambió algo (comparar por longitud y primer ID)
-    const currentPostsLength = currentPosts.length
-    const prevPostsLength = prevCurrentPostsRef.current.length
-    const firstPostId = currentPosts[0]?.id
-    const prevFirstPostId = prevCurrentPostsRef.current[0]?.id
-    
-    const postsChanged = currentPostsLength !== prevPostsLength || firstPostId !== prevFirstPostId
+    // Solo actualizar si realmente cambió algo (comparar por IDs)
+    const postsChanged = currentPostsIds !== prevPostsIdsRef.current
     const pageChanged = page !== prevPageRef.current
     
-    if (!postsChanged && !pageChanged && currentPostsLength > 0) {
+    if (!postsChanged && !pageChanged && currentPosts.length > 0) {
       return // No hacer nada si no cambió nada
     }
     
     if (currentPosts.length > 0) {
       if (page === 1) {
         setAllPosts(currentPosts)
-        prevCurrentPostsRef.current = currentPosts
+        prevPostsIdsRef.current = currentPostsIds
       } else {
         setAllPosts(prev => {
           const existingIds = new Set(prev.map(p => p.id))
           const newPosts = currentPosts.filter((p: any) => !existingIds.has(p.id))
-          const updated = [...prev, ...newPosts]
-          prevCurrentPostsRef.current = updated
-          return updated
+          return [...prev, ...newPosts]
         })
+        prevPostsIdsRef.current = currentPostsIds
       }
     } else if (page === 1 && !loading) {
       // Solo limpiar si no está cargando para evitar parpadeos
       setAllPosts([])
-      prevCurrentPostsRef.current = []
+      prevPostsIdsRef.current = ''
     }
     
     prevPageRef.current = page
-  }, [currentPosts, page, loading])
+  }, [currentPostsIds, currentPosts, page, loading])
 
   // Reset cuando cambia el filtro o subforumId
   useEffect(() => {
