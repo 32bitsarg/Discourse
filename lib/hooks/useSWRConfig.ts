@@ -29,8 +29,45 @@ export const swrConfig: SWRConfiguration = {
 export const fetcher = async (url: string) => {
   try {
     const res = await fetch(url)
+    
+    // Para ciertas APIs, 401 es esperado y no debería lanzar error
     if (!res.ok) {
-      // Intentar obtener el mensaje de error
+      // Para estas APIs, 401 significa "no autenticado" pero no es un error
+      if (res.status === 401 && (
+        url.includes('/api/admin/check') || 
+        url.includes('/api/feed/following') ||
+        url.includes('/api/settings')
+      )) {
+        // Intentar parsear la respuesta para obtener datos por defecto
+        try {
+          const errorData = await res.json()
+          // Si la respuesta tiene datos, retornarlos
+          if (errorData.isAdmin !== undefined) {
+            return errorData
+          }
+          if (errorData.posts !== undefined) {
+            return errorData
+          }
+          if (errorData.settings !== undefined) {
+            return errorData
+          }
+        } catch {
+          // Si no se puede parsear, retornar estructura por defecto
+        }
+        
+        // Retornar estructura por defecto según la API
+        if (url.includes('/api/admin/check')) {
+          return { isAdmin: false }
+        }
+        if (url.includes('/api/feed/following')) {
+          return { posts: [], hasMore: false, page: 1, total: 0 }
+        }
+        if (url.includes('/api/settings')) {
+          return { settings: [] }
+        }
+      }
+      
+      // Para otros errores, intentar obtener el mensaje
       let errorMessage = 'Error desconocido'
       try {
         const errorData = await res.json()

@@ -39,16 +39,20 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const mutateFn = filter === 'for-you' ? mutateForYou : filter === 'following' ? mutateFollowing : mutate
   
   // Acumular posts para infinite scroll
-  // Comparar posts por IDs en lugar de referencia para evitar loops infinitos
+  // Usar useRef para evitar loops infinitos
   const prevPageRef = useRef(1)
-  const currentPostsIds = useMemo(() => {
-    return currentPosts.map((p: any) => p?.id).filter(Boolean).join(',')
-  }, [currentPosts])
-  
   const prevPostsIdsRef = useRef('')
+  const isProcessingRef = useRef(false)
   
   useEffect(() => {
+    // Prevenir procesamiento simultáneo
+    if (isProcessingRef.current) {
+      return
+    }
+    
     try {
+      isProcessingRef.current = true
+      
       // Validar que currentPosts sea un array
       if (!Array.isArray(currentPosts)) {
         console.warn('[PostFeed] currentPosts no es un array:', currentPosts)
@@ -58,6 +62,9 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
         }
         return
       }
+      
+      // Calcular IDs de posts actuales
+      const currentPostsIds = currentPosts.map((p: any) => p?.id).filter(Boolean).join(',')
       
       // Solo actualizar si realmente cambió algo (comparar por IDs)
       const postsChanged = currentPostsIds !== prevPostsIdsRef.current
@@ -82,14 +89,14 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
         
         if (page === 1) {
           setAllPosts(validPosts)
-          prevPostsIdsRef.current = validPosts.map((p: any) => p.id).join(',')
+          prevPostsIdsRef.current = currentPostsIds
         } else {
           setAllPosts(prev => {
             const existingIds = new Set(prev.map(p => p.id))
             const newPosts = validPosts.filter((p: any) => !existingIds.has(p.id))
             return [...prev, ...newPosts]
           })
-          prevPostsIdsRef.current = validPosts.map((p: any) => p.id).join(',')
+          prevPostsIdsRef.current = currentPostsIds
         }
       } else if (page === 1 && !loading) {
         // Solo limpiar si no está cargando para evitar parpadeos
@@ -105,8 +112,10 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
         setAllPosts([])
         prevPostsIdsRef.current = ''
       }
+    } finally {
+      isProcessingRef.current = false
     }
-  }, [currentPostsIds, currentPosts, page, loading])
+  }, [currentPosts, page, loading])
 
   // Reset cuando cambia el filtro o subforumId
   useEffect(() => {
