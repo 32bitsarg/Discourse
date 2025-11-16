@@ -24,11 +24,25 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    // Log detallado del error para debugging
+    console.error('ErrorBoundary caught an error:', {
+      error: error.toString(),
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      errorName: error.name,
+    })
   }
 
   handleReset = () => {
+    // Resetear el estado del error
     this.setState({ hasError: false, error: null })
+    
+    // Recargar la página para asegurar que todo se reinicialice correctamente
+    // Esto es más seguro que intentar revalidar SWR manualmente
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
   }
 
   render() {
@@ -47,14 +61,19 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-600 mb-6">
               Ocurrió un error inesperado. Por favor, intenta recargar la página.
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {this.state.error && (
               <details className="mb-4 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 mb-2">
-                  Detalles del error (solo en desarrollo)
+                  Detalles del error
                 </summary>
-                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
+                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
                   {this.state.error.toString()}
-                  {this.state.error.stack}
+                  {this.state.error.stack && (
+                    <>
+                      {'\n\nStack trace:\n'}
+                      {this.state.error.stack}
+                    </>
+                  )}
                 </pre>
               </details>
             )}

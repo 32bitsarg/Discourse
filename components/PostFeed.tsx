@@ -48,40 +48,75 @@ const PostFeed = forwardRef<PostFeedRef, PostFeedProps>(({ filter = 'all', subfo
   const prevPostsIdsRef = useRef('')
   
   useEffect(() => {
-    // Solo actualizar si realmente cambió algo (comparar por IDs)
-    const postsChanged = currentPostsIds !== prevPostsIdsRef.current
-    const pageChanged = page !== prevPageRef.current
-    
-    if (!postsChanged && !pageChanged && currentPosts.length > 0) {
-      return // No hacer nada si no cambió nada
-    }
-    
-    if (currentPosts.length > 0) {
-      if (page === 1) {
-        setAllPosts(currentPosts)
-        prevPostsIdsRef.current = currentPostsIds
-      } else {
-        setAllPosts(prev => {
-          const existingIds = new Set(prev.map(p => p.id))
-          const newPosts = currentPosts.filter((p: any) => !existingIds.has(p.id))
-          return [...prev, ...newPosts]
-        })
-        prevPostsIdsRef.current = currentPostsIds
+    try {
+      // Validar que currentPosts sea un array
+      if (!Array.isArray(currentPosts)) {
+        console.warn('[PostFeed] currentPosts no es un array:', currentPosts)
+        if (page === 1 && !loading) {
+          setAllPosts([])
+          prevPostsIdsRef.current = ''
+        }
+        return
       }
-    } else if (page === 1 && !loading) {
-      // Solo limpiar si no está cargando para evitar parpadeos
-      setAllPosts([])
-      prevPostsIdsRef.current = ''
+      
+      // Solo actualizar si realmente cambió algo (comparar por IDs)
+      const postsChanged = currentPostsIds !== prevPostsIdsRef.current
+      const pageChanged = page !== prevPageRef.current
+      
+      if (!postsChanged && !pageChanged && currentPosts.length > 0) {
+        return // No hacer nada si no cambió nada
+      }
+      
+      if (currentPosts.length > 0) {
+        // Validar que los posts tengan estructura válida
+        const validPosts = currentPosts.filter((p: any) => p && p.id)
+        
+        if (validPosts.length === 0) {
+          console.warn('[PostFeed] Todos los posts son inválidos:', currentPosts)
+          if (page === 1 && !loading) {
+            setAllPosts([])
+            prevPostsIdsRef.current = ''
+          }
+          return
+        }
+        
+        if (page === 1) {
+          setAllPosts(validPosts)
+          prevPostsIdsRef.current = validPosts.map((p: any) => p.id).join(',')
+        } else {
+          setAllPosts(prev => {
+            const existingIds = new Set(prev.map(p => p.id))
+            const newPosts = validPosts.filter((p: any) => !existingIds.has(p.id))
+            return [...prev, ...newPosts]
+          })
+          prevPostsIdsRef.current = validPosts.map((p: any) => p.id).join(',')
+        }
+      } else if (page === 1 && !loading) {
+        // Solo limpiar si no está cargando para evitar parpadeos
+        setAllPosts([])
+        prevPostsIdsRef.current = ''
+      }
+      
+      prevPageRef.current = page
+    } catch (error: any) {
+      console.error('[PostFeed] Error en useEffect de acumulación de posts:', error)
+      // En caso de error, intentar resetear el estado
+      if (page === 1) {
+        setAllPosts([])
+        prevPostsIdsRef.current = ''
+      }
     }
-    
-    prevPageRef.current = page
   }, [currentPostsIds, currentPosts, page, loading])
 
   // Reset cuando cambia el filtro o subforumId
   useEffect(() => {
     setPage(1)
     setAllPosts([])
-  }, [filter, subforumId])
+    prevPostsIdsRef.current = ''
+    prevPageRef.current = 1
+    // Forzar revalidación de los datos cuando cambia el filtro
+    mutateFn()
+  }, [filter, subforumId, mutateFn])
 
   const removePost = useCallback((postId: string) => {
     setAllPosts(prev => prev.filter(p => p.id.toString() !== postId))

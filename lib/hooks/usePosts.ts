@@ -28,18 +28,30 @@ export function usePosts(options: UsePostsOptions = {}) {
   // Debug: Log de errores y datos
   useEffect(() => {
     if (error) {
-      console.error(`[usePosts] Error en ${url}:`, error)
+      console.error(`[usePosts] Error en ${url}:`, {
+        message: error?.message || String(error),
+        error: error,
+      })
     }
     if (data) {
-      console.log(`[usePosts] Datos recibidos de ${url}:`, {
-        postsCount: data?.posts?.length || 0,
-        hasPagination: !!data?.pagination,
-      })
+      // Validar que data tenga la estructura esperada
+      if (!data.posts || !Array.isArray(data.posts)) {
+        console.warn(`[usePosts] Datos inválidos de ${url}:`, data)
+      } else {
+        console.log(`[usePosts] Datos recibidos de ${url}:`, {
+          postsCount: data.posts.length,
+          hasPagination: !!data?.pagination,
+          firstPost: data.posts[0] || null,
+        })
+      }
     }
   }, [error, data, url])
 
+  // Asegurar que siempre retornemos un array válido
+  const posts = Array.isArray(data?.posts) ? data.posts : []
+  
   return {
-    posts: data?.posts || [],
+    posts,
     pagination: data?.pagination || null,
     isLoading,
     isError: error,
@@ -81,8 +93,21 @@ export function useForYouFeed(page: number = 1, limit: number = 10) {
     }
   )
 
+  // Asegurar que siempre retornemos un array válido
+  const posts = Array.isArray(data?.posts) ? data.posts : []
+  
+  // Log para debugging
+  useEffect(() => {
+    if (error) {
+      console.error(`[useForYouFeed] Error:`, error)
+    }
+    if (data && !Array.isArray(data.posts)) {
+      console.warn(`[useForYouFeed] Posts no es un array:`, data)
+    }
+  }, [error, data])
+
   return {
-    posts: data?.posts || [],
+    posts,
     hasMore: data?.hasMore || false,
     isLoading,
     isError: error,
@@ -103,8 +128,21 @@ export function useFollowingFeed(page: number = 1, limit: number = 10) {
     }
   )
 
+  // Asegurar que siempre retornemos un array válido
+  const posts = Array.isArray(data?.posts) ? data.posts : []
+  
+  // Log para debugging
+  useEffect(() => {
+    if (error) {
+      console.error(`[useFollowingFeed] Error:`, error)
+    }
+    if (data && !Array.isArray(data.posts)) {
+      console.warn(`[useFollowingFeed] Posts no es un array:`, data)
+    }
+  }, [error, data])
+
   return {
-    posts: data?.posts || [],
+    posts,
     hasMore: data?.hasMore || false,
     isLoading,
     isError: error,

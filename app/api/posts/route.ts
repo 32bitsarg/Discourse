@@ -236,12 +236,29 @@ export async function GET(request: NextRequest) {
           },
         })
   } catch (error: any) {
-    // Si las tablas no existen, devolver array vacío
-    if (error?.code === 'ER_NO_SUCH_TABLE') {
-      return NextResponse.json({ posts: [] })
-    }
+    // Log del error para debugging
+    console.error('[API /api/posts] Error:', {
+      message: error?.message,
+      code: error?.code,
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
+    })
     
-    return NextResponse.json({ posts: [] })
+    // Si las tablas no existen o hay error de BD, devolver estructura completa vacía
+    return NextResponse.json({ 
+      posts: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        hasMore: false,
+        totalPages: 0
+      }
+    }, {
+      status: 200, // Retornar 200 para no romper SWR
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+      },
+    })
   }
 }
 
